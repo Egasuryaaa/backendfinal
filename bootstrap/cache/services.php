@@ -34,42 +34,23 @@
     30 => 'Filament\\Tables\\TablesServiceProvider',
     31 => 'Filament\\Widgets\\WidgetsServiceProvider',
     32 => 'Kirschbaum\\PowerJoins\\PowerJoinsServiceProvider',
-<<<<<<< HEAD
-    33 => 'Laravel\\Sanctum\\SanctumServiceProvider',
-    34 => 'Laravel\\Tinker\\TinkerServiceProvider',
-    35 => 'Livewire\\LivewireServiceProvider',
-    36 => 'Carbon\\Laravel\\ServiceProvider',
-    37 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    38 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
-    39 => 'Spatie\\MediaLibrary\\MediaLibraryServiceProvider',
-    40 => 'Spatie\\Permission\\PermissionServiceProvider',
-    41 => 'Laravel\\Sanctum\\SanctumServiceProvider',
-    42 => 'Spatie\\Permission\\PermissionServiceProvider',
-    43 => 'App\\Providers\\AppServiceProvider',
-    44 => 'App\\Providers\\RouteServiceProvider',
-    45 => 'App\\Providers\\Filament\\AdminPanelProvider',
-    46 => 'App\\Providers\\AppServiceProvider',
-    47 => 'App\\Providers\\Filament\\AdminPanelProvider',
-=======
     33 => 'Laravel\\Pail\\PailServiceProvider',
     34 => 'Laravel\\Sail\\SailServiceProvider',
     35 => 'Laravel\\Sanctum\\SanctumServiceProvider',
     36 => 'Laravel\\Tinker\\TinkerServiceProvider',
     37 => 'Livewire\\LivewireServiceProvider',
     38 => 'Carbon\\Laravel\\ServiceProvider',
-    39 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
-    40 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    41 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
-    42 => 'Spatie\\MediaLibrary\\MediaLibraryServiceProvider',
-    43 => 'Spatie\\Permission\\PermissionServiceProvider',
-    44 => 'Laravel\\Sanctum\\SanctumServiceProvider',
-    45 => 'Spatie\\Permission\\PermissionServiceProvider',
-    46 => 'App\\Providers\\AppServiceProvider',
-    47 => 'App\\Providers\\RouteServiceProvider',
-    48 => 'App\\Providers\\Filament\\AdminPanelProvider',
-    49 => 'App\\Providers\\AppServiceProvider',
-    50 => 'App\\Providers\\Filament\\AdminPanelProvider',
->>>>>>> ce069af (first commit)
+    39 => 'Termwind\\Laravel\\TermwindServiceProvider',
+    40 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
+    41 => 'Spatie\\MediaLibrary\\MediaLibraryServiceProvider',
+    42 => 'Spatie\\Permission\\PermissionServiceProvider',
+    43 => 'Laravel\\Sanctum\\SanctumServiceProvider',
+    44 => 'Spatie\\Permission\\PermissionServiceProvider',
+    45 => 'App\\Providers\\AppServiceProvider',
+    46 => 'App\\Providers\\RouteServiceProvider',
+    47 => 'App\\Providers\\Filament\\AdminPanelProvider',
+    48 => 'App\\Providers\\AppServiceProvider',
+    49 => 'App\\Providers\\Filament\\AdminPanelProvider',
   ),
   'eager' => 
   array (
@@ -94,39 +75,21 @@
     18 => 'Filament\\Tables\\TablesServiceProvider',
     19 => 'Filament\\Widgets\\WidgetsServiceProvider',
     20 => 'Kirschbaum\\PowerJoins\\PowerJoinsServiceProvider',
-<<<<<<< HEAD
-    21 => 'Laravel\\Sanctum\\SanctumServiceProvider',
-    22 => 'Livewire\\LivewireServiceProvider',
-    23 => 'Carbon\\Laravel\\ServiceProvider',
-    24 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    25 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
-    26 => 'Spatie\\MediaLibrary\\MediaLibraryServiceProvider',
-    27 => 'Spatie\\Permission\\PermissionServiceProvider',
-    28 => 'Laravel\\Sanctum\\SanctumServiceProvider',
-    29 => 'Spatie\\Permission\\PermissionServiceProvider',
-    30 => 'App\\Providers\\AppServiceProvider',
-    31 => 'App\\Providers\\RouteServiceProvider',
-    32 => 'App\\Providers\\Filament\\AdminPanelProvider',
-    33 => 'App\\Providers\\AppServiceProvider',
-    34 => 'App\\Providers\\Filament\\AdminPanelProvider',
-=======
     21 => 'Laravel\\Pail\\PailServiceProvider',
     22 => 'Laravel\\Sanctum\\SanctumServiceProvider',
     23 => 'Livewire\\LivewireServiceProvider',
     24 => 'Carbon\\Laravel\\ServiceProvider',
-    25 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
-    26 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    27 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
-    28 => 'Spatie\\MediaLibrary\\MediaLibraryServiceProvider',
-    29 => 'Spatie\\Permission\\PermissionServiceProvider',
-    30 => 'Laravel\\Sanctum\\SanctumServiceProvider',
-    31 => 'Spatie\\Permission\\PermissionServiceProvider',
-    32 => 'App\\Providers\\AppServiceProvider',
-    33 => 'App\\Providers\\RouteServiceProvider',
-    34 => 'App\\Providers\\Filament\\AdminPanelProvider',
-    35 => 'App\\Providers\\AppServiceProvider',
-    36 => 'App\\Providers\\Filament\\AdminPanelProvider',
->>>>>>> ce069af (first commit)
+    25 => 'Termwind\\Laravel\\TermwindServiceProvider',
+    26 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
+    27 => 'Spatie\\MediaLibrary\\MediaLibraryServiceProvider',
+    28 => 'Spatie\\Permission\\PermissionServiceProvider',
+    29 => 'Laravel\\Sanctum\\SanctumServiceProvider',
+    30 => 'Spatie\\Permission\\PermissionServiceProvider',
+    31 => 'App\\Providers\\AppServiceProvider',
+    32 => 'App\\Providers\\RouteServiceProvider',
+    33 => 'App\\Providers\\Filament\\AdminPanelProvider',
+    34 => 'App\\Providers\\AppServiceProvider',
+    35 => 'App\\Providers\\Filament\\AdminPanelProvider',
   ),
   'deferred' => 
   array (
@@ -279,11 +242,8 @@
     'validator' => 'Illuminate\\Validation\\ValidationServiceProvider',
     'validation.presence' => 'Illuminate\\Validation\\ValidationServiceProvider',
     'Illuminate\\Contracts\\Validation\\UncompromisedVerifier' => 'Illuminate\\Validation\\ValidationServiceProvider',
-<<<<<<< HEAD
-=======
     'Laravel\\Sail\\Console\\InstallCommand' => 'Laravel\\Sail\\SailServiceProvider',
     'Laravel\\Sail\\Console\\PublishCommand' => 'Laravel\\Sail\\SailServiceProvider',
->>>>>>> ce069af (first commit)
     'command.tinker' => 'Laravel\\Tinker\\TinkerServiceProvider',
   ),
   'when' => 
@@ -324,12 +284,9 @@
     'Illuminate\\Validation\\ValidationServiceProvider' => 
     array (
     ),
-<<<<<<< HEAD
-=======
     'Laravel\\Sail\\SailServiceProvider' => 
     array (
     ),
->>>>>>> ce069af (first commit)
     'Laravel\\Tinker\\TinkerServiceProvider' => 
     array (
     ),
