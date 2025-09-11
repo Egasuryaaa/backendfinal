@@ -89,6 +89,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Mendapatkan lokasi penjual utama.
+     */
+    public function sellerLocation()
+    {
+        return $this->hasOne(SellerLocation::class)->where('aktif', true);
+    }
+
+    /**
      * Mendapatkan ulasan yang diberikan oleh user.
      */
     public function reviews()
