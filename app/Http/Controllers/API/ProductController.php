@@ -130,7 +130,6 @@ class ProductController extends Controller
         $categoryIds = [$category->id];
         $childCategories = $category->children()->pluck('id')->toArray();
         $categoryIds = array_merge($categoryIds, $childCategories);
-
         $query = Product::with(['category', 'seller'])
                         ->whereIn('kategori_id', $categoryIds)
                         ->where('aktif', true)
@@ -145,7 +144,6 @@ class ProductController extends Controller
         if ($request->has('min_price')) {
             $query->where('harga', '>=', $request->min_price);
         }
-
         if ($request->has('max_price')) {
             $query->where('harga', '<=', $request->max_price);
         }
@@ -205,7 +203,6 @@ class ProductController extends Controller
         if ($request->has('min_price')) {
             $query->where('harga', '>=', $request->min_price);
         }
-
         if ($request->has('max_price')) {
             $query->where('harga', '<=', $request->max_price);
         }

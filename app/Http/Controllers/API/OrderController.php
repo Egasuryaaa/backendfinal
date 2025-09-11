@@ -62,7 +62,6 @@ class OrderController extends Controller
     public function show(Request $request, Order $order)
     {
         $user = $request->user();
-
         if ($user->id !== $order->user_id && !$order->orderItems->contains('penjual_id', $user->id)) {
             return response()->json([
                 'success' => false,
@@ -244,7 +243,6 @@ class OrderController extends Controller
             'metode_pembayaran' => 'required|string',
             'catatan' => 'nullable|string'
         ]);
-
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -263,7 +261,6 @@ class OrderController extends Controller
                 'message' => 'Alamat tidak valid'
             ], 400);
         }
-
         // Dapatkan keranjang pengguna
         $cart = Cart::where('user_id', $user->id)->first();
         if (!$cart || $cart->items()->count() === 0) {
@@ -296,7 +293,6 @@ class OrderController extends Controller
                     ];
                     continue;
                 }
-
                 // Cek stok - validasi real-time saat checkout
                 if ($product->stok < $item->jumlah) {
                     $invalidItems[] = [
@@ -324,12 +320,10 @@ class OrderController extends Controller
                     ]
                 ], 400);
             }
-
             // Hitung biaya
             $biayaKirim = $request->biaya_kirim;
             $pajak = 0; // Sesuaikan jika ada pajak
             $total = $subtotal + $biayaKirim + $pajak;
-
             // Buat pesanan
             $order = Order::create([
                 'user_id' => $user->id,
@@ -360,7 +354,6 @@ class OrderController extends Controller
                     'harga' => $product->harga,
                     'subtotal' => $product->harga * $item->jumlah
                 ]);
-
                 // PENGURANGAN STOK: Stok dikurangi hanya pada saat checkout
                 $product->stok -= $item->jumlah;
                 $product->save();
@@ -380,7 +373,6 @@ class OrderController extends Controller
                 'pesanan_id' => $order->id,
                 'tautan' => '/pesanan/' . $order->id,
             ]);
-
             // Notifikasi untuk setiap penjual
             $sellerGroups = $cartItems->groupBy('product.penjual_id');
             foreach ($sellerGroups as $sellerId => $items) {
@@ -415,7 +407,6 @@ class OrderController extends Controller
                 'cart_id' => $cart->id,
                 'trace' => $e->getTraceAsString()
             ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Checkout gagal: ' . $e->getMessage()
@@ -433,7 +424,6 @@ class OrderController extends Controller
     public function cancelOrder(Request $request, Order $order)
     {
         $user = $request->user();
-
         // Pastikan pesanan milik pengguna
         if ($user->id !== $order->user_id) {
             return response()->json([
@@ -441,7 +431,6 @@ class OrderController extends Controller
                 'message' => 'Pesanan tidak ditemukan'
             ], 404);
         }
-
         // Cek status pesanan
         if (!in_array($order->status, ['menunggu', 'diproses'])) {
             return response()->json([
@@ -466,7 +455,6 @@ class OrderController extends Controller
                     $product->save();
                 }
             }
-
             // Notifikasi untuk pelanggan
             $user->notifications()->create([
                 'judul' => 'Pesanan Dibatalkan',
@@ -475,7 +463,6 @@ class OrderController extends Controller
                 'pesanan_id' => $order->id,
                 'tautan' => '/pesanan/' . $order->id,
             ]);
-
             // Notifikasi untuk penjual
             $sellerIds = $order->orderItems->pluck('penjual_id')->unique();
             foreach ($sellerIds as $sellerId) {
@@ -509,7 +496,6 @@ class OrderController extends Controller
                 'order_id' => $order->id,
                 'trace' => $e->getTraceAsString()
             ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal membatalkan pesanan: ' . $e->getMessage()
@@ -529,7 +515,6 @@ class OrderController extends Controller
         $validator = Validator::make($request->all(), [
             'status' => 'required|string|in:diproses,dikirim,selesai,dibatalkan'
         ]);
-
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -561,7 +546,6 @@ class OrderController extends Controller
             'selesai' => [],
             'dibatalkan' => []
         ];
-
         if (!in_array($newStatus, $validTransitions[$currentStatus])) {
             return response()->json([
                 'success' => false,
@@ -602,7 +586,6 @@ class OrderController extends Controller
                     'selesai' => 'telah selesai',
                     'dibatalkan' => 'telah dibatalkan oleh penjual'
                 ];
-
                 $buyer->notifications()->create([
                     'judul' => 'Status Pesanan Berubah',
                     'isi' => "Pesanan #{$order->nomor_pesanan} {$statusLabels[$newStatus]}.",
@@ -630,7 +613,6 @@ class OrderController extends Controller
                 'order_id' => $order->id,
                 'trace' => $e->getTraceAsString()
             ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memperbarui status pesanan: ' . $e->getMessage()
@@ -648,7 +630,6 @@ class OrderController extends Controller
     public function completeOrder(Request $request, Order $order)
     {
         $user = $request->user();
-
         // Pastikan pesanan milik pengguna
         if ($user->id !== $order->user_id) {
             return response()->json([
@@ -656,7 +637,6 @@ class OrderController extends Controller
                 'message' => 'Pesanan tidak ditemukan'
             ], 404);
         }
-
         // Cek status pesanan
         if ($order->status !== 'dikirim') {
             return response()->json([
@@ -672,7 +652,6 @@ class OrderController extends Controller
             $order->status = 'selesai';
             $order->tanggal_selesai = now();
             $order->save();
-
             // Notifikasi untuk pembeli
             $user->notifications()->create([
                 'judul' => 'Pesanan Selesai',
@@ -681,7 +660,6 @@ class OrderController extends Controller
                 'pesanan_id' => $order->id,
                 'tautan' => '/pesanan/' . $order->id,
             ]);
-
             // Notifikasi untuk penjual
             $sellerIds = $order->orderItems->pluck('penjual_id')->unique();
             foreach ($sellerIds as $sellerId) {
@@ -715,7 +693,6 @@ class OrderController extends Controller
                 'order_id' => $order->id,
                 'trace' => $e->getTraceAsString()
             ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menyelesaikan pesanan: ' . $e->getMessage()

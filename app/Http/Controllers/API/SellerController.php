@@ -23,21 +23,18 @@ class SellerController extends Controller
     public function dashboard(Request $request)
     {
         $user = $request->user();
-
         if (!$user->hasRole('seller')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'
             ], 403);
         }
-
         // Hitung total pendapatan
         $totalRevenue = OrderItem::where('penjual_id', $user->id)
                                ->whereHas('order', function($q) {
                                    $q->where('status_pembayaran', 'dibayar');
                                })
                                ->sum('subtotal');
-
         // Hitung jumlah pesanan
         $orderCount = OrderItem::where('penjual_id', $user->id)
                              ->distinct('pesanan_id')
@@ -50,7 +47,6 @@ class SellerController extends Controller
         $outOfStockCount = Product::where('penjual_id', $user->id)
                                 ->where('stok', 0)
                                 ->count();
-
         // Hitung rating rata-rata
         $avgRating = Review::whereHas('product', function($q) use ($user) {
                            $q->where('penjual_id', $user->id);
@@ -65,7 +61,6 @@ class SellerController extends Controller
                              })
                              ->doesntHave('reviewReply')
                              ->count();
-
         // Hitung jumlah pesanan berdasarkan status
         $orderStats = OrderItem::where('penjual_id', $user->id)
                              ->join('orders', 'order_items.pesanan_id', '=', 'orders.id')
@@ -74,14 +69,12 @@ class SellerController extends Controller
                              ->get()
                              ->pluck('count', 'status')
                              ->toArray();
-
         // Lengkapi dengan status yang kosong
         foreach (['menunggu', 'dibayar', 'diproses', 'dikirim', 'selesai', 'dibatalkan'] as $status) {
             if (!isset($orderStats[$status])) {
                 $orderStats[$status] = 0;
             }
         }
-
         // Dapatkan data penjualan 7 hari terakhir
         $salesData = [];
         for ($i = 6; $i >= 0; $i--) {
@@ -92,13 +85,11 @@ class SellerController extends Controller
                                        ->whereDate('created_at', $date);
                                  })
                                  ->sum('subtotal');
-
             $salesData[] = [
                 'date' => Carbon::now()->subDays($i)->format('d M'),
                 'sales' => $dailySales
             ];
         }
-
         // Dapatkan pesanan terbaru
         $latestOrders = OrderItem::where('penjual_id', $user->id)
                               ->with(['order', 'order.user', 'product'])
@@ -121,7 +112,6 @@ class SellerController extends Controller
                                       'created_at' => $item->created_at->format('d M Y H:i')
                                   ];
                               });
-
         // Dapatkan janji temu akan datang
         $upcomingAppointments = Appointment::where('penjual_id', $user->id)
                                        ->where('tanggal_janji', '>=', now())

@@ -83,6 +83,23 @@
       0 => 'Kirschbaum\\PowerJoins\\PowerJoinsServiceProvider',
     ),
   ),
+<<<<<<< HEAD
+=======
+  'laravel/pail' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Laravel\\Pail\\PailServiceProvider',
+    ),
+  ),
+  'laravel/sail' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Laravel\\Sail\\SailServiceProvider',
+    ),
+  ),
+>>>>>>> ce069af (first commit)
   'laravel/sanctum' => 
   array (
     'providers' => 
@@ -115,6 +132,16 @@
       0 => 'Carbon\\Laravel\\ServiceProvider',
     ),
   ),
+<<<<<<< HEAD
+=======
+  'nunomaduro/collision' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
+    ),
+  ),
+>>>>>>> ce069af (first commit)
   'nunomaduro/termwind' => 
   array (
     'providers' => 

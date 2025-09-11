@@ -103,7 +103,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reviews', [ReviewController::class, 'store']);
     Route::put('/reviews/{review}', [ReviewController::class, 'update']);
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
-
     // Appointments
     Route::get('/appointments', [AppointmentController::class, 'index']);
     Route::post('/appointments', [AppointmentController::class, 'store']);
@@ -111,7 +110,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
     Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
     Route::put('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
-
     // Messages
     Route::get('/messages/{userId}', [MessageController::class, 'getConversation']);
     Route::post('/messages', [MessageController::class, 'sendMessage']);

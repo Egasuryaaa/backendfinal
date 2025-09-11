@@ -34,6 +34,7 @@
     30 => 'Filament\\Tables\\TablesServiceProvider',
     31 => 'Filament\\Widgets\\WidgetsServiceProvider',
     32 => 'Kirschbaum\\PowerJoins\\PowerJoinsServiceProvider',
+<<<<<<< HEAD
     33 => 'Laravel\\Sanctum\\SanctumServiceProvider',
     34 => 'Laravel\\Tinker\\TinkerServiceProvider',
     35 => 'Livewire\\LivewireServiceProvider',
@@ -49,6 +50,26 @@
     45 => 'App\\Providers\\Filament\\AdminPanelProvider',
     46 => 'App\\Providers\\AppServiceProvider',
     47 => 'App\\Providers\\Filament\\AdminPanelProvider',
+=======
+    33 => 'Laravel\\Pail\\PailServiceProvider',
+    34 => 'Laravel\\Sail\\SailServiceProvider',
+    35 => 'Laravel\\Sanctum\\SanctumServiceProvider',
+    36 => 'Laravel\\Tinker\\TinkerServiceProvider',
+    37 => 'Livewire\\LivewireServiceProvider',
+    38 => 'Carbon\\Laravel\\ServiceProvider',
+    39 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
+    40 => 'Termwind\\Laravel\\TermwindServiceProvider',
+    41 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
+    42 => 'Spatie\\MediaLibrary\\MediaLibraryServiceProvider',
+    43 => 'Spatie\\Permission\\PermissionServiceProvider',
+    44 => 'Laravel\\Sanctum\\SanctumServiceProvider',
+    45 => 'Spatie\\Permission\\PermissionServiceProvider',
+    46 => 'App\\Providers\\AppServiceProvider',
+    47 => 'App\\Providers\\RouteServiceProvider',
+    48 => 'App\\Providers\\Filament\\AdminPanelProvider',
+    49 => 'App\\Providers\\AppServiceProvider',
+    50 => 'App\\Providers\\Filament\\AdminPanelProvider',
+>>>>>>> ce069af (first commit)
   ),
   'eager' => 
   array (
@@ -73,6 +94,7 @@
     18 => 'Filament\\Tables\\TablesServiceProvider',
     19 => 'Filament\\Widgets\\WidgetsServiceProvider',
     20 => 'Kirschbaum\\PowerJoins\\PowerJoinsServiceProvider',
+<<<<<<< HEAD
     21 => 'Laravel\\Sanctum\\SanctumServiceProvider',
     22 => 'Livewire\\LivewireServiceProvider',
     23 => 'Carbon\\Laravel\\ServiceProvider',
@@ -87,6 +109,24 @@
     32 => 'App\\Providers\\Filament\\AdminPanelProvider',
     33 => 'App\\Providers\\AppServiceProvider',
     34 => 'App\\Providers\\Filament\\AdminPanelProvider',
+=======
+    21 => 'Laravel\\Pail\\PailServiceProvider',
+    22 => 'Laravel\\Sanctum\\SanctumServiceProvider',
+    23 => 'Livewire\\LivewireServiceProvider',
+    24 => 'Carbon\\Laravel\\ServiceProvider',
+    25 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
+    26 => 'Termwind\\Laravel\\TermwindServiceProvider',
+    27 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
+    28 => 'Spatie\\MediaLibrary\\MediaLibraryServiceProvider',
+    29 => 'Spatie\\Permission\\PermissionServiceProvider',
+    30 => 'Laravel\\Sanctum\\SanctumServiceProvider',
+    31 => 'Spatie\\Permission\\PermissionServiceProvider',
+    32 => 'App\\Providers\\AppServiceProvider',
+    33 => 'App\\Providers\\RouteServiceProvider',
+    34 => 'App\\Providers\\Filament\\AdminPanelProvider',
+    35 => 'App\\Providers\\AppServiceProvider',
+    36 => 'App\\Providers\\Filament\\AdminPanelProvider',
+>>>>>>> ce069af (first commit)
   ),
   'deferred' => 
   array (
@@ -239,6 +279,11 @@
     'validator' => 'Illuminate\\Validation\\ValidationServiceProvider',
     'validation.presence' => 'Illuminate\\Validation\\ValidationServiceProvider',
     'Illuminate\\Contracts\\Validation\\UncompromisedVerifier' => 'Illuminate\\Validation\\ValidationServiceProvider',
+<<<<<<< HEAD
+=======
+    'Laravel\\Sail\\Console\\InstallCommand' => 'Laravel\\Sail\\SailServiceProvider',
+    'Laravel\\Sail\\Console\\PublishCommand' => 'Laravel\\Sail\\SailServiceProvider',
+>>>>>>> ce069af (first commit)
     'command.tinker' => 'Laravel\\Tinker\\TinkerServiceProvider',
   ),
   'when' => 
@@ -279,6 +324,12 @@
     'Illuminate\\Validation\\ValidationServiceProvider' => 
     array (
     ),
+<<<<<<< HEAD
+=======
+    'Laravel\\Sail\\SailServiceProvider' => 
+    array (
+    ),
+>>>>>>> ce069af (first commit)
     'Laravel\\Tinker\\TinkerServiceProvider' => 
     array (
     ),
