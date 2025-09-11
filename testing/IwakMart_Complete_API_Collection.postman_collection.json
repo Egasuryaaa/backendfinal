@@ -1,0 +1,1902 @@
+{
+  "info": {
+    "name": "IwakMart Complete API Collection",
+    "description": "Complete API endpoints for IwakMart e-commerce platform with examples",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "45|9cAMnRfHMygufHWTAesnDOW78bPfDuBV5khYEhO8f1b54b14",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "product_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "address_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"phone\": \"+6281234567890\",\n    \"role\": \"buyer\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "register"]
+            },
+            "description": "Register new user as buyer or seller"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.to.have.status(200)) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.token) {",
+                  "        pm.collectionVariables.set('auth_token', jsonData.data.token);",
+                  "        pm.collectionVariables.set('user_id', jsonData.data.user.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"admin@iwakmart.com\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "login"]
+            },
+            "description": "Login user and get authentication token"
+          }
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/user",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user"]
+            },
+            "description": "Get current user profile"
+          }
+        },
+        {
+          "name": "Update User Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"John Doe Updated\",\n    \"phone\": \"+6281234567891\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/user",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user"]
+            },
+            "description": "Update user profile information"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "logout"]
+            },
+            "description": "Logout current user"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products?kategori_id=1&jenis_ikan=segar&sort_by=created_at&sort_direction=desc&per_page=10&page=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                {
+                  "key": "kategori_id",
+                  "value": "1",
+                  "description": "Filter by category ID"
+                },
+                {
+                  "key": "jenis_ikan",
+                  "value": "segar",
+                  "description": "Filter by fish type: segar, beku, olahan, hidup"
+                },
+                {
+                  "key": "sort_by",
+                  "value": "created_at",
+                  "description": "Sort field: nama, harga, created_at"
+                },
+                {
+                  "key": "sort_direction",
+                  "value": "desc",
+                  "description": "Sort direction: asc, desc"
+                },
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                }
+              ]
+            },
+            "description": "Get paginated list of products with filters"
+          }
+        },
+        {
+          "name": "Get Featured Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/featured",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "featured"]
+            },
+            "description": "Get featured products"
+          }
+        },
+        {
+          "name": "Search Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/search/ikan",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "search", "ikan"]
+            },
+            "description": "Search products by keyword"
+          }
+        },
+        {
+          "name": "Get Product Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}"]
+            },
+            "description": "Get detailed product information"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Categories",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"]
+            },
+            "description": "Get all product categories"
+          }
+        },
+        {
+          "name": "Get Category Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/categories/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "1"]
+            },
+            "description": "Get category details"
+          }
+        },
+        {
+          "name": "Get Products by Category",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/categories/1/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "1", "products"]
+            },
+            "description": "Get products in specific category"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Cart Management",
+      "item": [
+        {
+          "name": "Get Cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart"]
+            },
+            "description": "Get user's shopping cart"
+          }
+        },
+        {
+          "name": "Add to Cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"produk_id\": 1,\n    \"jumlah\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cart",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart"]
+            },
+            "description": "Add product to cart"
+          }
+        },
+        {
+          "name": "Update Cart Item",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"jumlah\": 3\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cart/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "1"]
+            },
+            "description": "Update cart item quantity"
+          }
+        },
+        {
+          "name": "Remove Cart Item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "1"]
+            },
+            "description": "Remove item from cart"
+          }
+        },
+        {
+          "name": "Clear Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart"]
+            },
+            "description": "Clear all items from cart"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Address Management",
+      "item": [
+        {
+          "name": "Get All Addresses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/addresses",
+              "host": ["{{base_url}}"],
+              "path": ["api", "addresses"]
+            },
+            "description": "Get user's saved addresses"
+          }
+        },
+        {
+          "name": "Add New Address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nama_penerima\": \"John Doe\",\n    \"telepon\": \"+6281234567890\",\n    \"alamat_lengkap\": \"Jl. Sudirman No. 123\",\n    \"provinsi\": \"DKI Jakarta\",\n    \"kota\": \"Jakarta Pusat\",\n    \"kecamatan\": \"Tanah Abang\",\n    \"kode_pos\": \"10220\",\n    \"alamat_utama\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/addresses",
+              "host": ["{{base_url}}"],
+              "path": ["api", "addresses"]
+            },
+            "description": "Add new delivery address"
+          }
+        },
+        {
+          "name": "Get Address Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/addresses/{{address_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "addresses", "{{address_id}}"]
+            },
+            "description": "Get specific address details"
+          }
+        },
+        {
+          "name": "Update Address",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nama_penerima\": \"John Doe Updated\",\n    \"telepon\": \"+6281234567891\",\n    \"alamat_lengkap\": \"Jl. Sudirman No. 456\",\n    \"provinsi\": \"DKI Jakarta\",\n    \"kota\": \"Jakarta Selatan\",\n    \"kecamatan\": \"Kebayoran Baru\",\n    \"kode_pos\": \"12110\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/addresses/{{address_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "addresses", "{{address_id}}"]
+            },
+            "description": "Update address information"
+          }
+        },
+        {
+          "name": "Set as Main Address",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/addresses/{{address_id}}/set-as-main",
+              "host": ["{{base_url}}"],
+              "path": ["api", "addresses", "{{address_id}}", "set-as-main"]
+            },
+            "description": "Set address as main/default address"
+          }
+        },
+        {
+          "name": "Delete Address",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/addresses/{{address_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "addresses", "{{address_id}}"]
+            },
+            "description": "Delete address"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Order Management",
+      "item": [
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders?status=menunggu&sort_by=created_at&sort_direction=desc&per_page=10&page=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "menunggu",
+                  "description": "Filter by order status"
+                },
+                {
+                  "key": "sort_by",
+                  "value": "created_at",
+                  "description": "Sort field"
+                },
+                {
+                  "key": "sort_direction",
+                  "value": "desc",
+                  "description": "Sort direction"
+                },
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                }
+              ]
+            },
+            "description": "Get user's orders with filters"
+          }
+        },
+        {
+          "name": "Checkout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.to.have.status(201)) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.id) {",
+                  "        pm.collectionVariables.set('order_id', jsonData.data.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"alamat_id\": 1,\n    \"metode_pengiriman\": \"reguler\",\n    \"biaya_kirim\": 15000,\n    \"metode_pembayaran\": \"bank_transfer\",\n    \"catatan\": \"Mohon dikemas dengan rapi\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders/checkout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "checkout"]
+            },
+            "description": "Checkout cart items to create order"
+          }
+        },
+        {
+          "name": "Get Order Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "{{order_id}}"]
+            },
+            "description": "Get detailed order information"
+          }
+        },
+        {
+          "name": "Get Order Items",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/{{order_id}}/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "{{order_id}}", "items"]
+            },
+            "description": "Get order items separately"
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/{{order_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "{{order_id}}", "cancel"]
+            },
+            "description": "Cancel order (only if status allows)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Payment Management",
+      "item": [
+        {
+          "name": "Get Payment Methods",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payment/methods",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payment", "methods"]
+            },
+            "description": "Get available payment methods"
+          }
+        },
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"payment_method\": \"bank_transfer\",\n    \"payment_channel\": \"BCA\",\n    \"customer_phone\": \"+6281234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders/{{order_id}}/payment",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "{{order_id}}", "payment"]
+            },
+            "description": "Create Xendit payment invoice for order"
+          }
+        },
+        {
+          "name": "Get Payment Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payments/1/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payments", "1", "status"]
+            },
+            "description": "Check payment status"
+          }
+        },
+        {
+          "name": "Get Payment Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payments/1/details",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payments", "1", "details"]
+            },
+            "description": "Get detailed payment information"
+          }
+        },
+        {
+          "name": "Cancel Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payments/1/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payments", "1", "cancel"]
+            },
+            "description": "Cancel payment"
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Reviews",
+      "item": [
+        {
+          "name": "Get Product Reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}", "reviews"]
+            },
+            "description": "Get reviews for specific product"
+          }
+        },
+        {
+          "name": "Create Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"produk_id\": 1,\n    \"pesanan_item_id\": 1,\n    \"rating\": 5,\n    \"komentar\": \"Produk sangat bagus, segar dan berkualitas!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews"]
+            },
+            "description": "Create product review"
+          }
+        },
+        {
+          "name": "Update Review",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"rating\": 4,\n    \"komentar\": \"Produk bagus, namun pengiriman agak lama\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reviews/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews", "1"]
+            },
+            "description": "Update existing review"
+          }
+        },
+        {
+          "name": "Delete Review",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reviews/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews", "1"]
+            },
+            "description": "Delete review"
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Appointments",
+      "item": [
+        {
+          "name": "Get All Appointments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments"]
+            },
+            "description": "Get user's appointments"
+          }
+        },
+        {
+          "name": "Create Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"lokasi_penjual_id\": 1,\n    \"tanggal_janji\": \"2025-07-25 10:00:00\",\n    \"tujuan\": \"Konsultasi produk ikan segar\",\n    \"catatan\": \"Ingin melihat kualitas ikan langsung\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments"]
+            },
+            "description": "Create new appointment with seller"
+          }
+        },
+        {
+          "name": "Get Appointment Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/appointments/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments", "1"]
+            },
+            "description": "Get appointment details"
+          }
+        },
+        {
+          "name": "Update Appointment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"tanggal_janji\": \"2025-07-26 14:00:00\",\n    \"tujuan\": \"Konsultasi dan pemesanan ikan\",\n    \"catatan\": \"Reschedule karena ada keperluan mendadak\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/appointments/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments", "1"]
+            },
+            "description": "Update appointment information"
+          }
+        },
+        {
+          "name": "Update Appointment Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"dikonfirmasi\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/appointments/1/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments", "1", "status"]
+            },
+            "description": "Update appointment status (menunggu, dikonfirmasi, selesai, dibatalkan)"
+          }
+        },
+        {
+          "name": "Delete Appointment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/appointments/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments", "1"]
+            },
+            "description": "Cancel/delete appointment"
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Messages",
+      "item": [
+        {
+          "name": "Get Conversations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/conversations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "conversations"]
+            },
+            "description": "Get user's message conversations"
+          }
+        },
+        {
+          "name": "Get Conversation with User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/messages/2",
+              "host": ["{{base_url}}"],
+              "path": ["api", "messages", "2"]
+            },
+            "description": "Get conversation with specific user"
+          }
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"penerima_id\": 2,\n    \"isi\": \"Halo, saya tertarik dengan produk ikan segar Anda. Apakah masih tersedia?\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/messages",
+              "host": ["{{base_url}}"],
+              "path": ["api", "messages"]
+            },
+            "description": "Send message to user"
+          }
+        },
+        {
+          "name": "Mark Message as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/messages/1/read",
+              "host": ["{{base_url}}"],
+              "path": ["api", "messages", "1", "read"]
+            },
+            "description": "Mark message as read"
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Notifications",
+      "item": [
+        {
+          "name": "Get All Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications"]
+            },
+            "description": "Get user's notifications"
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "1"]
+            },
+            "description": "Mark specific notification as read"
+          }
+        },
+        {
+          "name": "Mark All Notifications as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/mark-all-as-read",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "mark-all-as-read"]
+            },
+            "description": "Mark all notifications as read"
+          }
+        }
+      ]
+    },
+    {
+      "name": "12. Seller Management",
+      "item": [
+        {
+          "name": "Get Seller Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/seller/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "seller", "dashboard"]
+            },
+            "description": "Get seller dashboard data (revenue, orders, etc.)"
+          }
+        },
+        {
+          "name": "Get Seller Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/seller/products?aktif=true&kategori_id=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "seller", "products"],
+              "query": [
+                {
+                  "key": "aktif",
+                  "value": "true",
+                  "description": "Filter by active status"
+                },
+                {
+                  "key": "kategori_id",
+                  "value": "1",
+                  "description": "Filter by category"
+                }
+              ]
+            },
+            "description": "Get seller's products"
+          }
+        },
+        {
+          "name": "Add New Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nama\": \"Ikan Salmon Segar\",\n    \"kategori_id\": 1,\n    \"deskripsi\": \"Ikan salmon segar berkualitas tinggi dari perairan dingin\",\n    \"harga\": 85000,\n    \"stok\": 50,\n    \"berat\": 1.0,\n    \"jenis_ikan\": \"segar\",\n    \"spesies_ikan\": \"Salmon\",\n    \"aktif\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/seller/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "seller", "products"]
+            },
+            "description": "Add new product as seller"
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nama\": \"Ikan Salmon Segar Premium\",\n    \"harga\": 90000,\n    \"stok\": 45,\n    \"deskripsi\": \"Ikan salmon segar premium grade A dari perairan dingin Norwegia\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/seller/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "seller", "products", "{{product_id}}"]
+            },
+            "description": "Update product information"
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/seller/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "seller", "products", "{{product_id}}"]
+            },
+            "description": "Delete product"
+          }
+        },
+        {
+          "name": "Get Seller Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/seller/orders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "seller", "orders"]
+            },
+            "description": "Get orders for seller's products"
+          }
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"diproses\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/seller/orders/{{order_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "seller", "orders", "{{order_id}}", "status"]
+            },
+            "description": "Update order status (diproses, dikirim, selesai)"
+          }
+        },
+        {
+          "name": "Reply to Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"balasan\": \"Terima kasih atas review positifnya! Kami senang produk kami memuaskan Anda.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reviews/1/reply",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews", "1", "reply"]
+            },
+            "description": "Reply to customer review"
+          }
+        }
+      ]
+    },
+    {
+      "name": "13. Seller Locations",
+      "item": [
+        {
+          "name": "Get All Seller Locations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/seller-locations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "seller-locations"]
+            },
+            "description": "Get all seller locations (public)"
+          }
+        },
+        {
+          "name": "Get Seller Location Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/seller-locations/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "seller-locations", "1"]
+            },
+            "description": "Get seller location details"
+          }
+        },
+        {
+          "name": "Get My Seller Locations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/seller/locations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "seller", "locations"]
+            },
+            "description": "Get seller's own locations"
+          }
+        },
+        {
+          "name": "Add Seller Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nama_usaha\": \"Toko Ikan Segar Jaya\",\n    \"alamat\": \"Jl. Pasar Ikan No. 15, Jakarta Utara\",\n    \"telepon\": \"+6281234567890\",\n    \"jam_buka\": \"06:00\",\n    \"jam_tutup\": \"18:00\",\n    \"deskripsi\": \"Menyediakan ikan segar berkualitas langsung dari nelayan\",\n    \"aktif\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/seller/locations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "seller", "locations"]
+            },
+            "description": "Add new seller location"
+          }
+        },
+        {
+          "name": "Update Seller Location",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nama_usaha\": \"Toko Ikan Segar Jaya Premium\",\n    \"jam_buka\": \"05:30\",\n    \"jam_tutup\": \"19:00\",\n    \"deskripsi\": \"Menyediakan ikan segar premium berkualitas langsung dari nelayan terpilih\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/seller/locations/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "seller", "locations", "1"]
+            },
+            "description": "Update seller location"
+          }
+        },
+        {
+          "name": "Delete Seller Location",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/seller/locations/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "seller", "locations", "1"]
+            },
+            "description": "Delete seller location"
+          }
+        },
+        {
+          "name": "Get Seller Appointments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/seller/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "seller", "appointments"]
+            },
+            "description": "Get appointments for seller's locations"
+          }
+        }
+      ]
+    },
+    {
+      "name": "14. Testing Endpoints",
+      "item": [
+        {
+          "name": "Test - Get Payment Methods",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/test/payment-methods",
+              "host": ["{{base_url}}"],
+              "path": ["api", "test", "payment-methods"]
+            },
+            "description": "Test endpoint for payment methods"
+          }
+        },
+        {
+          "name": "Test - Create Mock Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"payment_method\": \"bank_transfer\",\n    \"payment_channel\": \"BCA\",\n    \"customer_phone\": \"+6281234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/test/create-payment",
+              "host": ["{{base_url}}"],
+              "path": ["api", "test", "create-payment"]
+            },
+            "description": "Test endpoint for creating mock payment"
+          }
+        },
+        {
+          "name": "Test - Create Payment for Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"payment_method\": \"e_wallet\",\n    \"payment_channel\": \"OVO\",\n    \"customer_phone\": \"+6281234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/test/orders/{{order_id}}/payment",
+              "host": ["{{base_url}}"],
+              "path": ["api", "test", "orders", "{{order_id}}", "payment"]
+            },
+            "description": "Test endpoint for creating payment for specific order"
+          }
+        },
+        {
+          "name": "Get Public Key",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payment/public-key",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payment", "public-key"]
+            },
+            "description": "Get Xendit public key for frontend integration"
+          }
+        }
+      ]
+    },
+    {
+      "name": "15. Webhooks",
+      "item": [
+        {
+          "name": "Xendit Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-callback-token",
+                "value": "pDc830zh8sB9ZVb8aX6W2RWe3C0WBpVJspCKlzhVyjMn5GG2"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"id\": \"invoice_id_example\",\n    \"external_id\": \"ORDER_1_1234567890\",\n    \"status\": \"PAID\",\n    \"paid_at\": \"2025-07-23T10:00:00.000Z\",\n    \"amount\": 50000,\n    \"paid_amount\": 50000,\n    \"payment_method\": \"BANK_TRANSFER\",\n    \"payment_channel\": \"BCA\",\n    \"payment_destination\": \"123456789\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/webhooks/xendit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "webhooks", "xendit"]
+            },
+            "description": "Xendit webhook endpoint for payment status updates"
+          }
+        }
+      ]
+    }
+  ]
+}
