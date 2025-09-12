@@ -20,40 +20,11 @@ class OrderController extends Controller
 {
     /**
      * Mendapatkan daftar pesanan pengguna.
-<<<<<<< HEAD
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-=======
      * PERBAIKAN: Eager loading yang konsisten
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
      */
     public function index(Request $request)
     {
         $user = $request->user();
-<<<<<<< HEAD
-        
-        $query = Order::where('user_id', $user->id);
-        
-        // Filter berdasarkan status
-        if ($request->has('status') && !empty($request->status)) {
-            $query->where('status', $request->status);
-        }
-        
-        // Pengurutan
-        $sortField = $request->sort_by ?? 'created_at';
-        $sortDirection = $request->sort_direction ?? 'desc';
-        
-        $allowedSortFields = ['nomor_pesanan', 'total', 'status', 'created_at'];
-        
-        if (in_array($sortField, $allowedSortFields)) {
-            $query->orderBy($sortField, $sortDirection);
-        }
-        
-        $orders = $query->with(['orderItems', 'orderItems.product', 'address'])
-                        ->paginate($request->per_page ?? 10);
-        
-=======
 
         $query = Order::where('user_id', $user->id);
 
@@ -78,7 +49,6 @@ class OrderController extends Controller
             'payment:id,order_id,status,payment_method,payment_channel,payment_url,expired_at'
         ])->paginate($request->per_page ?? 10);
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         return response()->json([
             'success' => true,
             'data' => new OrderCollection($orders)
@@ -87,45 +57,17 @@ class OrderController extends Controller
 
     /**
      * Menampilkan detail pesanan.
-<<<<<<< HEAD
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Order  $order
-     * @return \Illuminate\Http\Response
-=======
      * PERBAIKAN: Simplified response without complex resource
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
      */
     public function show(Request $request, Order $order)
     {
         $user = $request->user();
-<<<<<<< HEAD
-        
-        // Pastikan pesanan milik pengguna atau penjual yang terkait
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         if ($user->id !== $order->user_id && !$order->orderItems->contains('penjual_id', $user->id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Pesanan tidak ditemukan'
             ], 404);
         }
-<<<<<<< HEAD
-        
-        $order->load([
-            'user', 
-            'address', 
-            'orderItems', 
-            'orderItems.product', 
-            'orderItems.seller',
-            'payments'
-        ]);
-        
-        return response()->json([
-            'success' => true,
-            'data' => new OrderResource($order)
-        ]);
-=======
 
         try {
             // Simple data structure without complex resource
@@ -284,7 +226,6 @@ class OrderController extends Controller
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     }
 
     /**
@@ -302,10 +243,6 @@ class OrderController extends Controller
             'metode_pembayaran' => 'required|string',
             'catatan' => 'nullable|string'
         ]);
-<<<<<<< HEAD
-        
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -313,15 +250,9 @@ class OrderController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-<<<<<<< HEAD
-        
-        $user = $request->user();
-        
-=======
 
         $user = $request->user();
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         // Verifikasi alamat milik pengguna
         $address = Address::find($request->alamat_id);
         if (!$address || $address->user_id !== $user->id) {
@@ -330,10 +261,6 @@ class OrderController extends Controller
                 'message' => 'Alamat tidak valid'
             ], 400);
         }
-<<<<<<< HEAD
-        
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         // Dapatkan keranjang pengguna
         $cart = Cart::where('user_id', $user->id)->first();
         if (!$cart || $cart->items()->count() === 0) {
@@ -342,31 +269,14 @@ class OrderController extends Controller
                 'message' => 'Keranjang kosong'
             ], 400);
         }
-<<<<<<< HEAD
-        
-        try {
-            DB::beginTransaction();
-            
-=======
 
         try {
             DB::beginTransaction();
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             // Kunci semua produk untuk validasi stok - mencegah race condition
             $cartItems = $cart->items()->with(['product' => function($query) {
                 $query->lockForUpdate();
             }])->get();
-<<<<<<< HEAD
-            
-            // Validasi item keranjang (stok, dll)
-            $subtotal = 0;
-            $invalidItems = [];
-            
-            foreach ($cartItems as $item) {
-                $product = $item->product;
-                
-=======
 
             // Validasi item keranjang (stok, dll)
             $subtotal = 0;
@@ -375,7 +285,6 @@ class OrderController extends Controller
             foreach ($cartItems as $item) {
                 $product = $item->product;
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
                 // Cek ketersediaan produk
                 if (!$product || !$product->aktif) {
                     $invalidItems[] = [
@@ -384,10 +293,6 @@ class OrderController extends Controller
                     ];
                     continue;
                 }
-<<<<<<< HEAD
-                
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
                 // Cek stok - validasi real-time saat checkout
                 if ($product->stok < $item->jumlah) {
                     $invalidItems[] = [
@@ -399,19 +304,11 @@ class OrderController extends Controller
                     ];
                     continue;
                 }
-<<<<<<< HEAD
-                
-                // Hitung subtotal
-                $subtotal += $product->harga * $item->jumlah;
-            }
-            
-=======
 
                 // Hitung subtotal
                 $subtotal += $product->harga * $item->jumlah;
             }
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             // Jika ada item tidak valid
             if (count($invalidItems) > 0) {
                 DB::rollBack();
@@ -423,18 +320,10 @@ class OrderController extends Controller
                     ]
                 ], 400);
             }
-<<<<<<< HEAD
-            
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             // Hitung biaya
             $biayaKirim = $request->biaya_kirim;
             $pajak = 0; // Sesuaikan jika ada pajak
             $total = $subtotal + $biayaKirim + $pajak;
-<<<<<<< HEAD
-            
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             // Buat pesanan
             $order = Order::create([
                 'user_id' => $user->id,
@@ -450,19 +339,11 @@ class OrderController extends Controller
                 'total' => $total,
                 'catatan' => $request->catatan
             ]);
-<<<<<<< HEAD
-            
-            // Buat item pesanan
-            foreach ($cartItems as $item) {
-                $product = $item->product;
-                
-=======
 
             // Buat item pesanan
             foreach ($cartItems as $item) {
                 $product = $item->product;
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
                 // Buat item pesanan
                 OrderItem::create([
                     'pesanan_id' => $order->id,
@@ -473,23 +354,10 @@ class OrderController extends Controller
                     'harga' => $product->harga,
                     'subtotal' => $product->harga * $item->jumlah
                 ]);
-<<<<<<< HEAD
-                
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
                 // PENGURANGAN STOK: Stok dikurangi hanya pada saat checkout
                 $product->stok -= $item->jumlah;
                 $product->save();
             }
-<<<<<<< HEAD
-            
-            // Kosongkan keranjang
-            $cart->items()->delete();
-            
-            // Hapus cache keranjang
-            Cache::forget('cart_' . $user->id);
-            
-=======
 
             // Kosongkan keranjang
             $cart->items()->delete();
@@ -497,7 +365,6 @@ class OrderController extends Controller
             // Hapus cache keranjang
             Cache::forget('cart_' . $user->id);
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             // Notifikasi untuk pelanggan
             $user->notifications()->create([
                 'judul' => 'Pesanan Baru',
@@ -506,10 +373,6 @@ class OrderController extends Controller
                 'pesanan_id' => $order->id,
                 'tautan' => '/pesanan/' . $order->id,
             ]);
-<<<<<<< HEAD
-            
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             // Notifikasi untuk setiap penjual
             $sellerGroups = $cartItems->groupBy('product.penjual_id');
             foreach ($sellerGroups as $sellerId => $items) {
@@ -524,45 +387,26 @@ class OrderController extends Controller
                     ]);
                 }
             }
-<<<<<<< HEAD
-            
-            DB::commit();
-            
-            $order->load(['address', 'orderItems', 'orderItems.product', 'orderItems.seller']);
-            
-=======
 
             DB::commit();
 
             $order->load(['address', 'orderItems', 'orderItems.product', 'orderItems.seller']);
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             return response()->json([
                 'success' => true,
                 'message' => 'Checkout berhasil',
                 'data' => new OrderResource($order)
             ], 201);
-<<<<<<< HEAD
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            
-=======
 
         } catch (\Exception $e) {
             DB::rollBack();
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             // Log error untuk debugging
             Log::error('Checkout failed: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'cart_id' => $cart->id,
                 'trace' => $e->getTraceAsString()
             ]);
-<<<<<<< HEAD
-            
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             return response()->json([
                 'success' => false,
                 'message' => 'Checkout gagal: ' . $e->getMessage()
@@ -580,10 +424,6 @@ class OrderController extends Controller
     public function cancelOrder(Request $request, Order $order)
     {
         $user = $request->user();
-<<<<<<< HEAD
-        
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         // Pastikan pesanan milik pengguna
         if ($user->id !== $order->user_id) {
             return response()->json([
@@ -591,10 +431,6 @@ class OrderController extends Controller
                 'message' => 'Pesanan tidak ditemukan'
             ], 404);
         }
-<<<<<<< HEAD
-        
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         // Cek status pesanan
         if (!in_array($order->status, ['menunggu', 'diproses'])) {
             return response()->json([
@@ -602,17 +438,6 @@ class OrderController extends Controller
                 'message' => 'Pesanan tidak dapat dibatalkan dengan status saat ini'
             ], 400);
         }
-<<<<<<< HEAD
-        
-        try {
-            DB::beginTransaction();
-            
-            // Update status
-            $order->status = 'dibatalkan';
-            $order->status_pembayaran = 'dibatalkan';
-            $order->save();
-            
-=======
 
         try {
             DB::beginTransaction();
@@ -622,7 +447,6 @@ class OrderController extends Controller
             $order->status_pembayaran = 'gagal';
             $order->save();
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             // Kembalikan stok produk - PENTING: stok dikembalikan saat pesanan dibatalkan
             foreach ($order->orderItems as $item) {
                 $product = Product::find($item->produk_id);
@@ -631,10 +455,6 @@ class OrderController extends Controller
                     $product->save();
                 }
             }
-<<<<<<< HEAD
-            
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             // Notifikasi untuk pelanggan
             $user->notifications()->create([
                 'judul' => 'Pesanan Dibatalkan',
@@ -643,10 +463,6 @@ class OrderController extends Controller
                 'pesanan_id' => $order->id,
                 'tautan' => '/pesanan/' . $order->id,
             ]);
-<<<<<<< HEAD
-            
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             // Notifikasi untuk penjual
             $sellerIds = $order->orderItems->pluck('penjual_id')->unique();
             foreach ($sellerIds as $sellerId) {
@@ -661,44 +477,25 @@ class OrderController extends Controller
                     ]);
                 }
             }
-<<<<<<< HEAD
-            
-            DB::commit();
-            
-            $order->load(['address', 'orderItems', 'orderItems.product', 'orderItems.seller']);
-            
-=======
 
             DB::commit();
 
             $order->load(['address', 'orderItems', 'orderItems.product', 'orderItems.seller']);
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             return response()->json([
                 'success' => true,
                 'message' => 'Pesanan berhasil dibatalkan',
                 'data' => new OrderResource($order)
             ]);
-<<<<<<< HEAD
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            
-=======
 
         } catch (\Exception $e) {
             DB::rollBack();
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             Log::error('Cancel order failed: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'order_id' => $order->id,
                 'trace' => $e->getTraceAsString()
             ]);
-<<<<<<< HEAD
-            
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal membatalkan pesanan: ' . $e->getMessage()
@@ -718,10 +515,6 @@ class OrderController extends Controller
         $validator = Validator::make($request->all(), [
             'status' => 'required|string|in:diproses,dikirim,selesai,dibatalkan'
         ]);
-<<<<<<< HEAD
-        
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -729,40 +522,23 @@ class OrderController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-<<<<<<< HEAD
-        
-        $user = $request->user();
-        
-        // Pastikan pengguna adalah penjual yang terkait dengan pesanan
-        $isSellerInvolved = $order->orderItems->contains('penjual_id', $user->id);
-        
-=======
 
         $user = $request->user();
 
         // Pastikan pengguna adalah penjual yang terkait dengan pesanan
         $isSellerInvolved = $order->orderItems->contains('penjual_id', $user->id);
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         if (!$isSellerInvolved && !$user->hasRole('admin')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Anda tidak memiliki izin untuk mengubah status pesanan ini'
             ], 403);
         }
-<<<<<<< HEAD
-        
-        // Validasi perubahan status
-        $currentStatus = $order->status;
-        $newStatus = $request->status;
-        
-=======
 
         // Validasi perubahan status
         $currentStatus = $order->status;
         $newStatus = $request->status;
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         $validTransitions = [
             'menunggu' => ['diproses', 'dibatalkan'],
             'diproses' => ['dikirim', 'dibatalkan'],
@@ -770,29 +546,12 @@ class OrderController extends Controller
             'selesai' => [],
             'dibatalkan' => []
         ];
-<<<<<<< HEAD
-        
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         if (!in_array($newStatus, $validTransitions[$currentStatus])) {
             return response()->json([
                 'success' => false,
                 'message' => "Perubahan status dari '$currentStatus' ke '$newStatus' tidak valid"
             ], 400);
         }
-<<<<<<< HEAD
-        
-        try {
-            DB::beginTransaction();
-            
-            // Update status
-            $order->status = $newStatus;
-            
-            // Jika dibatalkan, kembalikan stok
-            if ($newStatus === 'dibatalkan') {
-                $order->status_pembayaran = 'dibatalkan';
-                
-=======
 
         try {
             DB::beginTransaction();
@@ -804,7 +563,6 @@ class OrderController extends Controller
             if ($newStatus === 'dibatalkan') {
                 $order->status_pembayaran = 'dibatalkan';
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
                 // Kembalikan stok produk
                 foreach ($order->orderItems as $item) {
                     if ($item->penjual_id === $user->id || $user->hasRole('admin')) {
@@ -816,15 +574,9 @@ class OrderController extends Controller
                     }
                 }
             }
-<<<<<<< HEAD
-            
-            $order->save();
-            
-=======
 
             $order->save();
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             // Notifikasi untuk pembeli
             $buyer = $order->user;
             if ($buyer) {
@@ -834,10 +586,6 @@ class OrderController extends Controller
                     'selesai' => 'telah selesai',
                     'dibatalkan' => 'telah dibatalkan oleh penjual'
                 ];
-<<<<<<< HEAD
-                
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
                 $buyer->notifications()->create([
                     'judul' => 'Status Pesanan Berubah',
                     'isi' => "Pesanan #{$order->nomor_pesanan} {$statusLabels[$newStatus]}.",
@@ -846,44 +594,25 @@ class OrderController extends Controller
                     'tautan' => '/pesanan/' . $order->id,
                 ]);
             }
-<<<<<<< HEAD
-            
-            DB::commit();
-            
-            $order->load(['address', 'orderItems', 'orderItems.product', 'orderItems.seller']);
-            
-=======
 
             DB::commit();
 
             $order->load(['address', 'orderItems', 'orderItems.product', 'orderItems.seller']);
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             return response()->json([
                 'success' => true,
                 'message' => 'Status pesanan berhasil diperbarui',
                 'data' => new OrderResource($order)
             ]);
-<<<<<<< HEAD
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            
-=======
 
         } catch (\Exception $e) {
             DB::rollBack();
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             Log::error('Update order status failed: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'order_id' => $order->id,
                 'trace' => $e->getTraceAsString()
             ]);
-<<<<<<< HEAD
-            
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memperbarui status pesanan: ' . $e->getMessage()
@@ -901,10 +630,6 @@ class OrderController extends Controller
     public function completeOrder(Request $request, Order $order)
     {
         $user = $request->user();
-<<<<<<< HEAD
-        
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         // Pastikan pesanan milik pengguna
         if ($user->id !== $order->user_id) {
             return response()->json([
@@ -912,10 +637,6 @@ class OrderController extends Controller
                 'message' => 'Pesanan tidak ditemukan'
             ], 404);
         }
-<<<<<<< HEAD
-        
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         // Cek status pesanan
         if ($order->status !== 'dikirim') {
             return response()->json([
@@ -923,25 +644,14 @@ class OrderController extends Controller
                 'message' => 'Hanya pesanan dengan status dikirim yang dapat ditandai selesai'
             ], 400);
         }
-<<<<<<< HEAD
-        
-        try {
-            DB::beginTransaction();
-            
-=======
 
         try {
             DB::beginTransaction();
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             // Update status
             $order->status = 'selesai';
             $order->tanggal_selesai = now();
             $order->save();
-<<<<<<< HEAD
-            
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             // Notifikasi untuk pembeli
             $user->notifications()->create([
                 'judul' => 'Pesanan Selesai',
@@ -950,10 +660,6 @@ class OrderController extends Controller
                 'pesanan_id' => $order->id,
                 'tautan' => '/pesanan/' . $order->id,
             ]);
-<<<<<<< HEAD
-            
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             // Notifikasi untuk penjual
             $sellerIds = $order->orderItems->pluck('penjual_id')->unique();
             foreach ($sellerIds as $sellerId) {
@@ -968,53 +674,31 @@ class OrderController extends Controller
                     ]);
                 }
             }
-<<<<<<< HEAD
-            
-            DB::commit();
-            
-            $order->load(['address', 'orderItems', 'orderItems.product', 'orderItems.seller']);
-            
-=======
 
             DB::commit();
 
             $order->load(['address', 'orderItems', 'orderItems.product', 'orderItems.seller']);
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             return response()->json([
                 'success' => true,
                 'message' => 'Pesanan berhasil ditandai selesai',
                 'data' => new OrderResource($order)
             ]);
-<<<<<<< HEAD
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            
-=======
 
         } catch (\Exception $e) {
             DB::rollBack();
 
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             Log::error('Complete order failed: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'order_id' => $order->id,
                 'trace' => $e->getTraceAsString()
             ]);
-<<<<<<< HEAD
-            
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menyelesaikan pesanan: ' . $e->getMessage()
             ], 500);
         }
     }
-<<<<<<< HEAD
-}
-=======
 
     /**
      * Mendapatkan daftar pesanan untuk penjual.
@@ -1078,4 +762,3 @@ class OrderController extends Controller
         ]);
     }
 }
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3

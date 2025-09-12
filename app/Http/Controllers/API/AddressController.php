@@ -4,16 +4,12 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-<<<<<<< HEAD
 use Illuminate\Http\JsonResponse;
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
 use Illuminate\Support\Facades\Validator;
 use App\Models\Address;
 
 class AddressController extends Controller
 {
-<<<<<<< HEAD
     /**zz
      * Mendapatkan semua alamat untuk pengguna yang login.
      *
@@ -21,15 +17,6 @@ class AddressController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request): JsonResponse
-=======
-    /**
-     * Mendapatkan semua alamat untuk pengguna yang login.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function index(Request $request)
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         $addresses = $user->addresses()->orderBy('utama', 'desc')->get();
@@ -44,15 +31,9 @@ class AddressController extends Controller
      * Menyimpan alamat baru.
      *
      * @param  \Illuminate\Http\Request  $request
-<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request): JsonResponse
-=======
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $validator = Validator::make($request->all(), [
             'label' => 'nullable|string|max:255',
@@ -99,15 +80,9 @@ class AddressController extends Controller
      *
      * @param  \App\Models\Address  $address
      * @param  \Illuminate\Http\Request  $request
-<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function show(Address $address, Request $request): JsonResponse
-=======
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Address $address, Request $request)
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         
@@ -130,15 +105,9 @@ class AddressController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Address  $address
-<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, Address $address): JsonResponse
-=======
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Address $address)
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         
@@ -192,15 +161,9 @@ class AddressController extends Controller
      *
      * @param  \App\Models\Address  $address
      * @param  \Illuminate\Http\Request  $request
-<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(Address $address, Request $request): JsonResponse
-=======
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Address $address, Request $request)
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         
@@ -246,15 +209,9 @@ class AddressController extends Controller
      *
      * @param  \App\Models\Address  $address
      * @param  \Illuminate\Http\Request  $request
-<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function setAsMain(Address $address, Request $request): JsonResponse
-=======
-     * @return \Illuminate\Http\Response
-     */
-    public function setAsMain(Address $address, Request $request)
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         

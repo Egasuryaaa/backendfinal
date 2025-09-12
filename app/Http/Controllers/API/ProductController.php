@@ -4,10 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-<<<<<<< HEAD
 use Illuminate\Http\JsonResponse;
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -20,15 +17,9 @@ class ProductController extends Controller
      * Mendapatkan daftar produk.
      *
      * @param  \Illuminate\Http\Request  $request
-<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request): JsonResponse
-=======
-     * @return \Illuminate\Http\Response
-     */
-    public function index(Request $request)
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $query = Product::with(['category', 'seller'])
                         ->where('aktif', true)
@@ -47,15 +38,9 @@ class ProductController extends Controller
         // Pengurutan
         $sortField = $request->sort_by ?? 'created_at';
         $sortDirection = $request->sort_direction ?? 'desc';
-<<<<<<< HEAD
         
         $allowedSortFields = ['nama', 'harga', 'created_at', 'rating_rata'];
         
-=======
-
-        $allowedSortFields = ['nama', 'harga', 'created_at', 'rating_rata'];
-
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         if (in_array($sortField, $allowedSortFields)) {
             $query->orderBy($sortField, $sortDirection);
         }
@@ -73,15 +58,9 @@ class ProductController extends Controller
     /**
      * Mendapatkan daftar produk unggulan.
      *
-<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function featured(): JsonResponse
-=======
-     * @return \Illuminate\Http\Response
-     */
-    public function featured()
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $products = Product::with(['category', 'seller'])
                           ->where('aktif', true)
@@ -101,15 +80,9 @@ class ProductController extends Controller
      * Mendapatkan detail produk.
      *
      * @param  \App\Models\Product  $product
-<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function show(Product $product): JsonResponse
-=======
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Product $product)
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         if (!$product->aktif) {
             return response()->json([
@@ -119,15 +92,9 @@ class ProductController extends Controller
         }
 
         $product->load([
-<<<<<<< HEAD
             'category', 
             'seller', 
             'seller.sellerLocations',
-=======
-            'category',
-            'seller',
-            'seller.sellerLocation',
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             'reviews' => function ($query) {
                 $query->with(['user', 'reviewReply', 'reviewReply.user'])
                       ->orderBy('created_at', 'desc')
@@ -156,24 +123,15 @@ class ProductController extends Controller
      *
      * @param  \App\Models\Category  $category
      * @param  \Illuminate\Http\Request  $request
-<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function byCategory(Category $category, Request $request): JsonResponse
-=======
-     * @return \Illuminate\Http\Response
-     */
-    public function byCategory(Category $category, Request $request)
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         // Ambil semua ID kategori anak
         $categoryIds = [$category->id];
         $childCategories = $category->children()->pluck('id')->toArray();
         $categoryIds = array_merge($categoryIds, $childCategories);
-<<<<<<< HEAD
         
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         $query = Product::with(['category', 'seller'])
                         ->whereIn('kategori_id', $categoryIds)
                         ->where('aktif', true)
@@ -188,10 +146,7 @@ class ProductController extends Controller
         if ($request->has('min_price')) {
             $query->where('harga', '>=', $request->min_price);
         }
-<<<<<<< HEAD
         
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         if ($request->has('max_price')) {
             $query->where('harga', '<=', $request->max_price);
         }
@@ -199,15 +154,9 @@ class ProductController extends Controller
         // Pengurutan
         $sortField = $request->sort_by ?? 'created_at';
         $sortDirection = $request->sort_direction ?? 'desc';
-<<<<<<< HEAD
         
         $allowedSortFields = ['nama', 'harga', 'created_at', 'rating_rata'];
         
-=======
-
-        $allowedSortFields = ['nama', 'harga', 'created_at', 'rating_rata'];
-
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         if (in_array($sortField, $allowedSortFields)) {
             $query->orderBy($sortField, $sortDirection);
         }
@@ -230,15 +179,9 @@ class ProductController extends Controller
      *
      * @param  string  $keyword
      * @param  \Illuminate\Http\Request  $request
-<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function search($keyword, Request $request): JsonResponse
-=======
-     * @return \Illuminate\Http\Response
-     */
-    public function search($keyword, Request $request)
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $query = Product::with(['category', 'seller'])
                         ->where(function($q) use ($keyword) {
@@ -263,10 +206,7 @@ class ProductController extends Controller
         if ($request->has('min_price')) {
             $query->where('harga', '>=', $request->min_price);
         }
-<<<<<<< HEAD
         
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         if ($request->has('max_price')) {
             $query->where('harga', '<=', $request->max_price);
         }
@@ -274,15 +214,9 @@ class ProductController extends Controller
         // Pengurutan
         $sortField = $request->sort_by ?? 'created_at';
         $sortDirection = $request->sort_direction ?? 'desc';
-<<<<<<< HEAD
         
         $allowedSortFields = ['nama', 'harga', 'created_at', 'rating_rata'];
         
-=======
-
-        $allowedSortFields = ['nama', 'harga', 'created_at', 'rating_rata'];
-
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         if (in_array($sortField, $allowedSortFields)) {
             $query->orderBy($sortField, $sortDirection);
         }
@@ -304,15 +238,9 @@ class ProductController extends Controller
      * Mendapatkan daftar produk penjual.
      *
      * @param  \Illuminate\Http\Request  $request
-<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function sellerProducts(Request $request): JsonResponse
-=======
-     * @return \Illuminate\Http\Response
-     */
-    public function sellerProducts(Request $request)
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
 
@@ -353,15 +281,9 @@ class ProductController extends Controller
         // Pengurutan
         $sortField = $request->sort_by ?? 'created_at';
         $sortDirection = $request->sort_direction ?? 'desc';
-<<<<<<< HEAD
         
         $allowedSortFields = ['nama', 'harga', 'stok', 'created_at'];
         
-=======
-
-        $allowedSortFields = ['nama', 'harga', 'stok', 'created_at'];
-
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         if (in_array($sortField, $allowedSortFields)) {
             $query->orderBy($sortField, $sortDirection);
         }
@@ -382,11 +304,7 @@ class ProductController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-<<<<<<< HEAD
     public function store(Request $request): JsonResponse
-=======
-    public function store(Request $request)
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
 
@@ -398,51 +316,17 @@ class ProductController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-<<<<<<< HEAD
             'nama' => 'required|string|max:255',
             'kategori_id' => 'required|exists:categories,id',
             'deskripsi' => 'required|string',
             'harga' => 'required|numeric|min:0',
             'stok' => 'required|integer|min:0',
             'berat' => 'required|numeric|min:0',
-=======
-            'nama' => 'required|string|min:3|max:255',
-            'kategori_id' => 'required|exists:categories,id',
-            'deskripsi' => 'required|string',
-            'harga' => 'required|numeric|min:0.01',
-            'stok' => 'required|integer|min:0',
-            'berat' => 'required|numeric|min:0.01',
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             'jenis_ikan' => 'required|in:segar,beku,olahan,hidup',
             'spesies_ikan' => 'nullable|string|max:255',
             'aktif' => 'boolean',
             'unggulan' => 'boolean',
-<<<<<<< HEAD
             'gambar.*' => 'image|mimes:jpeg,png,jpg|max:2048',
-=======
-            'gambar.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
-        ], [
-            'nama.required' => 'Nama produk harus diisi',
-            'nama.min' => 'Nama produk minimal 3 karakter',
-            'nama.max' => 'Nama produk maksimal 255 karakter',
-            'kategori_id.required' => 'Kategori harus dipilih',
-            'kategori_id.exists' => 'Kategori yang dipilih tidak valid',
-            'deskripsi.required' => 'Deskripsi harus diisi',
-            'harga.required' => 'Harga harus diisi',
-            'harga.numeric' => 'Harga harus berupa angka',
-            'harga.min' => 'Harga harus lebih dari 0',
-            'stok.required' => 'Stok harus diisi',
-            'stok.integer' => 'Stok harus berupa angka bulat',
-            'stok.min' => 'Stok tidak boleh negatif',
-            'berat.required' => 'Berat harus diisi',
-            'berat.numeric' => 'Berat harus berupa angka',
-            'berat.min' => 'Berat harus lebih dari 0',
-            'jenis_ikan.required' => 'Jenis ikan harus dipilih',
-            'jenis_ikan.in' => 'Jenis ikan tidak valid',
-            'gambar.*.image' => 'File harus berupa gambar',
-            'gambar.*.mimes' => 'Format gambar harus jpeg, png, jpg, atau webp',
-            'gambar.*.max' => 'Ukuran gambar maksimal 2MB',
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         ]);
 
         if ($validator->fails()) {
@@ -453,17 +337,6 @@ class ProductController extends Controller
             ], 422);
         }
 
-<<<<<<< HEAD
-=======
-        // Validasi jumlah gambar (maksimal 5)
-        if ($request->hasFile('gambar') && count($request->file('gambar')) > 5) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Maksimal 5 gambar dapat diunggah'
-            ], 422);
-        }
-
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         // Upload gambar
         $imageNames = [];
         if ($request->hasFile('gambar')) {
@@ -506,11 +379,7 @@ class ProductController extends Controller
      * @param  \App\Models\Product  $product
      * @return \Illuminate\Http\JsonResponse
      */
-<<<<<<< HEAD
     public function update(Request $request, Product $product): JsonResponse
-=======
-    public function update(Request $request, Product $product)
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
 
@@ -571,13 +440,8 @@ class ProductController extends Controller
 
         // Update data produk
         $productData = $request->only([
-<<<<<<< HEAD
             'nama', 'kategori_id', 'deskripsi', 'harga', 
             'stok', 'berat', 'jenis_ikan', 'spesies_ikan', 
-=======
-            'nama', 'kategori_id', 'deskripsi', 'harga',
-            'stok', 'berat', 'jenis_ikan', 'spesies_ikan',
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             'aktif', 'unggulan'
         ]);
 
@@ -606,11 +470,7 @@ class ProductController extends Controller
      * @param  \App\Models\Product  $product
      * @return \Illuminate\Http\JsonResponse
      */
-<<<<<<< HEAD
     public function destroy(Request $request, Product $product): JsonResponse
-=======
-    public function destroy(Request $request, Product $product)
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
 
@@ -635,8 +495,4 @@ class ProductController extends Controller
             'message' => 'Produk berhasil dihapus'
         ]);
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
