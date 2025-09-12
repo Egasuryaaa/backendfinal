@@ -1,0 +1,236 @@
+{
+  "info": {
+    "name": "Xendit Payment Testing - Iwak Mart",
+    "description": "Collection untuk testing pembayaran Xendit dengan token user raka@gmail.com",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "45|9cAMnRfHMygufHWTAesnDOW78bPfDuBV5khYEhO8f1b54b14",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Set base URL",
+          "pm.globals.set('base_url', 'http://localhost:8000/api');"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Test Connection",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/payment/public-key",
+          "host": ["{{base_url}}"],
+          "path": ["payment", "public-key"]
+        }
+      }
+    },
+    {
+      "name": "2. Get Payment Methods",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/payment/methods",
+          "host": ["{{base_url}}"],
+          "path": ["payment", "methods"]
+        }
+      }
+    },
+    {
+      "name": "3. Test Bank Transfer (BCA)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"payment_method\": \"bank_transfer\",\n    \"payment_channel\": \"BCA\",\n    \"customer_phone\": \"08123456789\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/test/orders/1/payment",
+          "host": ["{{base_url}}"],
+          "path": ["test", "orders", "1", "payment"]
+        }
+      }
+    },
+    {
+      "name": "4. Test E-Wallet (OVO)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"payment_method\": \"e_wallet\",\n    \"payment_channel\": \"OVO\",\n    \"customer_phone\": \"08987654321\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/test/orders/2/payment",
+          "host": ["{{base_url}}"],
+          "path": ["test", "orders", "2", "payment"]
+        }
+      }
+    },
+    {
+      "name": "5. Test E-Wallet (DANA)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"payment_method\": \"e_wallet\",\n    \"payment_channel\": \"DANA\",\n    \"customer_phone\": \"08111222333\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/test/orders/3/payment",
+          "host": ["{{base_url}}"],
+          "path": ["test", "orders", "3", "payment"]
+        }
+      }
+    },
+    {
+      "name": "6. Test Retail (Alfamart)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"payment_method\": \"retail\",\n    \"payment_channel\": \"ALFAMART\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/test/orders/4/payment",
+          "host": ["{{base_url}}"],
+          "path": ["test", "orders", "4", "payment"]
+        }
+      }
+    },
+    {
+      "name": "7. Test QRIS",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"payment_method\": \"qris\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/test/orders/5/payment",
+          "host": ["{{base_url}}"],
+          "path": ["test", "orders", "5", "payment"]
+        }
+      }
+    },
+    {
+      "name": "8. Test Credit Card",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"payment_method\": \"credit_card\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/test/orders/6/payment",
+          "host": ["{{base_url}}"],
+          "path": ["test", "orders", "6", "payment"]
+        }
+      }
+    }
+  ]
+}

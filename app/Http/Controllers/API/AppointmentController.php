@@ -4,7 +4,10 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+<<<<<<< HEAD
 use Illuminate\Http\JsonResponse;
+=======
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
 use Illuminate\Support\Facades\Validator;
 use App\Models\Appointment;
 use App\Models\SellerLocation;
@@ -17,9 +20,15 @@ class AppointmentController extends Controller
      * Mendapatkan daftar janji temu untuk pengguna yang login.
      *
      * @param  \Illuminate\Http\Request  $request
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Request $request)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         
@@ -72,6 +81,7 @@ class AppointmentController extends Controller
     }
 
     /**
+<<<<<<< HEAD
      * Create a new appointment
      *
      * @param Request $request
@@ -87,6 +97,21 @@ class AppointmentController extends Controller
             'time' => 'required',
             'purpose' => 'required|string|max:255',
             'notes' => 'nullable|string|max:1000',
+=======
+     * Menyimpan janji temu baru.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'penjual_id' => 'required|exists:users,id',
+            'lokasi_penjual_id' => 'required|exists:seller_locations,id',
+            'tanggal_janji' => 'required|date|after:now',
+            'tujuan' => 'nullable|string|max:255',
+            'catatan' => 'nullable|string'
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         ]);
 
         if ($validator->fails()) {
@@ -97,6 +122,7 @@ class AppointmentController extends Controller
             ], 422);
         }
 
+<<<<<<< HEAD
         try {
             // Get current authenticated user
             $user = $request->user();
@@ -134,6 +160,110 @@ class AppointmentController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+=======
+        $user = $request->user();
+        
+        // Verifikasi penjual dan lokasi
+        $seller = User::find($request->penjual_id);
+        if (!$seller || !$seller->hasRole('seller')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Penjual tidak valid'
+            ], 400);
+        }
+        
+        $location = SellerLocation::find($request->lokasi_penjual_id);
+        if (!$location || $location->user_id != $request->penjual_id || !$location->aktif) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lokasi penjual tidak valid'
+            ], 400);
+        }
+        
+        // Verifikasi waktu (jam operasional)
+        $appointmentDateTime = Carbon::parse($request->tanggal_janji);
+        $appointmentDayName = $appointmentDateTime->translatedFormat('l'); // nama hari dalam bahasa yang sesuai
+        $appointmentTime = $appointmentDateTime->format('H:i:s');
+        
+        // Konversi nama hari ke bahasa Indonesia (sesuaikan dengan format yang disimpan)
+        $dayMapping = [
+            'Monday' => 'Senin',
+            'Tuesday' => 'Selasa',
+            'Wednesday' => 'Rabu',
+            'Thursday' => 'Kamis',
+            'Friday' => 'Jumat',
+            'Saturday' => 'Sabtu',
+            'Sunday' => 'Minggu',
+        ];
+        
+        $dayName = $dayMapping[$appointmentDayName] ?? $appointmentDayName;
+        
+        // Cek jam operasional (asumsikan jam_operasional berisi array dengan elemen 'hari', 'jam_buka', dan 'jam_tutup')
+        $operatingHours = collect($location->jam_operasional ?? []);
+        $daySchedule = $operatingHours->firstWhere('hari', $dayName);
+        
+        if (!$daySchedule) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lokasi tidak beroperasi pada hari ' . $dayName
+            ], 400);
+        }
+        
+        if (isset($daySchedule['jam_buka']) && isset($daySchedule['jam_tutup'])) {
+            $openTime = Carbon::parse($daySchedule['jam_buka']);
+            $closeTime = Carbon::parse($daySchedule['jam_tutup']);
+            $appointmentTimeObj = Carbon::parse($appointmentTime);
+            
+            if ($appointmentTimeObj->lt($openTime) || $appointmentTimeObj->gt($closeTime)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Waktu di luar jam operasional (' . $daySchedule['jam_buka'] . ' - ' . $daySchedule['jam_tutup'] . ')'
+                ], 400);
+            }
+        }
+        
+        // Buat janji temu
+        $appointment = Appointment::create([
+            'penjual_id' => $request->penjual_id,
+            'pembeli_id' => $user->id,
+            'lokasi_penjual_id' => $request->lokasi_penjual_id,
+            'tanggal_janji' => $request->tanggal_janji,
+            'status' => 'menunggu',
+            'tujuan' => $request->tujuan,
+            'catatan' => $request->catatan
+        ]);
+        
+        // Buat notifikasi untuk pembeli
+        $user->notifications()->create([
+            'judul' => 'Janji Temu Baru',
+            'isi' => "Janji temu dengan {$seller->name} telah dibuat dan menunggu konfirmasi.",
+            'jenis' => 'janji_temu',
+            'janji_temu_id' => $appointment->id,
+            'tautan' => '/janji-temu/' . $appointment->id,
+        ]);
+        
+        // Buat notifikasi untuk penjual
+        $seller->notifications()->create([
+            'judul' => 'Janji Temu Baru',
+            'isi' => "{$user->name} mengajukan janji temu dengan Anda.",
+            'jenis' => 'janji_temu',
+            'janji_temu_id' => $appointment->id,
+            'tautan' => '/janji-temu/' . $appointment->id,
+        ]);
+        
+        $appointment->load(['seller', 'buyer', 'sellerLocation']);
+        
+        // Format untuk tampilan
+        $appointment->formatted_date = Carbon::parse($appointment->tanggal_janji)->format('d M Y');
+        $appointment->formatted_time = Carbon::parse($appointment->tanggal_janji)->format('H:i');
+        $appointment->status_text = Appointment::$statuses[$appointment->status] ?? $appointment->status;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Janji temu berhasil dibuat dan menunggu konfirmasi',
+            'data' => $appointment
+        ], 201);
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     }
 
     /**
@@ -141,9 +271,15 @@ class AppointmentController extends Controller
      *
      * @param  \App\Models\Appointment  $appointment
      * @param  \Illuminate\Http\Request  $request
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function show(Appointment $appointment, Request $request): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function show(Appointment $appointment, Request $request)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         
@@ -157,6 +293,7 @@ class AppointmentController extends Controller
         
         $appointment->load(['seller', 'buyer', 'sellerLocation', 'messages']);
         
+<<<<<<< HEAD
         // Prepare response data with formatted values
         $responseData = $appointment->toArray();
         $responseData['formatted_date'] = Carbon::parse($appointment->tanggal_janji)->format('d M Y');
@@ -166,6 +303,16 @@ class AppointmentController extends Controller
         return response()->json([
             'success' => true,
             'data' => $responseData
+=======
+        // Format untuk tampilan
+        $appointment->formatted_date = Carbon::parse($appointment->tanggal_janji)->format('d M Y');
+        $appointment->formatted_time = Carbon::parse($appointment->tanggal_janji)->format('H:i');
+        $appointment->status_text = Appointment::$statuses[$appointment->status] ?? $appointment->status;
+
+        return response()->json([
+            'success' => true,
+            'data' => $appointment
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         ]);
     }
 
@@ -174,9 +321,15 @@ class AppointmentController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Appointment  $appointment
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, Appointment $appointment): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, Appointment $appointment)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         
@@ -275,16 +428,27 @@ class AppointmentController extends Controller
         
         $appointment->load(['seller', 'buyer', 'sellerLocation']);
         
+<<<<<<< HEAD
         // Prepare response data with formatted values
         $responseData = $appointment->toArray();
         $responseData['formatted_date'] = Carbon::parse($appointment->tanggal_janji)->format('d M Y');
         $responseData['formatted_time'] = Carbon::parse($appointment->tanggal_janji)->format('H:i');
         $responseData['status_text'] = Appointment::$statuses[$appointment->status] ?? $appointment->status;
+=======
+        // Format untuk tampilan
+        $appointment->formatted_date = Carbon::parse($appointment->tanggal_janji)->format('d M Y');
+        $appointment->formatted_time = Carbon::parse($appointment->tanggal_janji)->format('H:i');
+        $appointment->status_text = Appointment::$statuses[$appointment->status] ?? $appointment->status;
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
 
         return response()->json([
             'success' => true,
             'message' => 'Janji temu berhasil diperbarui',
+<<<<<<< HEAD
             'data' => $responseData
+=======
+            'data' => $appointment
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         ]);
     }
 
@@ -293,9 +457,15 @@ class AppointmentController extends Controller
      *
      * @param  \App\Models\Appointment  $appointment
      * @param  \Illuminate\Http\Request  $request
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(Appointment $appointment, Request $request): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(Appointment $appointment, Request $request)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         
@@ -343,9 +513,15 @@ class AppointmentController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Appointment  $appointment
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function updateStatus(Request $request, Appointment $appointment): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function updateStatus(Request $request, Appointment $appointment)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $validator = Validator::make($request->all(), [
             'status' => 'required|in:menunggu,dikonfirmasi,selesai,dibatalkan'
@@ -398,17 +574,29 @@ class AppointmentController extends Controller
         $oldStatus = $appointment->status;
         $appointment->updateStatus($newStatus);
         
+<<<<<<< HEAD
         // Prepare response data with formatted values
         $appointment->load(['seller', 'buyer', 'sellerLocation']);
         $responseData = $appointment->toArray();
         $responseData['formatted_date'] = Carbon::parse($appointment->tanggal_janji)->format('d M Y');
         $responseData['formatted_time'] = Carbon::parse($appointment->tanggal_janji)->format('H:i');
         $responseData['status_text'] = Appointment::$statuses[$appointment->status] ?? $appointment->status;
+=======
+        // Format untuk tampilan
+        $appointment->load(['seller', 'buyer', 'sellerLocation']);
+        $appointment->formatted_date = Carbon::parse($appointment->tanggal_janji)->format('d M Y');
+        $appointment->formatted_time = Carbon::parse($appointment->tanggal_janji)->format('H:i');
+        $appointment->status_text = Appointment::$statuses[$appointment->status] ?? $appointment->status;
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
 
         return response()->json([
             'success' => true,
             'message' => 'Status janji temu berhasil diperbarui',
+<<<<<<< HEAD
             'data' => $responseData
+=======
+            'data' => $appointment
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         ]);
     }
     
@@ -416,9 +604,15 @@ class AppointmentController extends Controller
      * Mendapatkan daftar janji temu untuk penjual.
      *
      * @param  \Illuminate\Http\Request  $request
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function sellerAppointments(Request $request): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function sellerAppointments(Request $request)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         

@@ -4,7 +4,10 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+<<<<<<< HEAD
 use Illuminate\Http\JsonResponse;
+=======
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use App\Models\SellerLocation;
@@ -16,9 +19,15 @@ class SellerLocationController extends Controller
      * Mendapatkan daftar lokasi penjual (publik).
      *
      * @param  \Illuminate\Http\Request  $request
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Request $request)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $query = SellerLocation::with('user')
                               ->where('aktif', true);
@@ -63,6 +72,7 @@ class SellerLocationController extends Controller
             $item->seller_type_text = SellerLocation::$sellerTypes[$item->jenis_penjual] ?? $item->jenis_penjual;
             
             // Pastikan foto_urls adalah array
+<<<<<<< HEAD
             $fotoUrls = [];
             if ($item->foto) {
                 foreach ($item->foto as $photo) {
@@ -70,6 +80,14 @@ class SellerLocationController extends Controller
                 }
             }
             $item->foto_urls = $fotoUrls;
+=======
+            $item->foto_urls = [];
+            if ($item->foto) {
+                foreach ($item->foto as $photo) {
+                    $item->foto_urls[] = asset('storage/' . $photo);
+                }
+            }
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             return $item;
         });
 
@@ -83,9 +101,15 @@ class SellerLocationController extends Controller
      * Menyimpan lokasi penjual baru.
      *
      * @param  \Illuminate\Http\Request  $request
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         
@@ -164,9 +188,15 @@ class SellerLocationController extends Controller
      * Menampilkan detail lokasi penjual.
      *
      * @param  \App\Models\SellerLocation  $sellerLocation
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function show(SellerLocation $sellerLocation): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function show(SellerLocation $sellerLocation)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         // Pastikan lokasi penjual aktif
         if (!$sellerLocation->aktif) {
@@ -211,9 +241,15 @@ class SellerLocationController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\SellerLocation  $sellerLocation
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, SellerLocation $sellerLocation): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, SellerLocation $sellerLocation)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         
@@ -307,9 +343,15 @@ class SellerLocationController extends Controller
      *
      * @param  \App\Models\SellerLocation  $sellerLocation
      * @param  \Illuminate\Http\Request  $request
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(SellerLocation $sellerLocation, Request $request): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(SellerLocation $sellerLocation, Request $request)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         
@@ -352,9 +394,15 @@ class SellerLocationController extends Controller
      * Mendapatkan daftar lokasi untuk penjual yang login.
      *
      * @param  \Illuminate\Http\Request  $request
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function sellerLocations(Request $request): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function sellerLocations(Request $request)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         

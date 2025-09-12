@@ -129,6 +129,7 @@
       0 => 'Carbon\\Laravel\\ServiceProvider',
     ),
   ),
+<<<<<<< HEAD
   'nunomaduro/collision' => 
   array (
     'providers' => 
@@ -136,6 +137,8 @@
       0 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
     ),
   ),
+=======
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
   'nunomaduro/termwind' => 
   array (
     'providers' => 

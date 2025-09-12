@@ -4,7 +4,10 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+<<<<<<< HEAD
 use Illuminate\Http\JsonResponse;
+=======
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Review;
@@ -18,9 +21,15 @@ class ReviewController extends Controller
      * Mendapatkan semua ulasan untuk pengguna yang login.
      *
      * @param  \Illuminate\Http\Request  $request
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Request $request)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         
@@ -39,9 +48,15 @@ class ReviewController extends Controller
      * Menyimpan ulasan baru.
      *
      * @param  \Illuminate\Http\Request  $request
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $validator = Validator::make($request->all(), [
             'produk_id' => 'required|exists:products,id',
@@ -146,9 +161,15 @@ class ReviewController extends Controller
      *
      * @param  \App\Models\Review  $review
      * @param  \Illuminate\Http\Request  $request
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function show(Review $review, Request $request): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function show(Review $review, Request $request)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         
@@ -183,9 +204,15 @@ class ReviewController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Review  $review
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, Review $review): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, Review $review)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         
@@ -261,9 +288,15 @@ class ReviewController extends Controller
      *
      * @param  \App\Models\Review  $review
      * @param  \Illuminate\Http\Request  $request
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(Review $review, Request $request): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(Review $review, Request $request)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         
@@ -308,9 +341,15 @@ class ReviewController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Review  $review
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function reply(Request $request, Review $review): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function reply(Request $request, Review $review)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $validator = Validator::make($request->all(), [
             'comment' => 'required|string',
@@ -378,9 +417,15 @@ class ReviewController extends Controller
      *
      * @param  \App\Models\Product  $product
      * @param  \Illuminate\Http\Request  $request
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function productReviews(Product $product, Request $request): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function productReviews(Product $product, Request $request)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         // Filter berdasarkan rating
         $query = Review::with(['user', 'reviewReply', 'reviewReply.user'])

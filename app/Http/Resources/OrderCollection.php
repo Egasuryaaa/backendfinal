@@ -1,5 +1,9 @@
 <?php
 
+<<<<<<< HEAD
+=======
+// File: app/Http/Resources/OrderCollection.php
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -32,11 +36,18 @@ class OrderCollection extends ResourceCollection
                         return [
                             'nama_produk' => $item->nama_produk,
                             'jumlah' => $item->jumlah,
+<<<<<<< HEAD
                             'product' => $item->whenLoaded('product', function() use ($item) {
                                 return [
                                     'gambar' => $item->product->gambar
                                 ];
                             })
+=======
+                            // PERBAIKAN: Cek relasi product ada atau tidak
+                            'product' => $item->relationLoaded('product') && $item->product ? [
+                                'gambar' => $item->product->gambar
+                            ] : null
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
                         ];
                     }),
                     'has_more_items' => $order->orderItems->count() > 2
@@ -68,6 +79,10 @@ class OrderCollection extends ResourceCollection
     {
         $labels = [
             'menunggu' => 'Menunggu Pembayaran',
+<<<<<<< HEAD
+=======
+            'dibayar' => 'Dibayar',
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             'diproses' => 'Sedang Diproses',
             'dikirim' => 'Dalam Pengiriman',
             'selesai' => 'Selesai',

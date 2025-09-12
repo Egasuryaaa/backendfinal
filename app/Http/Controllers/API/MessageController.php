@@ -4,7 +4,10 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+<<<<<<< HEAD
 use Illuminate\Http\JsonResponse;
+=======
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Message;
@@ -15,6 +18,7 @@ use Carbon\Carbon;
 
 class MessageController extends Controller
 {
+<<<<<<< HEAD
         /**
      * Mendapatkan percakapan dengan pengguna lain
      *
@@ -23,6 +27,16 @@ class MessageController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function getConversation(Request $request, $userId): JsonResponse
+=======
+    /**
+     * Mendapatkan percakapan antara dua pengguna.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $userId
+     * @return \Illuminate\Http\Response
+     */
+    public function getConversation(Request $request, $userId)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         $otherUser = User::find($userId);
@@ -85,9 +99,15 @@ class MessageController extends Controller
      * Mengirim pesan.
      *
      * @param  \Illuminate\Http\Request  $request
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function sendMessage(Request $request): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function sendMessage(Request $request)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $validator = Validator::make($request->all(), [
             'penerima_id' => 'required|exists:users,id',
@@ -170,6 +190,7 @@ class MessageController extends Controller
             'tautan' => '/chat/' . $user->id,
         ]);
         
+<<<<<<< HEAD
                 $message->load(['sender', 'recipient', 'product', 'appointment']);
         
         // Prepare response data without modifying readonly properties
@@ -191,6 +212,28 @@ class MessageController extends Controller
             'success' => true,
             'message' => 'Pesan berhasil dikirim',
             'data' => $messageData
+=======
+        $message->load(['sender', 'recipient', 'product', 'appointment']);
+        
+        // Format untuk tampilan
+        $message->is_sender = true;
+        $message->is_read = false;
+        $message->time = Carbon::parse($message->created_at)->format('H:i');
+        $message->date = Carbon::parse($message->created_at)->format('d M Y');
+        
+        // Pastikan lampiran_urls adalah array
+        $message->lampiran_urls = [];
+        if ($message->lampiran) {
+            foreach ($message->lampiran as $attachment) {
+                $message->lampiran_urls[] = asset('storage/' . $attachment);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pesan berhasil dikirim',
+            'data' => $message
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         ], 201);
     }
 
@@ -199,9 +242,15 @@ class MessageController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Message  $message
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function markAsRead(Request $request, Message $message): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function markAsRead(Request $request, Message $message)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         
@@ -228,9 +277,15 @@ class MessageController extends Controller
      * Mendapatkan daftar percakapan pengguna.
      *
      * @param  \Illuminate\Http\Request  $request
+<<<<<<< HEAD
      * @return \Illuminate\Http\JsonResponse
      */
     public function getConversations(Request $request): JsonResponse
+=======
+     * @return \Illuminate\Http\Response
+     */
+    public function getConversations(Request $request)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $user = $request->user();
         

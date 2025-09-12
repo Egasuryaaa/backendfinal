@@ -35,11 +35,17 @@ class OrderResource extends JsonResource
             'catatan' => $this->catatan,
             'tanggal_pesan' => $this->created_at->format('Y-m-d H:i:s'),
             'tanggal_pesan_formatted' => $this->created_at->translatedFormat('d F Y H:i'),
+<<<<<<< HEAD
             'tanggal_selesai' => $this->tanggal_selesai ? $this->tanggal_selesai->format('Y-m-d H:i:s') : null,
             'tanggal_selesai_formatted' => $this->tanggal_selesai ? $this->tanggal_selesai->translatedFormat('d F Y H:i') : null,
             
             // User/Pembeli
             'user' => $this->whenLoaded('user', function() {
+=======
+
+            // User/Pembeli - PERBAIKAN: Cek relasi loaded
+            'user' => $this->when($this->relationLoaded('user'), function() {
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
                 return [
                     'id' => $this->user->id,
                     'name' => $this->user->name,
@@ -47,9 +53,15 @@ class OrderResource extends JsonResource
                     'phone' => $this->user->phone
                 ];
             }),
+<<<<<<< HEAD
             
             // Alamat pengiriman
             'address' => $this->whenLoaded('address', function() {
+=======
+
+            // Alamat pengiriman - PERBAIKAN: Cek relasi loaded
+            'address' => $this->when($this->relationLoaded('address'), function() {
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
                 return [
                     'id' => $this->address->id,
                     'nama_penerima' => $this->address->nama_penerima,
@@ -58,6 +70,7 @@ class OrderResource extends JsonResource
                     'provinsi' => $this->address->provinsi,
                     'kota' => $this->address->kota,
                     'kecamatan' => $this->address->kecamatan,
+<<<<<<< HEAD
                     'kelurahan' => $this->address->kelurahan,
                     'kode_pos' => $this->address->kode_pos,
                     'alamat_utama' => (bool) $this->address->alamat_utama,
@@ -69,11 +82,25 @@ class OrderResource extends JsonResource
             'items' => $this->whenLoaded('orderItems', function() {
                 return $this->orderItems->map(function($item) {
                     return [
+=======
+                    'kelurahan' => $this->address->kelurahan ?? null,
+                    'kode_pos' => $this->address->kode_pos,
+                    'alamat_utama' => (bool) ($this->address->alamat_utama ?? false),
+                    'catatan_alamat' => $this->address->catatan_alamat ?? null
+                ];
+            }),
+
+            // Order items - PERBAIKAN: Simplified approach
+            'items' => $this->when($this->relationLoaded('orderItems'), function() {
+                return $this->orderItems->map(function($item) {
+                    $itemData = [
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
                         'id' => $item->id,
                         'product_id' => $item->produk_id,
                         'seller_id' => $item->penjual_id,
                         'nama_produk' => $item->nama_produk,
                         'jumlah' => $item->jumlah,
+<<<<<<< HEAD
                         'harga' => $item->harga,
                         'harga_formatted' => 'Rp ' . number_format($item->harga, 0, ',', '.'),
                         'subtotal' => $item->subtotal,
@@ -116,11 +143,48 @@ class OrderResource extends JsonResource
             'can_complete' => $this->status === 'dikirim',
             'can_review' => $this->status === 'selesai' && !$this->hasReviewed(),
             
+=======
+                        'harga' => (float) $item->harga,
+                        'harga_formatted' => 'Rp ' . number_format((float) $item->harga, 0, ',', '.'),
+                        'subtotal' => (float) $item->subtotal,
+                        'subtotal_formatted' => 'Rp ' . number_format((float) $item->subtotal, 0, ',', '.'),
+                    ];
+
+                    // PERBAIKAN: Safe product data loading
+                    if ($item->relationLoaded('product') && $item->product) {
+                        $itemData['product'] = [
+                            'id' => $item->product->id,
+                            'nama' => $item->product->nama,
+                            'gambar' => $item->product->gambar,
+                            'jenis_ikan' => $item->product->jenis_ikan ?? null
+                        ];
+                    }
+
+                    // PERBAIKAN: Safe seller data loading
+                    if ($item->relationLoaded('seller') && $item->seller) {
+                        $itemData['seller'] = [
+                            'id' => $item->seller->id,
+                            'name' => $item->seller->name
+                        ];
+                    }
+
+                    return $itemData;
+                });
+            }),
+
+            'can_cancel' => in_array($this->status, ['menunggu', 'diproses']),
+            'can_complete' => $this->status === 'dikirim',
+            'can_review' => $this->status === 'selesai',
+
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s')
         ];
     }
+<<<<<<< HEAD
     
+=======
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     /**
      * Get human-readable status label.
      *
@@ -130,15 +194,26 @@ class OrderResource extends JsonResource
     {
         $labels = [
             'menunggu' => 'Menunggu Pembayaran',
+<<<<<<< HEAD
+=======
+            'dibayar' => 'Dibayar',
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             'diproses' => 'Sedang Diproses',
             'dikirim' => 'Dalam Pengiriman',
             'selesai' => 'Selesai',
             'dibatalkan' => 'Dibatalkan'
         ];
+<<<<<<< HEAD
         
         return $labels[$this->status] ?? $this->status;
     }
     
+=======
+
+        return $labels[$this->status] ?? $this->status;
+    }
+
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     /**
      * Get human-readable payment status label.
      *
@@ -148,6 +223,7 @@ class OrderResource extends JsonResource
     {
         $labels = [
             'menunggu' => 'Menunggu Pembayaran',
+<<<<<<< HEAD
             'diverifikasi' => 'Pembayaran Diverifikasi',
             'ditolak' => 'Pembayaran Ditolak',
             'dibatalkan' => 'Dibatalkan'
@@ -156,6 +232,15 @@ class OrderResource extends JsonResource
         return $labels[$this->status_pembayaran] ?? $this->status_pembayaran;
     }
     
+=======
+            'dibayar' => 'Pembayaran Diterima',
+            'gagal' => 'Pembayaran Gagal'
+        ];
+
+        return $labels[$this->status_pembayaran] ?? $this->status_pembayaran;
+    }
+
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     /**
      * Get human-readable payment method label.
      *
@@ -169,6 +254,7 @@ class OrderResource extends JsonResource
             'cod' => 'Bayar di Tempat (COD)',
             'virtual_account' => 'Virtual Account'
         ];
+<<<<<<< HEAD
         
         return $labels[$this->metode_pembayaran] ?? $this->metode_pembayaran;
     }
@@ -196,3 +282,9 @@ class OrderResource extends JsonResource
         return $hasReview;
     }
 }
+=======
+
+        return $labels[$this->metode_pembayaran] ?? $this->metode_pembayaran;
+    }
+}
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3

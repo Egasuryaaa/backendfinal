@@ -191,7 +191,11 @@ class CartController extends Controller
      * @param  \App\Models\CartItem  $cartItem
      * @return \Illuminate\Http\Response
      */
+<<<<<<< HEAD
     public function updateCartItem(Request $request, $cartItemId)
+=======
+    public function updateCartItem(Request $request, CartItem $cartItem)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         $validator = Validator::make($request->all(), [
             'jumlah' => 'required|integer|min:1'
@@ -209,6 +213,7 @@ class CartController extends Controller
         $user = $request->user();
         $cart = Cart::where('user_id', $user->id)->first();
 
+<<<<<<< HEAD
         if (!$cart) {
             return response()->json([
                 'success' => false,
@@ -221,6 +226,9 @@ class CartController extends Controller
                            ->first();
 
         if (!$cartItem) {
+=======
+        if (!$cart || $cartItem->keranjang_id !== $cart->id) {
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             return response()->json([
                 'success' => false,
                 'message' => 'Item tidak ditemukan'
@@ -274,12 +282,17 @@ class CartController extends Controller
      * @param  \App\Models\CartItem  $cartItem
      * @return \Illuminate\Http\Response
      */
+<<<<<<< HEAD
     public function removeFromCart(Request $request, $cartItemId)
+=======
+    public function removeFromCart(Request $request, CartItem $cartItem)
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     {
         // Pastikan item keranjang milik pengguna
         $user = $request->user();
         $cart = Cart::where('user_id', $user->id)->first();
 
+<<<<<<< HEAD
         if (!$cart) {
             return response()->json([
                 'success' => false,
@@ -292,6 +305,9 @@ class CartController extends Controller
                            ->first();
 
         if (!$cartItem) {
+=======
+        if (!$cart || $cartItem->keranjang_id !== $cart->id) {
+>>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             return response()->json([
                 'success' => false,
                 'message' => 'Item tidak ditemukan'
