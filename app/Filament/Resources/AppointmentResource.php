@@ -79,22 +79,22 @@ class AppointmentResource extends Resource
                                     ->label('Catatan')
                                     ->maxLength(65535)
                                     ->columnSpan('full'),
-
-                                Forms\Components\Section::make('Lokasi Pertemuan')
-                                    ->schema([
-                                        GoogleMapsLocationPicker::make('meeting_location')
-                                            ->label('Pilih Lokasi Pertemuan (Opsional)')
-                                            ->center(-7.1192, 112.4186) // Lamongan center
-                                            ->zoom(12)
-                                            ->searchable(true)
-                                            ->height('300px')
-                                            ->helperText('Pilih lokasi khusus untuk pertemuan, atau kosongkan untuk menggunakan lokasi penjual'),
-                                    ])
-                                    ->columnSpan('full'),
                             ])
                             ->columns([
                                 'sm' => 2,
                             ]),
+                        
+                        Forms\Components\Section::make('Lokasi Pertemuan')
+                            ->schema([
+                                GoogleMapsLocationPicker::make('meeting_location')
+                                    ->label('Pilih Lokasi Pertemuan (Opsional)')
+                                    ->center(-7.1192, 112.4186) // Lamongan center
+                                    ->zoom(12)
+                                    ->searchable(true)
+                                    ->height('300px')
+                                    ->helperText('Pilih lokasi khusus untuk pertemuan, atau kosongkan untuk menggunakan lokasi penjual'),
+                            ])
+                            ->columnSpan('full'),
                     ])
                     ->columnSpan([
                         'sm' => 2,
@@ -193,6 +193,15 @@ class AppointmentResource extends Resource
                 Tables\Columns\TextColumn::make('tujuan')
                     ->label('Tujuan')
                     ->limit(30),
+                
+                Tables\Columns\IconColumn::make('meeting_location')
+                    ->label('Lokasi Pertemuan')
+                    ->boolean()
+                    ->getStateUsing(fn ($record) => !empty($record->meeting_location))
+                    ->trueIcon('heroicon-o-map-pin')
+                    ->falseIcon('heroicon-o-minus')
+                    ->trueColor('success')
+                    ->falseColor('gray'),
                 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')

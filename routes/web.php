@@ -69,12 +69,12 @@ Route::get('/addresses', [App\Http\Controllers\Web\AddressController::class, 'in
 
 // Address resource routes
 Route::middleware(['auth'])->group(function () {
-    Route::get('/addresses/create', [App\Http\Controllers\Web\AddressController::class, 'create'])->name('addresses.create');
-    Route::post('/addresses', [App\Http\Controllers\Web\AddressController::class, 'store'])->name('addresses.store');
-    Route::get('/addresses/{address}/edit', [App\Http\Controllers\Web\AddressController::class, 'edit'])->name('addresses.edit');
-    Route::put('/addresses/{address}', [App\Http\Controllers\Web\AddressController::class, 'update'])->name('addresses.update');
-    Route::delete('/addresses/{address}', [App\Http\Controllers\Web\AddressController::class, 'destroy'])->name('addresses.destroy');
-    Route::patch('/addresses/{address}/set-main', [App\Http\Controllers\Web\AddressController::class, 'setMain'])->name('addresses.setMain');
+    Route::get('/addresses/create', [App\Http\Controllers\Web\AddressController::class, 'create'])->name('web.addresses.create');
+    Route::post('/addresses', [App\Http\Controllers\Web\AddressController::class, 'store'])->name('web.addresses.store');
+    Route::get('/addresses/{address}/edit', [App\Http\Controllers\Web\AddressController::class, 'edit'])->name('web.addresses.edit');
+    Route::put('/addresses/{address}', [App\Http\Controllers\Web\AddressController::class, 'update'])->name('web.addresses.update');
+    Route::delete('/addresses/{address}', [App\Http\Controllers\Web\AddressController::class, 'destroy'])->name('web.addresses.destroy');
+    Route::patch('/addresses/{address}/set-main', [App\Http\Controllers\Web\AddressController::class, 'setMain'])->name('web.addresses.setMain');
 });
 
 // Web API routes for addresses (using web middleware)

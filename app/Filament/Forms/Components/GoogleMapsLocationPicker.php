@@ -102,20 +102,49 @@ class GoogleMapsLocationPicker extends Field
     {
         parent::setUp();
 
-        $this->rule('nullable');
-        $this->rule('array');
-        $this->rule(function (string $attribute, $value, \Closure $fail) {
-            if (!is_array($value)) {
-                return;
+        $this->nullable();
+        
+        // Use afterStateUpdated for validation instead of closure rules
+        $this->afterStateUpdated(function ($state, callable $set, $component) {
+            if (is_null($state)) {
+                return; // Skip validation for null values
             }
-
-            if (isset($value['lat']) && (!is_numeric($value['lat']) || $value['lat'] < -90 || $value['lat'] > 90)) {
-                $fail('Latitude harus berupa angka antara -90 dan 90.');
+            
+            if (!is_array($state)) {
+                return; // Let Filament handle type validation
             }
-
-            if (isset($value['lng']) && (!is_numeric($value['lng']) || $value['lng'] < -180 || $value['lng'] > 180)) {
-                $fail('Longitude harus berupa angka antara -180 dan 180.');
+            
+            // Validate and clean the state
+            $cleanState = [];
+            
+            if (isset($state['lat'])) {
+                if (is_numeric($state['lat'])) {
+                    $lat = (float) $state['lat'];
+                    if ($lat >= -90 && $lat <= 90) {
+                        $cleanState['lat'] = $lat;
+                    }
+                }
+            }
+            
+            if (isset($state['lng'])) {
+                if (is_numeric($state['lng'])) {
+                    $lng = (float) $state['lng'];
+                    if ($lng >= -180 && $lng <= 180) {
+                        $cleanState['lng'] = $lng;
+                    }
+                }
+            }
+            
+            // Update state with cleaned data if both coordinates are valid
+            if (isset($cleanState['lat']) && isset($cleanState['lng'])) {
+                $set($component->getName(), $cleanState);
             }
         });
+        
+        // Use simple validation rules that don't require closures
+        $this->rules([
+            'nullable',
+            'array'
+        ]);
     }
 }
