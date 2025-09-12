@@ -102,49 +102,37 @@ class GoogleMapsLocationPicker extends Field
     {
         parent::setUp();
 
-        $this->nullable();
+        // Make the field nullable and set basic rules
+        $this->nullable()
+             ->default(null);
         
-        // Use afterStateUpdated for validation instead of closure rules
-        $this->afterStateUpdated(function ($state, callable $set, $component) {
-            if (is_null($state)) {
-                return; // Skip validation for null values
-            }
-            
-            if (!is_array($state)) {
-                return; // Let Filament handle type validation
-            }
-            
-            // Validate and clean the state
-            $cleanState = [];
-            
-            if (isset($state['lat'])) {
-                if (is_numeric($state['lat'])) {
+        // Use afterStateUpdated for data validation and cleaning
+        $this->afterStateUpdated(function ($state, $set, $get) {
+            // Only process if state is not null and is array
+            if (is_array($state) && !empty($state)) {
+                $cleanState = [];
+                
+                // Validate and clean latitude
+                if (isset($state['lat']) && is_numeric($state['lat'])) {
                     $lat = (float) $state['lat'];
                     if ($lat >= -90 && $lat <= 90) {
                         $cleanState['lat'] = $lat;
                     }
                 }
-            }
-            
-            if (isset($state['lng'])) {
-                if (is_numeric($state['lng'])) {
+                
+                // Validate and clean longitude
+                if (isset($state['lng']) && is_numeric($state['lng'])) {
                     $lng = (float) $state['lng'];
                     if ($lng >= -180 && $lng <= 180) {
                         $cleanState['lng'] = $lng;
                     }
                 }
-            }
-            
-            // Update state with cleaned data if both coordinates are valid
-            if (isset($cleanState['lat']) && isset($cleanState['lng'])) {
-                $set($component->getName(), $cleanState);
+                
+                // Only update if we have both valid coordinates
+                if (count($cleanState) === 2) {
+                    $set($this->getName(), $cleanState);
+                }
             }
         });
-        
-        // Use simple validation rules that don't require closures
-        $this->rules([
-            'nullable',
-            'array'
-        ]);
     }
 }
