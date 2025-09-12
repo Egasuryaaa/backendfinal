@@ -10280,7 +10280,6 @@
         },
         {
             "name": "sebastian/recursion-context",
-<<<<<<< HEAD
             "version": "6.0.3",
             "source": {
                 "type": "git",
@@ -10291,18 +10290,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/sebastianbergmann/recursion-context/zipball/f6458abbf32a6c8174f8f26261475dc133b3d9dc",
                 "reference": "f6458abbf32a6c8174f8f26261475dc133b3d9dc",
-=======
-            "version": "6.0.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/recursion-context.git",
-                "reference": "694d156164372abbd149a4b85ccda2e4670c0e16"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/recursion-context/zipball/694d156164372abbd149a4b85ccda2e4670c0e16",
-                "reference": "694d156164372abbd149a4b85ccda2e4670c0e16",
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
                 "shasum": ""
             },
             "require": {
