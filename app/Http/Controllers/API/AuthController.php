@@ -42,17 +42,9 @@ class AuthController extends Controller
             'phone' => $request->phone, // tambahkan ini agar tidak error jika phone dikirim
         ]);
 
-<<<<<<< HEAD
     // Assign role 'user' kepada user baru
     // PENAMBAHAN PENTING: Pemberian role 'user' secara default untuk user baru
     $user->assignRole('user');        // Buat keranjang untuk pengguna baru
-=======
-        // Assign role 'customer' kepada user baru
-        // PENAMBAHAN PENTING: Pemberian role 'customer' secara default untuk user baru
-        $user->assignRole('customer');
-
-        // Buat keranjang untuk pengguna baru
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         Cart::create([
             'user_id' => $user->id
         ]);
@@ -120,7 +112,6 @@ class AuthController extends Controller
     }
 
     /**
-<<<<<<< HEAD
      * Save token to session for web authentication.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -152,8 +143,6 @@ class AuthController extends Controller
     }
 
     /**
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
      * Logout pengguna.
      *
      * @param  \Illuminate\Http\Request  $request

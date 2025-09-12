@@ -274,26 +274,62 @@ async function removeFromCart(cartItemId) {
     }
 }
 
-// Logout function
+// Logout function - supports both API and session-based auth
 async function logout() {
     const token = getAuthToken();
     
+    // Try API logout first if we have a token
     if (token) {
         try {
+            console.log('Attempting API logout...');
             await authenticatedFetch('/api/logout', {
                 method: 'POST'
             });
+            console.log('API logout successful');
         } catch (error) {
             console.error('Logout API error:', error);
         }
     }
     
+    // Always try session-based logout for web auth
+    try {
+        console.log('Attempting session logout...');
+        const response = await fetch('/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        });
+        
+        if (response.ok) {
+            console.log('Session logout successful');
+        } else {
+            console.warn('Session logout failed with status:', response.status);
+        }
+    } catch (error) {
+        console.error('Session logout error:', error);
+    }
+    
+    // Clear all tokens regardless of logout success
     clearAuthToken();
     showAlert('Logout berhasil', 'success');
     
     setTimeout(() => {
         window.location.href = '/login';
     }, 1500);
+}
+
+// Confirm logout function for user interaction
+function confirmLogout() {
+    if (confirm('Apakah Anda yakin ingin keluar dari akun?')) {
+        logout();
+        return true;
+    }
+    return false;
 }
 
 // Universal alert function
@@ -380,6 +416,7 @@ window.getCartItems = getCartItems;
 window.updateCartItem = updateCartItem;
 window.removeFromCart = removeFromCart;
 window.logout = logout;
+window.confirmLogout = confirmLogout;
 window.showAlert = showAlert;
 
 // Auto-check authentication on page load

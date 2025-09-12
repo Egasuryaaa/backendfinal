@@ -528,6 +528,7 @@
         </div>
     </div>
 
+    <script src="/js/auth.js"></script>
     <script>
         let user = null;
         let orderStats = { total: 0, pending: 0, cancelled: 0 };
@@ -816,15 +817,27 @@
             document.body.appendChild(modal);
         }
 
-        // Logout function
+        // Logout function - now using auth.js
         function confirmLogout() {
-            if (confirm('Apakah Anda yakin ingin keluar dari akun?')) {
-                performLogout();
+            // Use the improved logout from auth.js if available
+            if (typeof window.confirmLogout === 'function' && window.confirmLogout !== arguments.callee) {
+                return window.confirmLogout();
             }
+            
+            // Fallback implementation
+            if (confirm('Apakah Anda yakin ingin keluar dari akun?')) {
+                return performLogout();
+            }
+            return false;
         }
 
         function performLogout() {
-            // Create hidden form for logout
+            // Use the improved logout from auth.js if available
+            if (typeof window.logout === 'function') {
+                return window.logout();
+            }
+            
+            // Fallback implementation
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '/logout';

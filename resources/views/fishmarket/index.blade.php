@@ -1018,14 +1018,19 @@
 
         // Show user menu
         function showUserMenu() {
-            // For session-based auth, we can just logout via form
-            if (confirm('Apakah Anda ingin logout?')) {
-                logout();
+            // Use the improved confirmLogout function from auth.js
+            if (typeof window.confirmLogout === 'function') {
+                window.confirmLogout();
+            } else {
+                // Fallback if auth.js not loaded
+                if (confirm('Apakah Anda ingin logout?')) {
+                    fallbackLogout();
+                }
             }
         }
 
-        // Logout function for session-based auth
-        async function logout() {
+        // Fallback logout function if auth.js not available
+        async function fallbackLogout() {
             try {
                 const response = await fetch('/logout', {
                     method: 'POST',
