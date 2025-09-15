@@ -540,7 +540,7 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('login.submit') }}" id="loginForm">
+                <form id="loginForm" novalidate>
                     @csrf
                     
                     <!-- Email Field -->
@@ -586,7 +586,7 @@
                     <!-- Remember Me & Forgot Password -->
                     <div class="form-options">
                         <label class="remember-me">
-                            <input type="checkbox" name="remember_me" {{ old('remember_me') ? 'checked' : '' }}>
+                            <input type="checkbox" id="remember_me" name="remember_me" {{ old('remember_me') ? 'checked' : '' }}>
                             <span>Ingat saya</span>
                         </label>
                         <a href="#" class="forgot-password" onclick="showComingSoon(event)">Lupa Password?</a>
@@ -620,8 +620,10 @@
             this.classList.toggle('fa-eye-slash');
         });
 
-        // Form submission - use normal form POST
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        // Form submission - use API endpoint
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
             const button = document.getElementById('loginButton');
             const buttonText = document.getElementById('buttonText');
             const buttonSpinner = document.getElementById('buttonSpinner');
@@ -630,8 +632,59 @@
             buttonText.style.display = 'none';
             buttonSpinner.style.display = 'inline-flex';
             
-            // Let the form submit normally to the server
-            // The form action is already set to {{ route('login.submit') }}
+            try {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const remember = document.getElementById('remember_me').checked;
+                
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password,
+                        remember_me: remember
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Login successful
+                    localShowAlert('Login berhasil! Mengarahkan ke dashboard...', 'success');
+                    
+                    // Store token using auth.js functions
+                    if (window.setAuthToken && data.data.access_token) {
+                        window.setAuthToken(data.data.access_token, remember);
+                    }
+                    
+                    // Redirect to fishmarket
+                    setTimeout(() => {
+                        window.location.href = '/fishmarket';
+                    }, 1500);
+                } else {
+                    // Login failed
+                    const errorMessage = data.message || 'Login gagal. Silakan periksa email dan password Anda.';
+                    localShowAlert(errorMessage, 'error');
+                    
+                    // Reset button state
+                    button.disabled = false;
+                    buttonText.style.display = 'inline';
+                    buttonSpinner.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                localShowAlert('Terjadi kesalahan. Silakan coba lagi.', 'error');
+                
+                // Reset button state
+                button.disabled = false;
+                buttonText.style.display = 'inline';
+                buttonSpinner.style.display = 'none';
+            }
         });
 
         // Show coming soon message for forgot password

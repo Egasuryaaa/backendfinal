@@ -42,7 +42,7 @@ class AuthController extends Controller
             'phone' => $request->phone, // tambahkan ini agar tidak error jika phone dikirim
         ]);
 
-    // Assign role 'user' kepada user baru
+    // Assign role 'user' kepada user baru dengan guard web
     // PENAMBAHAN PENTING: Pemberian role 'user' secara default untuk user baru
     $user->assignRole('user');        // Buat keranjang untuk pengguna baru
         Cart::create([

@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/js/auth.js"></script>
     <style>
         * {
             margin: 0;
@@ -646,6 +647,11 @@
                 if (response.ok && data.success) {
                     // Registration successful
                     localShowAlert('Pendaftaran berhasil! Mengarahkan ke halaman utama...', 'success');
+                    
+                    // Store token using auth.js functions if available
+                    if (window.setAuthToken && data.data.access_token) {
+                        window.setAuthToken(data.data.access_token, false); // Don't remember for registration
+                    }
                     
                     // Reset form
                     document.getElementById('registerForm').reset();

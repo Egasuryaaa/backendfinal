@@ -5,22 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Detail Produk - IwakMart</title>
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+
+    <!-- Auth Script -->
+    <script src="/js/auth.js"></script>
+
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #E3F2FD 0%, #F0F8FF 100%);
@@ -662,13 +665,23 @@
         async function loadProductDetail() {
             try {
                 showLoading(true);
-                
+
+                // Get auth token from auth.js
+                const token = getAuthToken ? getAuthToken() : null;
+
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                };
+
+                // Add Authorization header if token exists
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
                 const response = await fetch(`/api/products/${productId}`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    headers: headers
                 });
 
                 if (!response.ok) {
@@ -676,7 +689,7 @@
                 }
 
                 const data = await response.json();
-                
+
                 if (data.success) {
                     currentProduct = data.data.product;
                     displayProduct(currentProduct);
@@ -710,7 +723,7 @@
             const ratingContainer = document.getElementById('productRating');
             const rating = parseFloat(product.rating_rata || 0);
             const reviewCount = product.jumlah_ulasan || 0;
-            
+
             ratingContainer.innerHTML = `
                 <div class="rating-stars">
                     ${generateStars(rating)}
@@ -789,7 +802,7 @@
         function displayStockInfo(product) {
             const stockContainer = document.getElementById('stockInfo');
             const stock = product.stok || 0;
-            
+
             if (stock > 0) {
                 stockContainer.className = 'stock-info available';
                 stockContainer.innerHTML = `
@@ -805,14 +818,27 @@
             }
         }
 
+                // Helper function to get image URL
+        function getImageUrl(imagePath) {
+            if (!imagePath) return 'https://via.placeholder.com/400x400/BBDEFB/1976D2?text=No+Image';
+            
+            // If it's already a full URL, return as is
+            if (imagePath.startsWith('http')) {
+                return imagePath;
+            }
+            
+            // Otherwise, construct the storage URL
+            return `/storage/${imagePath}`;
+        }
+
         // Display product images
         function displayImages(images) {
             const carousel = document.getElementById('imageCarousel');
             const indicators = document.getElementById('imageIndicators');
-            
+
             if (!images || images.length === 0) {
                 carousel.innerHTML = `
-                    <img src="https://via.placeholder.com/400x400/BBDEFB/1976D2?text=No+Image" 
+                    <img src="https://via.placeholder.com/400x400/BBDEFB/1976D2?text=No+Image"
                          alt="No Image" class="product-image active">
                 `;
                 indicators.innerHTML = '';
@@ -821,8 +847,8 @@
 
             // Display images
             carousel.innerHTML = images.map((image, index) => `
-                <img src="/storage/${image}" 
-                     alt="Product Image ${index + 1}" 
+                <img src="${getImageUrl(image)}"
+                     alt="Product Image ${index + 1}"
                      class="product-image ${index === 0 ? 'active' : ''}"
                      onerror="this.src='https://via.placeholder.com/400x400/BBDEFB/1976D2?text=No+Image'">
             `).join('');
@@ -830,7 +856,7 @@
             // Display indicators if multiple images
             if (images.length > 1) {
                 indicators.innerHTML = images.map((_, index) => `
-                    <div class="indicator ${index === 0 ? 'active' : ''}" 
+                    <div class="indicator ${index === 0 ? 'active' : ''}"
                          onclick="showImage(${index})"></div>
                 `).join('');
             }
@@ -840,17 +866,17 @@
         function showImage(index) {
             const images = document.querySelectorAll('.product-image');
             const indicators = document.querySelectorAll('.indicator');
-            
+
             // Hide all images
             images.forEach(img => img.classList.remove('active'));
             indicators.forEach(ind => ind.classList.remove('active'));
-            
+
             // Show selected image
             if (images[index]) {
                 images[index].classList.add('active');
                 currentImageIndex = index;
             }
-            
+
             if (indicators[index]) {
                 indicators[index].classList.add('active');
             }
@@ -882,7 +908,7 @@
             const maxStock = currentProduct?.stok || 0;
             const decreaseBtn = document.getElementById('decreaseBtn');
             const increaseBtn = document.getElementById('increaseBtn');
-            
+
             decreaseBtn.disabled = currentQuantity <= 1;
             increaseBtn.disabled = currentQuantity >= maxStock;
         }
@@ -890,7 +916,7 @@
         // Add to cart
         async function addToCart() {
             if (isLoading || !currentProduct) return;
-            
+
             const stock = currentProduct.stok || 0;
             if (stock <= 0) {
                 showSnackbar('Produk sedang tidak tersedia', 'error');
@@ -899,31 +925,41 @@
 
             try {
                 setLoading(true);
-                
-                const formData = new FormData();
-                formData.append('produk_id', currentProduct.id);
-                formData.append('jumlah', currentQuantity);
+
+                // Get auth token from auth.js
+                const token = getAuthToken ? getAuthToken() : null;
+
+                const headers = {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                };
+
+                // Add Authorization header if token exists
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
 
                 const response = await fetch('/api/cart', {
                     method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: formData
+                    headers: headers,
+                    body: JSON.stringify({
+                        produk_id: currentProduct.id,
+                        jumlah: currentQuantity
+                    })
                 });
 
                 const data = await response.json();
 
                 if (response.ok && data.success) {
                     showSnackbar('Produk berhasil ditambahkan ke keranjang!', 'success');
-                    
+
                     // Update cart badge if function exists (for fishmarket page)
                     if (typeof refreshCartCount === 'function') {
                         refreshCartCount();
                     }
-                    
+
                     // Optionally show success dialog or redirect to cart
                     setTimeout(() => {
                         if (confirm('Produk berhasil ditambahkan ke keranjang. Lihat keranjang sekarang?')) {
@@ -993,7 +1029,7 @@
         function showLoading(show) {
             const loadingState = document.getElementById('loadingState');
             const productDetail = document.getElementById('productDetail');
-            
+
             if (show) {
                 loadingState.style.display = 'flex';
                 productDetail.style.display = 'none';
@@ -1006,7 +1042,7 @@
             isLoading = loading;
             const addToCartBtn = document.getElementById('addToCartBtn');
             const addToCartText = document.getElementById('addToCartText');
-            
+
             if (loading) {
                 addToCartBtn.disabled = true;
                 addToCartText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
@@ -1019,11 +1055,11 @@
         function showSnackbar(message, type = 'success') {
             const snackbar = document.getElementById('snackbar');
             const snackbarText = document.getElementById('snackbarText');
-            
+
             snackbarText.textContent = message;
             snackbar.className = `snackbar ${type}`;
             snackbar.classList.add('show');
-            
+
             setTimeout(() => {
                 snackbar.classList.remove('show');
             }, 3000);

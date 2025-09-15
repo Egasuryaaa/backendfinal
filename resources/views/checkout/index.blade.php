@@ -14,6 +14,9 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
+    <!-- Auth Script -->
+    <script src="/js/auth.js"></script>
+    
     <style>
         /* General Styles */
         * {
@@ -541,8 +544,21 @@
 
             async function fetchAddresses() {
                 try {
+                    // Get auth token from auth.js
+                    const token = getAuthToken ? getAuthToken() : null;
+                    
+                    const headers = {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    };
+                    
+                    // Add Authorization header if token exists
+                    if (token) {
+                        headers['Authorization'] = `Bearer ${token}`;
+                    }
+                    
                     const response = await fetch('/api/addresses', {
-                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
+                        headers: headers
                     });
                     const data = await response.json();
                     if (data.success) {
@@ -673,13 +689,23 @@
                 };
 
                 try {
+                    // Get auth token from auth.js
+                    const token = getAuthToken ? getAuthToken() : null;
+                    
+                    const headers = {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    };
+                    
+                    // Add Authorization header if token exists
+                    if (token) {
+                        headers['Authorization'] = `Bearer ${token}`;
+                    }
+                    
                     const response = await fetch('/api/orders/checkout', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        },
+                        headers: headers,
                         body: JSON.stringify(checkoutData)
                     });
 

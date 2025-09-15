@@ -61,6 +61,18 @@ class Product extends Model
     ];
 
     /**
+     * Atribut accessor yang ditambahkan ke array/JSON output.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [
+        'main_image_url',
+        'image_urls',
+        'formatted_price',
+        'stock_status'
+    ];
+
+    /**
      * Mendapatkan kategori dari produk.
      */
     public function category(): BelongsTo
@@ -205,7 +217,7 @@ class Product extends Model
     {
         $reviews = $this->reviews();
         $count = $reviews->count();
-        
+
         if ($count > 0) {
             $avgRating = $reviews->avg('rating');
             $this->rating_rata = round($avgRating, 1);

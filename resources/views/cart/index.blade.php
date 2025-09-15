@@ -5,22 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Keranjang Belanja - IwakMart</title>
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+
+    <!-- Auth Script -->
+    <script src="/js/auth.js"></script>
+
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #E3F2FD 0%, #F0F8FF 100%);
@@ -175,7 +178,7 @@
             flex-direction: column;
             gap: 16px;
         }
-        
+
         .cart-items.show {
             display: flex !important;
         }
@@ -634,11 +637,11 @@
             <button class="back-btn" onclick="goBack()">
                 <i class="fas fa-arrow-left"></i>
             </button>
-            
+
             <div class="cart-icon">
                 <i class="fas fa-shopping-cart"></i>
             </div>
-            
+
             <div class="header-info">
                 <h1>Keranjang Belanja</h1>
                 <p id="headerSummary">0 item - Rp 0</p>
@@ -729,6 +732,13 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Cart page loaded, initializing...');
+            console.log('Auth functions available:', {
+                isAuthenticated: typeof isAuthenticated,
+                getAuthToken: typeof getAuthToken,
+                logout: typeof logout
+            });
+
             fetchCartItems();
         });
 
@@ -736,36 +746,86 @@
         async function fetchCartItems() {
             try {
                 showLoading(true);
-                
+
+                console.log('Starting to fetch cart items...');
+
+                // Check if user is authenticated first
+                let token = null;
+
+                // Try to get token from various sources
+                if (typeof getAuthToken === 'function') {
+                    token = getAuthToken();
+                    console.log('Token from getAuthToken():', token ? 'Found' : 'Not found');
+                }
+
+                // Fallback: try localStorage
+                if (!token) {
+                    token = localStorage.getItem('auth_token');
+                    console.log('Token from localStorage:', token ? 'Found' : 'Not found');
+                }
+
+                // Fallback: try sessionStorage
+                if (!token) {
+                    token = sessionStorage.getItem('auth_token');
+                    console.log('Token from sessionStorage:', token ? 'Found' : 'Not found');
+                }
+
+                // If still no token, check if user needs to login
+                if (!token) {
+                    console.log('No authentication token found, redirecting to login');
+                    alert('Silakan login terlebih dahulu untuk melihat keranjang');
+                    window.location.href = '/login';
+                    return;
+                }
+
+                console.log('Using token for cart request');
+
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'X-Requested-With': 'XMLHttpRequest'
+                };
+
+                console.log('Making cart API request...');
+
                 const response = await fetch('/api/cart', {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
+                    method: 'GET',
+                    headers: headers
                 });
 
+                console.log('Cart API response status:', response.status);
+
                 if (!response.ok) {
+                    if (response.status === 401) {
+                        // Token expired or invalid
+                        console.log('Token invalid/expired, clearing and redirecting to login');
+                        localStorage.removeItem('auth_token');
+                        sessionStorage.removeItem('auth_token');
+                        alert('Sesi telah berakhir, silakan login kembali');
+                        window.location.href = '/login';
+                        return;
+                    }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 const data = await response.json();
                 console.log('Cart API Response:', data);
-                
+
                 if (data.success) {
                     const items = data.data?.items || [];
-                    console.log('Cart Items:', items);
+                    console.log('Cart Items from API:', items);
+
                     cartItems = items;
                     selectedItems = new Array(items.length).fill(true);
                     quantities = items.map(item => {
                         const qty = item.quantity || item.jumlah || 1;
                         return typeof qty === 'number' ? qty : parseInt(qty) || 1;
                     });
-                    
-                    console.log('Quantities:', quantities);
-                    console.log('Selected Items:', selectedItems);
-                    
+
+                    console.log('Processed quantities:', quantities);
+                    console.log('Selected items array:', selectedItems);
+
                     displayCartItems();
                     updateHeaderSummary();
                     updateFooter();
@@ -775,7 +835,7 @@
             } catch (error) {
                 console.error('Error loading cart:', error);
                 showEmptyState();
-                showSnackbar('Gagal mengambil data keranjang', 'error');
+                showSnackbar('Gagal mengambil data keranjang: ' + error.message, 'error');
             } finally {
                 showLoading(false);
             }
@@ -786,7 +846,7 @@
             const container = document.getElementById('cartItems');
             const content = document.querySelector('.content');
             console.log('Displaying cart items:', cartItems);
-            
+
             if (cartItems.length === 0) {
                 console.log('No cart items, showing empty state');
                 showEmptyState();
@@ -795,14 +855,19 @@
 
             console.log('Cart has items, rendering...');
             container.innerHTML = '';
-            
+
             cartItems.forEach((item, index) => {
                 console.log(`Processing item ${index}:`, item);
                 const product = item.product || {};
-                const imageUrl = product.gambar && product.gambar.length > 0 
-                    ? `/storage/${product.gambar[0]}` 
-                    : null;
                 
+                // Use main_image_url if available, otherwise fallback to manual path
+                let imageUrl = null;
+                if (product.main_image_url) {
+                    imageUrl = product.main_image_url;
+                } else if (product.gambar && product.gambar.length > 0) {
+                    imageUrl = `/storage/${product.gambar[0]}`;
+                }
+
                 const cartItemElement = createCartItemElement(item, product, imageUrl, index);
                 container.appendChild(cartItemElement);
             });
@@ -810,29 +875,29 @@
             console.log('Setting container display to flex');
             container.classList.add('show');
             container.style.visibility = 'visible';
-            
+
             // Show footer when there are cart items and keep it fixed
             const footer = document.getElementById('cartFooter');
             footer.classList.add('show');
             footer.style.display = 'block';
             footer.style.visibility = 'visible';
-            
+
             // Add padding to content to account for fixed footer
             content.classList.add('with-footer');
-            
+
             console.log('Container after setting display:', {
                 classList: container.classList.toString(),
                 visibility: container.style.visibility,
                 children: container.children.length,
                 innerHTML: container.innerHTML.length
             });
-            
+
             console.log('Footer visibility set to block and fixed');
-            
+
             // Ensure containers are visible
             document.getElementById('emptyState').style.display = 'none';
             document.getElementById('loadingState').style.display = 'none';
-            
+
             // Force container to be visible
             console.log('Final container computed style:', window.getComputedStyle(container).display);
         }
@@ -840,40 +905,40 @@
         // Create cart item element
         function createCartItemElement(item, product, imageUrl, index) {
             console.log(`Creating cart item element for index ${index}:`, {item, product, imageUrl});
-            
+
             const div = document.createElement('div');
             div.className = `cart-item ${selectedItems[index] ? 'selected' : ''}`;
             div.style.animationDelay = `${index * 0.1}s`;
-            
+
             const productName = product.nama || 'Produk';
             const productPrice = product.harga || 0;
             const productCategory = product.jenis_ikan || '-';
             const currentQuantity = quantities[index] || 1;
-            
+
             console.log(`Product details: ${productName}, ${productPrice}, ${productCategory}, qty: ${currentQuantity}`);
-            
+
             div.innerHTML = `
                 <div class="cart-item-content">
                     <div class="checkbox-container">
-                        <div class="custom-checkbox ${selectedItems[index] ? 'checked' : ''}" 
+                        <div class="custom-checkbox ${selectedItems[index] ? 'checked' : ''}"
                              onclick="toggleItemSelection(${index})">
                             <i class="fas fa-check"></i>
                         </div>
                     </div>
-                    
+
                     <div class="product-image">
-                        ${imageUrl ? 
-                            `<img src="${imageUrl}" alt="${productName}" 
+                        ${imageUrl ?
+                            `<img src="${imageUrl}" alt="${productName}"
                                   onerror="this.parentElement.innerHTML='<i class=\\"fas fa-image placeholder\\"></i>'">` :
                             '<i class="fas fa-image placeholder"></i>'
                         }
                     </div>
-                    
+
                     <div class="product-info">
                         <div class="product-category">${productCategory}</div>
                         <div class="product-name">${productName}</div>
                         <div class="product-price">Rp ${formatPrice(productPrice)}/kg</div>
-                        
+
                         <div class="product-controls">
                             <div class="quantity-controls">
                                 <button class="quantity-btn" onclick="updateQuantity(${index}, ${currentQuantity - 1})"
@@ -885,7 +950,7 @@
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
-                            
+
                             <button class="delete-btn" onclick="showDeleteConfirmation(${index}, '${productName.replace(/'/g, "\\'")}')">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -893,7 +958,7 @@
                     </div>
                 </div>
             `;
-            
+
             console.log('Cart item HTML created:', div.outerHTML);
             return div;
         }
@@ -918,43 +983,63 @@
             const oldQuantity = quantities[index];
             quantities[index] = newQuantity;
             cartItems[index].jumlah = newQuantity;
-            
+
             updateDisplay();
 
             try {
                 const item = cartItems[index];
                 const cartItemId = item.id;
 
-                const formData = new FormData();
-                formData.append('jumlah', newQuantity.toString());
-                formData.append('_method', 'PUT');
+                console.log('Updating quantity for cart item:', cartItemId, 'to:', newQuantity);
+
+                // Get auth token from auth.js
+                const token = getAuthToken();
+
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                };
 
                 const response = await fetch(`/api/cart/${cartItemId}`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: formData
+                    method: 'PUT',
+                    headers: headers,
+                    body: JSON.stringify({
+                        jumlah: newQuantity
+                    })
                 });
 
                 if (!response.ok) {
                     throw new Error('Failed to update quantity');
+                }
+
+                const result = await response.json();
+                console.log('Update quantity response:', result);
+
+                if (result.success) {
+                    showSnackbar('Jumlah berhasil diupdate', 'success');
+                } else {
+                    throw new Error(result.message || 'Failed to update quantity');
                 }
             } catch (error) {
                 console.error('Error updating quantity:', error);
                 quantities[index] = oldQuantity;
                 cartItems[index].jumlah = oldQuantity;
                 updateDisplay();
-                showSnackbar('Gagal mengupdate jumlah', 'error');
+                showSnackbar('Gagal mengupdate jumlah: ' + error.message, 'error');
             }
         }
 
         // Show delete confirmation
         function showDeleteConfirmation(index, productName) {
             deleteItemIndex = index;
-            document.getElementById('deleteMessage').textContent = 
+            document.getElementById('deleteMessage').textContent =
                 `Apakah Anda yakin ingin menghapus "${productName}" dari keranjang?`;
             document.getElementById('deleteModal').classList.add('show');
         }
@@ -973,30 +1058,43 @@
                 const item = cartItems[deleteItemIndex];
                 const cartItemId = item.id;
                 console.log('Deleting cart item with ID:', cartItemId);
-                console.log('Cart item data:', item);
+
+                // Get auth token from auth.js
+                const token = getAuthToken();
+
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                };
 
                 const response = await fetch(`/api/cart/${cartItemId}`, {
                     method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    headers: headers
                 });
 
                 console.log('Delete response status:', response.status);
-                
+
                 if (response.ok) {
+                    const result = await response.json();
+                    console.log('Delete response:', result);
+
                     cartItems.splice(deleteItemIndex, 1);
                     selectedItems.splice(deleteItemIndex, 1);
                     quantities.splice(deleteItemIndex, 1);
-                    
+
                     if (cartItems.length === 0) {
                         showEmptyState();
                     } else {
                         updateDisplay();
                     }
-                    
+
                     showSnackbar('Item berhasil dihapus dari keranjang', 'success');
                 } else {
                     const errorData = await response.text();
@@ -1005,7 +1103,7 @@
                 }
             } catch (error) {
                 console.error('Error deleting item:', error);
-                showSnackbar('Gagal menghapus item', 'error');
+                showSnackbar('Gagal menghapus item: ' + error.message, 'error');
             } finally {
                 closeDeleteModal();
             }
@@ -1021,7 +1119,7 @@
         // Update header summary
         function updateHeaderSummary() {
             const totalPrice = calculateTotalPrice();
-            document.getElementById('headerSummary').textContent = 
+            document.getElementById('headerSummary').textContent =
                 `${cartItems.length} item - Rp ${formatPrice(totalPrice)}`;
         }
 
@@ -1048,7 +1146,7 @@
             // Update checkout button
             const checkoutBtn = document.getElementById('checkoutBtn');
             const checkoutText = document.getElementById('checkoutText');
-            
+
             checkoutBtn.disabled = selectedCount === 0;
             checkoutText.textContent = `Checkout (${selectedCount})`;
         }
@@ -1096,11 +1194,11 @@
         function showLoading(show) {
             const content = document.querySelector('.content');
             const footer = document.getElementById('cartFooter');
-            
+
             document.getElementById('loadingState').style.display = show ? 'flex' : 'none';
             document.getElementById('emptyState').style.display = 'none';
             document.getElementById('cartItems').style.display = 'none';
-            
+
             if (show) {
                 // Hide footer during loading
                 footer.classList.remove('show');
@@ -1112,15 +1210,15 @@
         function showEmptyState() {
             const content = document.querySelector('.content');
             const footer = document.getElementById('cartFooter');
-            
+
             document.getElementById('loadingState').style.display = 'none';
             document.getElementById('emptyState').style.display = 'block';
             document.getElementById('cartItems').style.display = 'none';
-            
+
             // Hide footer when cart is empty
             footer.classList.remove('show');
             footer.style.display = 'none';
-            
+
             // Remove content padding when footer is hidden
             content.classList.remove('with-footer');
         }
@@ -1137,11 +1235,11 @@
         function showSnackbar(message, type = 'success') {
             const snackbar = document.getElementById('snackbar');
             const snackbarText = document.getElementById('snackbarText');
-            
+
             snackbarText.textContent = message;
             snackbar.className = `snackbar ${type}`;
             snackbar.classList.add('show');
-            
+
             setTimeout(() => {
                 snackbar.classList.remove('show');
             }, 3000);

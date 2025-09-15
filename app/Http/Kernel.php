@@ -35,11 +35,7 @@ class Kernel extends HttpKernel
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-<<<<<<< HEAD
             \App\Http\Middleware\VerifyCsrfToken::class,
-=======
-            // \App\Http\Middleware\VerifyCsrfToken::class,
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
 
@@ -59,11 +55,7 @@ class Kernel extends HttpKernel
      * @var array<string, class-string|string>
      */
     protected $middlewareAliases = [
-<<<<<<< HEAD
         'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
-=======
-        // 'auth' => \App\Http\Middleware\Authenticate::class,
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class,
         'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
@@ -76,9 +68,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'seller' => \App\Http\Middleware\SellerMiddleware::class,
         'role' => \App\Http\Middleware\RoleMiddleware::class,
-<<<<<<< HEAD
         'webauth' => \App\Http\Middleware\WebBearerAuth::class,
-=======
->>>>>>> a4f7a035c1848f938bab5ae49cff16cb399118b3
     ];
 }

@@ -38,9 +38,9 @@ class ProductController extends Controller
         // Pengurutan
         $sortField = $request->sort_by ?? 'created_at';
         $sortDirection = $request->sort_direction ?? 'desc';
-        
+
         $allowedSortFields = ['nama', 'harga', 'created_at', 'rating_rata'];
-        
+
         if (in_array($sortField, $allowedSortFields)) {
             $query->orderBy($sortField, $sortDirection);
         }
@@ -92,8 +92,8 @@ class ProductController extends Controller
         }
 
         $product->load([
-            'category', 
-            'seller', 
+            'category',
+            'seller',
             'seller.sellerLocations',
             'reviews' => function ($query) {
                 $query->with(['user', 'reviewReply', 'reviewReply.user'])
@@ -131,7 +131,7 @@ class ProductController extends Controller
         $categoryIds = [$category->id];
         $childCategories = $category->children()->pluck('id')->toArray();
         $categoryIds = array_merge($categoryIds, $childCategories);
-        
+
         $query = Product::with(['category', 'seller'])
                         ->whereIn('kategori_id', $categoryIds)
                         ->where('aktif', true)
@@ -146,7 +146,7 @@ class ProductController extends Controller
         if ($request->has('min_price')) {
             $query->where('harga', '>=', $request->min_price);
         }
-        
+
         if ($request->has('max_price')) {
             $query->where('harga', '<=', $request->max_price);
         }
@@ -154,9 +154,9 @@ class ProductController extends Controller
         // Pengurutan
         $sortField = $request->sort_by ?? 'created_at';
         $sortDirection = $request->sort_direction ?? 'desc';
-        
+
         $allowedSortFields = ['nama', 'harga', 'created_at', 'rating_rata'];
-        
+
         if (in_array($sortField, $allowedSortFields)) {
             $query->orderBy($sortField, $sortDirection);
         }
@@ -206,7 +206,7 @@ class ProductController extends Controller
         if ($request->has('min_price')) {
             $query->where('harga', '>=', $request->min_price);
         }
-        
+
         if ($request->has('max_price')) {
             $query->where('harga', '<=', $request->max_price);
         }
@@ -214,9 +214,9 @@ class ProductController extends Controller
         // Pengurutan
         $sortField = $request->sort_by ?? 'created_at';
         $sortDirection = $request->sort_direction ?? 'desc';
-        
+
         $allowedSortFields = ['nama', 'harga', 'created_at', 'rating_rata'];
-        
+
         if (in_array($sortField, $allowedSortFields)) {
             $query->orderBy($sortField, $sortDirection);
         }
@@ -281,9 +281,9 @@ class ProductController extends Controller
         // Pengurutan
         $sortField = $request->sort_by ?? 'created_at';
         $sortDirection = $request->sort_direction ?? 'desc';
-        
+
         $allowedSortFields = ['nama', 'harga', 'stok', 'created_at'];
-        
+
         if (in_array($sortField, $allowedSortFields)) {
             $query->orderBy($sortField, $sortDirection);
         }
@@ -440,8 +440,8 @@ class ProductController extends Controller
 
         // Update data produk
         $productData = $request->only([
-            'nama', 'kategori_id', 'deskripsi', 'harga', 
-            'stok', 'berat', 'jenis_ikan', 'spesies_ikan', 
+            'nama', 'kategori_id', 'deskripsi', 'harga',
+            'stok', 'berat', 'jenis_ikan', 'spesies_ikan',
             'aktif', 'unggulan'
         ]);
 

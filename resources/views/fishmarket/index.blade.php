@@ -543,6 +543,12 @@
             display: inline-block;
         }
 
+        .product-stock {
+            color: #666;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
         /* Loading Grid */
         .loading-grid {
             display: grid;
@@ -861,14 +867,17 @@
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             generateLoadingCards();
+            checkAuthenticationStatus();
+            fetchCategories();
             fetchProducts();
+            loadCartCount(); // Load cart count on page load
         });
 
         // Generate loading cards
         function generateLoadingCards() {
             const loadingGrid = document.getElementById('loadingGrid');
             loadingGrid.innerHTML = '';
-            
+
             for (let i = 0; i < 6; i++) {
                 const loadingCard = document.createElement('div');
                 loadingCard.className = 'loading-card';
@@ -885,10 +894,65 @@
             }
         }
 
+        // Fetch categories from API
+        async function fetchCategories() {
+            try {
+                const token = getAuthToken ? getAuthToken() : null;
+
+                const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                };
+
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const response = await fetch('/api/categories?parents_only=true&include_product_count=true', {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data) {
+                        displayCategories(data.data);
+                    }
+                } else {
+                    console.error('Failed to fetch categories');
+                }
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            }
+        }
+
+        // Display categories in filter section
+        function displayCategories(categories) {
+            // Implement category filter display if needed
+            console.log('Categories loaded:', categories);
+        }
+
         // Fetch products from API
         async function fetchProducts() {
             try {
-                const response = await fetch('/api/products');
+                // Get auth token from auth.js
+                const token = getAuthToken ? getAuthToken() : null;
+
+                const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                };
+
+                // Add Authorization header if token exists
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const response = await fetch('/api/products', {
+                    method: 'GET',
+                    headers: headers
+                });
+
                 if (response.ok) {
                     const data = await response.json();
                     products = data.data?.data || [];
@@ -943,10 +1007,12 @@
             const card = document.createElement('div');
             card.className = 'product-card';
             card.style.animationDelay = `${index * 0.1}s`;
-            
+
             let poster = 'https://via.placeholder.com/280x180/BBDEFB/1976D2?text=No+Image';
-            if (product.gambar && product.gambar.length > 0) {
-                // Assuming we have imageUrl function similar to Flutter's ApiConfig.imageUrl
+            if (product.main_image_url) {
+                poster = product.main_image_url;
+            } else if (product.gambar && product.gambar.length > 0) {
+                // Fallback to manual path construction if main_image_url is not available
                 poster = `/storage/${product.gambar[0]}`;
             }
 
@@ -955,7 +1021,7 @@
 
             card.innerHTML = `
                 <div class="product-image">
-                    <img src="${poster}" alt="${product.nama || 'Produk'}" 
+                    <img src="${poster}" alt="${product.nama || 'Produk'}"
                          onerror="this.src='https://via.placeholder.com/280x180/BBDEFB/1976D2?text=No+Image'">
                     <div class="fish-type-badge">${product.jenis_ikan || '-'}</div>
                     ${rating > 0 ? `
@@ -972,11 +1038,12 @@
                         <span>${product.seller?.name || '-'}</span>
                     </div>
                     <div class="product-price">Rp ${price}</div>
+                    <div class="product-stock">Stok: ${product.stok || 0}</div>
                 </div>
             `;
 
             card.addEventListener('click', () => {
-                // Navigate to product detail (implement as needed)
+                // Navigate to product detail
                 window.location.href = `/product/${product.id}`;
             });
 
@@ -986,13 +1053,13 @@
         // Filter products by category
         function filterProducts(categoryId) {
             selectedCategoryId = categoryId;
-            
+
             // Update active category chip
             document.querySelectorAll('.category-chip').forEach(chip => {
                 chip.classList.remove('active');
             });
             event.target.closest('.category-chip').classList.add('active');
-            
+
             displayProducts();
         }
 
@@ -1000,7 +1067,7 @@
         async function refreshProducts() {
             const refreshIndicator = document.getElementById('refreshIndicator');
             refreshIndicator.classList.add('show');
-            
+
             try {
                 await fetchProducts();
             } finally {
@@ -1040,11 +1107,11 @@
                     },
                     credentials: 'same-origin'
                 });
-                
+
                 // Clear any leftover tokens
                 localStorage.removeItem('auth_token');
                 sessionStorage.removeItem('auth_token');
-                
+
                 // Redirect to login
                 window.location.href = '/login';
             } catch (error) {
@@ -1059,23 +1126,34 @@
             // First test basic auth status
             try {
                 console.log('Testing auth status...');
+
+                // Get auth token from auth.js
+                const token = getAuthToken ? getAuthToken() : null;
+
+                const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                };
+
+                // Add Authorization header if token exists
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
                 const testResponse = await fetch('/auth-test', {
                     method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
+                    headers: headers,
                     credentials: 'same-origin'
                 });
-                
+
                 const testData = await testResponse.json();
                 console.log('Auth test result:', testData);
-                
+
                 if (testData.authenticated && testData.user) {
                     // User is authenticated, update UI directly
                     const userAvatar = document.getElementById('userAvatar');
                     const userName = document.getElementById('userName');
-                    
+
                     userAvatar.innerHTML = '<i class="fas fa-user-check" style="color: #4CAF50;"></i>';
                     userName.textContent = testData.user.name;
                     userName.style.display = 'block';
@@ -1113,7 +1191,7 @@
                 <small>Redirecting to login page...</small>
             `;
             document.body.appendChild(message);
-            
+
             setTimeout(() => {
                 window.location.href = '/login';
             }, 1500);
@@ -1122,22 +1200,35 @@
         function updateUIForLoggedOut() {
             const userAvatar = document.getElementById('userAvatar');
             const userName = document.getElementById('userName');
-            
+
             userAvatar.innerHTML = '<i class="fas fa-user"></i>';
             userName.style.display = 'none';
+
+            // Redirect to login if user is not authenticated
+            redirectToLogin();
         }
 
         // Load cart count and update badge
         async function loadCartCount() {
             try {
+                // Get auth token from auth.js
+                const token = getAuthToken ? getAuthToken() : null;
+
+                const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                };
+
+                // Add Authorization header if token exists
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
                 const response = await fetch('/api/cart', {
                     method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
+                    headers: headers,
                     credentials: 'same-origin'
                 });
 
@@ -1174,13 +1265,6 @@
         function refreshCartCount() {
             loadCartCount();
         }
-
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', function() {
-            checkAuthenticationStatus();
-            fetchProducts();
-            loadCartCount(); // Load cart count on page load
-        });
     </script>
 </body>
 </html>

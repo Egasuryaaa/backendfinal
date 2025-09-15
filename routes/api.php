@@ -59,6 +59,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Route::post('/cart', [CartController::class, 'addToCart']);
     // Route::put('/cart/{cartItem}', [CartController::class, 'updateCartItem']);
     // Route::delete('/cart/{cartItem}', [CartController::class, 'removeFromCart']);
+    
+    // Cart routes - restored for API usage
+    Route::get('/cart', [CartController::class, 'index']);
+    Route::post('/cart', [CartController::class, 'addToCart']);
+    Route::put('/cart/{cartItem}', [CartController::class, 'updateCartItem']);
+    Route::delete('/cart/{cartItem}', [CartController::class, 'removeFromCart']);
     Route::delete('/cart', [CartController::class, 'clearCart']);
     
     // Orders
