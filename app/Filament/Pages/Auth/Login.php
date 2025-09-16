@@ -70,14 +70,16 @@ class Login extends BaseLogin
     {
         return [
             $this->getAuthenticateFormAction(),
-            $this->registerAction(),
+            // Hapus register action untuk admin panel
+            // $this->registerAction(),
         ];
     }
 
     protected function onAuthenticated(): void
     {
         Notification::make()
-            ->title('Berhasil masuk')
+            ->title('Selamat datang, Admin!')
+            ->body('Anda berhasil masuk ke panel admin IwakMart.')
             ->success()
             ->send();
     }
@@ -104,6 +106,15 @@ class Login extends BaseLogin
         ], $data['remember'] ?? false)) {
             throw ValidationException::withMessages([
                 'data.email' => __('filament-panels::pages/auth/login.messages.failed'),
+            ]);
+        }
+
+        // Check if user is admin
+        $user = Filament::auth()->user();
+        if (!$user->isAdmin()) {
+            Filament::auth()->logout();
+            throw ValidationException::withMessages([
+                'data.email' => 'Akses ditolak. Hanya admin yang dapat mengakses panel ini.',
             ]);
         }
 

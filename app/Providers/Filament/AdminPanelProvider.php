@@ -29,7 +29,8 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login(Login::class)
-            ->registration(Register::class)
+            // Hapus registration untuk admin panel
+            // ->registration(Register::class)
             ->colors([
                 'primary' => Color::Amber,
                 'danger' => Color::Rose,

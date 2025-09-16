@@ -135,6 +135,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Determine if the user can access the Filament admin panel
+     */
+    public function canAccessPanel(\Filament\Panel $panel): bool
+    {
+        return $this->isAdmin();
+    }
+
+    /**
      * Check if user is pembeli/customer
      */
     public function isPembeli(): bool

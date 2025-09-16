@@ -179,8 +179,12 @@ class AuthController extends Controller
             'success' => true,
             'data' => [
                 'user' => $user,
-                'roles' => $user->getRoleNames(),
-                'is_seller' => $user->hasRole('seller')
+                'role' => $user->role,
+                'is_seller' => $user->isPenjualBiasa(),
+                'is_admin' => $user->isAdmin(),
+                'is_pengepul' => $user->isPengepul(),
+                'is_pemilik_tambak' => $user->isPemilikTambak(),
+                'is_pembeli' => $user->isPembeli(),
             ]
         ]);
     }
