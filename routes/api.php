@@ -16,6 +16,7 @@ use App\Http\Controllers\API\SellerController;
 use App\Http\Controllers\API\SellerLocationController;
 use App\Http\Controllers\API\PaymentController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 // CSRF Cookie route
 Route::get('/csrf-cookie', function () {
@@ -100,8 +101,19 @@ Route::post('/webhooks/xendit', [PaymentController::class, 'handleWebhook']);
     Route::post('/fish-farms/{id}/appointments', [FishFarmController::class, 'createAppointment']);
     
     // Collector routes
-    Route::apiResource('collectors', CollectorController::class);
     Route::get('/collectors/nearest', [CollectorController::class, 'getNearestCollectors']);
+    Route::get('/collectors/debug', function() {
+        $user = Auth::user();
+        return response()->json([
+            'authenticated' => !!$user,
+            'user_id' => $user ? $user->id : null,
+            'user_role' => $user ? $user->role : null,
+            'has_coordinates' => $user ? $user->hasCoordinates() : false,
+            'coordinates' => $user ? $user->getCoordinates() : null,
+            'is_pemilik_tambak' => $user ? $user->isPemilikTambak() : false,
+        ]);
+    });
+    Route::apiResource('collectors', CollectorController::class);
     Route::get('/collectors/{id}/nearby-fish-farms', [CollectorController::class, 'getNearbyFishFarms']);
     Route::get('/collectors/{id}/pending-appointments', [CollectorController::class, 'getPendingAppointments']);
     Route::put('/collectors/{id}/appointments/{appointmentId}', [CollectorController::class, 'handleAppointment']);

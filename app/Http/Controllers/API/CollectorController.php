@@ -377,8 +377,13 @@ class CollectorController extends Controller
         try {
             $user = Auth::user();
             
+            // Check if user is authenticated
+            if (!$user) {
+                return $this->error('User not authenticated', 401);
+            }
+
             // Only allow pemilik_tambak to access this endpoint
-            if (!$user->isPemilikTambak()) {
+            if (!$user->isPemilikTambak() && !$user->isAdmin()) {
                 return $this->error('Unauthorized - Only fish farm owners can access this endpoint', 403);
             }
 
@@ -412,41 +417,59 @@ class CollectorController extends Controller
                 ->where('status', 'aktif');
 
             // Filter by fish type if specified
-            if ($request->has('fish_type')) {
+            if ($request->has('fish_type') && $request->fish_type) {
                 $collectorsQuery->whereJsonContains('jenis_ikan_diterima', $request->fish_type);
             }
 
             // Filter by rate range
-            if ($request->has('min_rate')) {
+            if ($request->has('min_rate') && $request->min_rate) {
                 $collectorsQuery->where('rate_per_kg', '>=', $request->min_rate);
             }
-            if ($request->has('max_rate')) {
+            if ($request->has('max_rate') && $request->max_rate) {
                 $collectorsQuery->where('rate_per_kg', '<=', $request->max_rate);
             }
 
             // Filter by capacity
-            if ($request->has('min_capacity')) {
+            if ($request->has('min_capacity') && $request->min_capacity) {
                 $collectorsQuery->where('kapasitas_maximum', '>=', $request->min_capacity);
             }
 
             $collectors = $collectorsQuery->get();
 
-            // Calculate distances and filter by max distance
-            $collectorsWithDistance = LocationService::addDistanceToUsers($user, $collectors->map(function($collector) {
-                $collector->user->distance = null; // Will be calculated
-                return $collector;
-            }));
+            // If no collectors found, return empty results
+            if ($collectors->isEmpty()) {
+                return $this->success([
+                    'data' => [],
+                    'pagination' => [
+                        'current_page' => 1,
+                        'per_page' => $perPage,
+                        'total' => 0,
+                        'last_page' => 1,
+                        'from' => 0,
+                        'to' => 0
+                    ],
+                    'user_location' => $user->getCoordinates(),
+                    'search_radius' => $maxDistance . ' km'
+                ], 'No collectors found matching your criteria');
+            }
 
-            // Filter by distance and sort
-            $nearbyCollectors = $collectorsWithDistance->filter(function ($collector) use ($maxDistance) {
-                $distance = LocationService::calculateDistanceBetweenUsers(
-                    Auth::user(), 
-                    $collector->user
-                );
-                $collector->distance = $distance;
-                $collector->distance_formatted = LocationService::formatDistance($distance);
-                return $distance !== null && $distance <= $maxDistance;
-            })->sortBy('distance')->values();
+            // Calculate distances and filter by max distance
+            $nearbyCollectors = collect();
+            
+            foreach ($collectors as $collector) {
+                if ($collector->user && $collector->user->hasCoordinates()) {
+                    $distance = LocationService::calculateDistanceBetweenUsers($user, $collector->user);
+                    
+                    if ($distance !== null && $distance <= $maxDistance) {
+                        $collector->distance = $distance;
+                        $collector->distance_formatted = LocationService::formatDistance($distance);
+                        $nearbyCollectors->push($collector);
+                    }
+                }
+            }
+
+            // Sort by distance
+            $nearbyCollectors = $nearbyCollectors->sortBy('distance')->values();
 
             // Paginate results manually
             $currentPage = $request->get('page', 1);
@@ -457,8 +480,8 @@ class CollectorController extends Controller
                 'current_page' => (int) $currentPage,
                 'per_page' => (int) $perPage,
                 'total' => $nearbyCollectors->count(),
-                'last_page' => ceil($nearbyCollectors->count() / $perPage),
-                'from' => $offset + 1,
+                'last_page' => ceil($nearbyCollectors->count() / $perPage) ?: 1,
+                'from' => $nearbyCollectors->count() > 0 ? $offset + 1 : 0,
                 'to' => min($offset + $perPage, $nearbyCollectors->count())
             ];
 
@@ -470,7 +493,16 @@ class CollectorController extends Controller
             ], 'Nearest collectors retrieved successfully');
 
         } catch (\Exception $e) {
-            return $this->error('Failed to retrieve nearest collectors', 500, ['error' => $e->getMessage()]);
+            \Log::error('Error in getNearestCollectors: ' . $e->getMessage(), [
+                'user_id' => Auth::id(),
+                'request' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return $this->error('Failed to retrieve nearest collectors', 500, [
+                'error' => $e->getMessage(),
+                'debug' => config('app.debug') ? $e->getTraceAsString() : null
+            ]);
         }
     }
 }

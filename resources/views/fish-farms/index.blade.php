@@ -969,6 +969,51 @@
                     return;
                 }
 
+                // First test debug endpoint to check auth and role
+                console.log('Testing debug endpoint...');
+                const debugResponse = await fetch('/api/collectors/debug', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (debugResponse.ok) {
+                    const debugData = await safeParseJSON(debugResponse);
+                    console.log('Debug data:', debugData);
+                    
+                    if (!debugData.authenticated) {
+                        alert('Authentication failed. Please log in again.');
+                        window.location.href = '/login';
+                        return;
+                    }
+                    
+                    if (!debugData.is_pemilik_tambak && !debugData.is_admin) {
+                        document.getElementById('nearestCollectorsContainer').innerHTML = `
+                            <div class="empty-state">
+                                <i class="fas fa-lock"></i>
+                                <h3>Akses Terbatas</h3>
+                                <p>Fitur ini hanya tersedia untuk pemilik tambak. Role Anda: ${debugData.user_role || 'Unknown'}</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    if (!debugData.has_coordinates) {
+                        document.getElementById('nearestCollectorsContainer').innerHTML = `
+                            <div class="empty-state">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <h3>Lokasi Diperlukan</h3>
+                                <p>Untuk menggunakan fitur pencarian pengepul terdekat, silakan update lokasi Anda terlebih dahulu.</p>
+                                <button class="btn btn-primary" onclick="getCurrentLocation()">
+                                    <i class="fas fa-location-arrow"></i> Update Lokasi
+                                </button>
+                            </div>
+                        `;
+                        return;
+                    }
+                }
+
                 // Build query parameters
                 const params = new URLSearchParams();
                 
@@ -984,6 +1029,7 @@
                 const maxRate = document.getElementById('maxRateFilter').value;
                 if (maxRate) params.append('max_rate', maxRate);
 
+                console.log('Calling nearest collectors endpoint...');
                 const response = await fetch(`/api/collectors/nearest?${params}`, {
                     headers: {
                         'Authorization': 'Bearer ' + token,
@@ -995,6 +1041,7 @@
 
                 if (response.ok) {
                     const result = await safeParseJSON(response);
+                    console.log('Nearest collectors response:', result);
                     nearestCollectors = result.data.data || [];
                     userLocation = result.data.user_location;
                     
@@ -1002,6 +1049,8 @@
                     updateLocationInfo(userLocation, result.data.search_radius);
                 } else {
                     const errorData = await safeParseJSON(response);
+                    console.error('API Error:', response.status, errorData);
+                    
                     if (response.status === 403) {
                         container.innerHTML = `
                             <div class="empty-state">
@@ -1021,14 +1070,29 @@
                                 </button>
                             </div>
                         `;
+                    } else if (response.status === 404) {
+                        container.innerHTML = `
+                            <div class="empty-state">
+                                <i class="fas fa-search"></i>
+                                <h3>Endpoint Tidak Ditemukan</h3>
+                                <p>Fitur pencarian pengepul terdekat belum tersedia. Silakan gunakan tab "Cari Pengepul" untuk melihat semua pengepul.</p>
+                                <button class="btn btn-secondary" onclick="switchTab('collectors')">
+                                    <i class="fas fa-truck"></i> Lihat Semua Pengepul
+                                </button>
+                            </div>
+                        `;
                     } else {
                         container.innerHTML = `
                             <div class="empty-state">
                                 <i class="fas fa-exclamation-triangle"></i>
                                 <h3>Gagal Memuat Data</h3>
-                                <p>${errorData.message || 'Terjadi kesalahan saat memuat pengepul terdekat'}</p>
+                                <p>Status: ${response.status}<br>
+                                Error: ${errorData.message || 'Terjadi kesalahan saat memuat pengepul terdekat'}</p>
                                 <button class="btn btn-secondary" onclick="loadNearestCollectors()">
                                     <i class="fas fa-refresh"></i> Coba Lagi
+                                </button>
+                                <button class="btn btn-info" onclick="console.log('Debug info:', {status: ${response.status}, error: errorData}); alert('Check browser console for details')">
+                                    <i class="fas fa-bug"></i> Debug Info
                                 </button>
                             </div>
                         `;
