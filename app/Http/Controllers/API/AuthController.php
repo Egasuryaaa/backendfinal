@@ -24,7 +24,10 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'phone' => 'nullable|string|max:20', // boleh kosong
+            'phone' => 'nullable|string|max:20',
+            'role' => 'nullable|in:pembeli,penjual_biasa,pengepul,pemilik_tambak',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
         if ($validator->fails()) {
@@ -39,12 +42,13 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'phone' => $request->phone, // tambahkan ini agar tidak error jika phone dikirim
+            'phone' => $request->phone,
+            'role' => $request->role ?? 'pembeli', // default role is pembeli
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
         ]);
 
-    // Assign role 'user' kepada user baru dengan guard web
-    // PENAMBAHAN PENTING: Pemberian role 'user' secara default untuk user baru
-    $user->assignRole('user');        // Buat keranjang untuk pengguna baru
+        // Buat keranjang untuk pengguna baru
         Cart::create([
             'user_id' => $user->id
         ]);
@@ -58,7 +62,8 @@ class AuthController extends Controller
                 'user' => $user,
                 'access_token' => $token,
                 'token_type' => 'Bearer',
-                'roles' => $user->getRoleNames() // Sertakan role yang dimiliki user
+                'role' => $user->role,
+                'role_display' => $user->getRoleDisplayName()
             ]
         ], 201);
     }
@@ -105,8 +110,10 @@ class AuthController extends Controller
                 'user' => $user,
                 'access_token' => $token,
                 'token_type' => 'Bearer',
-                'roles' => $user->getRoleNames(),
-                'is_seller' => $user->hasRole('seller')
+                'role' => $user->role,
+                'role_display' => $user->getRoleDisplayName(),
+                'has_coordinates' => $user->hasCoordinates(),
+                'coordinates' => $user->getCoordinates()
             ]
         ]);
     }

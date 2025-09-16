@@ -307,6 +307,47 @@
                 width: 100%;
             }
         }
+
+        .location-info {
+            margin-bottom: 2rem;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-card h4 {
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .info-card p {
+            margin-bottom: 0.25rem;
+        }
+
+        .distance-badge {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00cc00;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+
+        .collector-card .distance-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -327,6 +368,9 @@
             </button>
             <button class="tab" onclick="switchTab('collectors')">
                 <i class="fas fa-truck"></i> Cari Pengepul
+            </button>
+            <button class="tab" onclick="switchTab('nearest-collectors')">
+                <i class="fas fa-map-marker-alt"></i> Pengepul Terdekat
             </button>
         </div>
 
@@ -384,6 +428,49 @@
                 </div>
             </div>
         </div>
+
+        <!-- Nearest Collectors Tab -->
+        <div id="nearest-collectors-tab" class="tab-content">
+            <div class="action-bar">
+                <div class="search-box">
+                    <input type="number" class="search-input" placeholder="Jarak maksimal (km)" id="maxDistanceFilter" value="50" min="1" max="500">
+                    <select class="search-input" id="nearestFishTypeFilter">
+                        <option value="">Semua Jenis Ikan</option>
+                        <option value="Lele">Lele</option>
+                        <option value="Nila">Nila</option>
+                        <option value="Mujair">Mujair</option>
+                        <option value="Gurame">Gurame</option>
+                        <option value="Patin">Patin</option>
+                        <option value="Bandeng">Bandeng</option>
+                        <option value="Mas">Mas</option>
+                        <option value="Bawal">Bawal</option>
+                    </select>
+                    <input type="number" class="search-input" placeholder="Rate min (Rp/kg)" id="minRateFilter" min="0">
+                    <input type="number" class="search-input" placeholder="Rate max (Rp/kg)" id="maxRateFilter" min="0">
+                    <button class="btn btn-secondary" onclick="loadNearestCollectors()">
+                        <i class="fas fa-search"></i> Cari Terdekat
+                    </button>
+                </div>
+                <button class="btn btn-info" onclick="getCurrentLocation()">
+                    <i class="fas fa-location-arrow"></i> Update Lokasi Saya
+                </button>
+            </div>
+
+            <div id="locationInfo" class="location-info" style="display: none;">
+                <div class="info-card">
+                    <h4><i class="fas fa-map-marker-alt"></i> Lokasi Anda</h4>
+                    <p id="userLocationText">Memuat lokasi...</p>
+                    <p><small>Pencarian berdasarkan lokasi Anda saat ini</small></p>
+                </div>
+            </div>
+
+            <div id="nearestCollectorsContainer" class="grid">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p>Memuat pengepul terdekat...</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="/js/auth.js"></script>
@@ -391,7 +478,9 @@
         let currentTab = 'fishfarms';
         let fishFarms = [];
         let collectors = [];
+        let nearestCollectors = [];
         let currentUserId = null;
+        let userLocation = null;
 
         document.addEventListener('DOMContentLoaded', function() {
             // Check if user is logged in
@@ -421,6 +510,8 @@
                 loadFishFarms();
             } else if (tab === 'collectors' && collectors.length === 0) {
                 loadCollectors();
+            } else if (tab === 'nearest-collectors') {
+                loadNearestCollectors();
             }
         }
 
@@ -866,6 +957,232 @@
                 console.error('Error creating appointment:', error);
                 alert('Terjadi kesalahan: ' + error.message);
             }
+        }
+
+        // Nearest Collectors Functions
+        async function loadNearestCollectors() {
+            try {
+                const token = getToken();
+                if (!token) {
+                    alert('Anda harus login terlebih dahulu');
+                    window.location.href = '/login';
+                    return;
+                }
+
+                // Build query parameters
+                const params = new URLSearchParams();
+                
+                const maxDistance = document.getElementById('maxDistanceFilter').value;
+                if (maxDistance) params.append('max_distance', maxDistance);
+                
+                const fishType = document.getElementById('nearestFishTypeFilter').value;
+                if (fishType) params.append('fish_type', fishType);
+                
+                const minRate = document.getElementById('minRateFilter').value;
+                if (minRate) params.append('min_rate', minRate);
+                
+                const maxRate = document.getElementById('maxRateFilter').value;
+                if (maxRate) params.append('max_rate', maxRate);
+
+                const response = await fetch(`/api/collectors/nearest?${params}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const container = document.getElementById('nearestCollectorsContainer');
+
+                if (response.ok) {
+                    const result = await safeParseJSON(response);
+                    nearestCollectors = result.data.data || [];
+                    userLocation = result.data.user_location;
+                    
+                    displayNearestCollectors();
+                    updateLocationInfo(userLocation, result.data.search_radius);
+                } else {
+                    const errorData = await safeParseJSON(response);
+                    if (response.status === 403) {
+                        container.innerHTML = `
+                            <div class="empty-state">
+                                <i class="fas fa-lock"></i>
+                                <h3>Akses Terbatas</h3>
+                                <p>Fitur ini hanya tersedia untuk pemilik tambak. Silakan daftar sebagai pemilik tambak untuk menggunakan fitur pencarian pengepul terdekat.</p>
+                            </div>
+                        `;
+                    } else if (response.status === 400) {
+                        container.innerHTML = `
+                            <div class="empty-state">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <h3>Lokasi Diperlukan</h3>
+                                <p>Untuk menggunakan fitur pencarian pengepul terdekat, silakan update lokasi Anda terlebih dahulu.</p>
+                                <button class="btn btn-primary" onclick="getCurrentLocation()">
+                                    <i class="fas fa-location-arrow"></i> Update Lokasi
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        container.innerHTML = `
+                            <div class="empty-state">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <h3>Gagal Memuat Data</h3>
+                                <p>${errorData.message || 'Terjadi kesalahan saat memuat pengepul terdekat'}</p>
+                                <button class="btn btn-secondary" onclick="loadNearestCollectors()">
+                                    <i class="fas fa-refresh"></i> Coba Lagi
+                                </button>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading nearest collectors:', error);
+                document.getElementById('nearestCollectorsContainer').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Terjadi Kesalahan</h3>
+                        <p>Gagal memuat pengepul terdekat. Silakan coba lagi.</p>
+                        <button class="btn btn-secondary" onclick="loadNearestCollectors()">
+                            <i class="fas fa-refresh"></i> Coba Lagi
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function displayNearestCollectors() {
+            const container = document.getElementById('nearestCollectorsContainer');
+
+            if (nearestCollectors.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <h3>Tidak Ada Pengepul Terdekat</h3>
+                        <p>Tidak ada pengepul yang ditemukan dalam radius pencarian Anda. Coba perluas jarak pencarian atau ubah filter.</p>
+                        <button class="btn btn-secondary" onclick="document.getElementById('maxDistanceFilter').value = Math.min(parseInt(document.getElementById('maxDistanceFilter').value) + 50, 500); loadNearestCollectors()">
+                            <i class="fas fa-search-plus"></i> Perluas Pencarian
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = nearestCollectors.map(collector => `
+                <div class="collector-card">
+                    <div class="card-image">
+                        <img src="${collector.foto ? '/storage/' + collector.foto : '/images/default-collector.jpg'}" 
+                             alt="${collector.nama_usaha}"
+                             onerror="this.src='/images/default-collector.jpg'">
+                        <div class="status-badge ${collector.status}">
+                            ${collector.status === 'aktif' ? 'Aktif' : 'Tidak Aktif'}
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <h3>${collector.nama_usaha}</h3>
+                        <p><i class="fas fa-user"></i> ${collector.user?.name || 'Pengepul'}</p>
+                        <p><i class="fas fa-phone"></i> ${collector.no_telepon}</p>
+                        <p><i class="fas fa-map-marker-alt"></i> ${collector.alamat}</p>
+                        <p><i class="fas fa-fish"></i> ${Array.isArray(collector.jenis_ikan_diterima) ? collector.jenis_ikan_diterima.join(', ') : (collector.jenis_ikan_diterima || 'Semua jenis ikan')}</p>
+                        <p><i class="fas fa-money-bill-wave"></i> Rp ${parseInt(collector.rate_per_kg || 0).toLocaleString('id-ID')}/kg</p>
+                        <p><i class="fas fa-weight"></i> Kapasitas: ${collector.kapasitas_maximum} kg</p>
+                        <p><i class="fas fa-clock"></i> ${collector.jam_operasional}</p>
+                        
+                        <div class="distance-info">
+                            <i class="fas fa-route"></i> 
+                            <strong>${collector.distance_formatted || 'Jarak tidak diketahui'}</strong>
+                        </div>
+                        
+                        <div class="card-actions">
+                            <button class="btn btn-secondary" onclick="viewCollector(${collector.id})">
+                                <i class="fas fa-eye"></i> Lihat Detail
+                            </button>
+                            <button class="btn btn-primary" onclick="openAppointmentModal(${collector.id}, '${collector.nama_usaha}')">
+                                <i class="fas fa-calendar-plus"></i> Buat Janji
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateLocationInfo(coordinates, searchRadius) {
+            const locationInfo = document.getElementById('locationInfo');
+            const locationText = document.getElementById('userLocationText');
+            
+            if (coordinates && coordinates.latitude && coordinates.longitude) {
+                locationText.innerHTML = `
+                    <strong>Koordinat:</strong> ${coordinates.latitude.toFixed(6)}, ${coordinates.longitude.toFixed(6)}<br>
+                    <strong>Radius Pencarian:</strong> ${searchRadius}
+                `;
+                locationInfo.style.display = 'block';
+            } else {
+                locationInfo.style.display = 'none';
+            }
+        }
+
+        async function getCurrentLocation() {
+            if (!navigator.geolocation) {
+                alert('Geolocation tidak didukung oleh browser Anda');
+                return;
+            }
+
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 300000 // 5 minutes
+            };
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude, longitude } = position.coords;
+                    
+                    try {
+                        const token = getToken();
+                        const response = await fetch('/api/user', {
+                            method: 'PUT',
+                            headers: {
+                                'Authorization': 'Bearer ' + token,
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                latitude: latitude,
+                                longitude: longitude
+                            })
+                        });
+
+                        if (response.ok) {
+                            userLocation = { latitude, longitude };
+                            alert('Lokasi berhasil diperbarui! Sekarang Anda dapat mencari pengepul terdekat.');
+                            loadNearestCollectors();
+                        } else {
+                            const errorData = await safeParseJSON(response);
+                            alert('Gagal memperbarui lokasi: ' + (errorData.message || 'Terjadi kesalahan'));
+                        }
+                    } catch (error) {
+                        console.error('Error updating location:', error);
+                        alert('Terjadi kesalahan saat memperbarui lokasi');
+                    }
+                },
+                (error) => {
+                    let errorMessage = 'Gagal mendapatkan lokasi: ';
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage += 'Akses lokasi ditolak. Silakan izinkan akses lokasi di browser Anda.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage += 'Informasi lokasi tidak tersedia.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage += 'Waktu permintaan lokasi habis.';
+                            break;
+                        default:
+                            errorMessage += 'Terjadi kesalahan yang tidak diketahui.';
+                            break;
+                    }
+                    alert(errorMessage);
+                },
+                options
+            );
         }
 
         // Close modal when clicking outside

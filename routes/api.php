@@ -101,6 +101,7 @@ Route::post('/webhooks/xendit', [PaymentController::class, 'handleWebhook']);
     
     // Collector routes
     Route::apiResource('collectors', CollectorController::class);
+    Route::get('/collectors/nearest', [CollectorController::class, 'getNearestCollectors']);
     Route::get('/collectors/{id}/nearby-fish-farms', [CollectorController::class, 'getNearbyFishFarms']);
     Route::get('/collectors/{id}/pending-appointments', [CollectorController::class, 'getPendingAppointments']);
     Route::put('/collectors/{id}/appointments/{appointmentId}', [CollectorController::class, 'handleAppointment']);

@@ -61,6 +61,13 @@ class FishFarmController extends Controller
     public function store(Request $request)
     {
         try {
+            $user = Auth::user();
+            
+            // Only allow pemilik_tambak to create fish farms
+            if (!$user->isPemilikTambak() && !$user->isAdmin()) {
+                return $this->error('Unauthorized - Only fish farm owners can create fish farms', 403);
+            }
+
             $validator = Validator::make($request->all(), [
                 'nama' => 'required|string|max:255',
                 'banyak_bibit' => 'required|integer|min:1',

@@ -27,6 +27,9 @@ class User extends Authenticatable
         'email',
         'password',
         'phone',
+        'role',
+        'latitude',
+        'longitude',
         'avatar',
     ];
 
@@ -50,6 +53,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'latitude' => 'decimal:8',
+            'longitude' => 'decimal:8',
         ];
     }
 
@@ -126,7 +131,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->hasRole('admin');
+        return $this->role === 'admin';
     }
 
     /**
@@ -134,7 +139,7 @@ class User extends Authenticatable
      */
     public function isPembeli(): bool
     {
-        return $this->hasRole('pembeli');
+        return $this->role === 'pembeli';
     }
 
     /**
@@ -142,7 +147,7 @@ class User extends Authenticatable
      */
     public function isPenjualBiasa(): bool
     {
-        return $this->hasRole('penjual_biasa');
+        return $this->role === 'penjual_biasa';
     }
 
     /**
@@ -150,7 +155,7 @@ class User extends Authenticatable
      */
     public function isPengepul(): bool
     {
-        return $this->hasRole('pengepul');
+        return $this->role === 'pengepul';
     }
 
     /**
@@ -158,7 +163,7 @@ class User extends Authenticatable
      */
     public function isPemilikTambak(): bool
     {
-        return $this->hasRole('pemilik_tambak');
+        return $this->role === 'pemilik_tambak';
     }
 
     /**
@@ -166,7 +171,7 @@ class User extends Authenticatable
      */
     public function isSeller(): bool
     {
-        return $this->hasAnyRole(['penjual_biasa', 'pemilik_tambak']);
+        return in_array($this->role, ['penjual_biasa', 'pemilik_tambak']);
     }
 
     /**
@@ -174,7 +179,7 @@ class User extends Authenticatable
      */
     public function canManageProducts(): bool
     {
-        return $this->hasAnyRole(['admin', 'penjual_biasa', 'pemilik_tambak']);
+        return in_array($this->role, ['admin', 'penjual_biasa', 'pemilik_tambak']);
     }
 
     /**
@@ -182,7 +187,7 @@ class User extends Authenticatable
      */
     public function canBulkPurchase(): bool
     {
-        return $this->hasAnyRole(['admin', 'pengepul']);
+        return in_array($this->role, ['admin', 'pengepul']);
     }
 
     /**
@@ -190,7 +195,7 @@ class User extends Authenticatable
      */
     public function canManageTambak(): bool
     {
-        return $this->hasAnyRole(['admin', 'pemilik_tambak']);
+        return in_array($this->role, ['admin', 'pemilik_tambak']);
     }
 
     /**
@@ -198,8 +203,7 @@ class User extends Authenticatable
      */
     public function getPrimaryRole(): ?string
     {
-        $role = $this->roles()->first();
-        return $role ? $role->name : null;
+        return $this->role;
     }
 
     /**
@@ -215,8 +219,7 @@ class User extends Authenticatable
             'pemilik_tambak' => 'Pemilik Tambak'
         ];
 
-        $primaryRole = $this->getPrimaryRole();
-        return $roleNames[$primaryRole] ?? 'Unknown';
+        return $roleNames[$this->role] ?? 'Unknown';
     }
 
     /**
@@ -224,8 +227,41 @@ class User extends Authenticatable
      */
     public function assignDefaultRole(): void
     {
-        if (!$this->hasAnyRole(['admin', 'pembeli', 'penjual_biasa', 'pengepul', 'pemilik_tambak'])) {
-            $this->assignRole('pembeli');
+        if (!$this->role) {
+            $this->role = 'pembeli';
+            $this->save();
         }
+    }
+
+    /**
+     * Check if user has coordinates
+     */
+    public function hasCoordinates(): bool
+    {
+        return !is_null($this->latitude) && !is_null($this->longitude);
+    }
+
+    /**
+     * Set user coordinates
+     */
+    public function setCoordinates(float $latitude, float $longitude): void
+    {
+        $this->latitude = $latitude;
+        $this->longitude = $longitude;
+        $this->save();
+    }
+
+    /**
+     * Get user coordinates as array
+     */
+    public function getCoordinates(): ?array
+    {
+        if ($this->hasCoordinates()) {
+            return [
+                'latitude' => (float) $this->latitude,
+                'longitude' => (float) $this->longitude
+            ];
+        }
+        return null;
     }
 }

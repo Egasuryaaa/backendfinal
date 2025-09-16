@@ -189,6 +189,69 @@
             box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.15);
         }
 
+        /* Select dropdown styling */
+        select.form-input {
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23666" d="M2 0L0 2h4zm0 5L0 3h4z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 12px;
+            cursor: pointer;
+        }
+
+        select.form-input option {
+            padding: 10px;
+        }
+
+        /* Location fields styling */
+        .location-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .location-btn {
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .location-btn:hover {
+            background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+            transform: translateY(-1px);
+        }
+
+        .location-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Role-based field styling */
+        #locationFields.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 300px;
+            }
+        }
+
         .password-toggle {
             position: absolute;
             right: 12px;
@@ -439,6 +502,68 @@
                         </div>
                     </div>
 
+                    <!-- Role Selection Field -->
+                    <div class="form-group">
+                        <label for="role" class="form-label">Peran/Role</label>
+                        <div class="input-container">
+                            <div class="input-icon">
+                                <i class="fas fa-user-tag"></i>
+                            </div>
+                            <select 
+                                id="role" 
+                                name="role" 
+                                class="form-input" 
+                                required
+                            >
+                                <option value="">Pilih peran Anda</option>
+                                <option value="pembeli">Pembeli - Beli ikan untuk konsumsi</option>
+                                <option value="penjual_biasa">Penjual Biasa - Jual ikan hasil tangkapan</option>
+                                <option value="pengepul">Pengepul - Kumpulkan dan distribusikan ikan</option>
+                                <option value="pemilik_tambak">Pemilik Tambak - Budidaya ikan</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Location Fields (Optional, will be shown based on role) -->
+                    <div id="locationFields" class="form-group" style="display: none;">
+                        <label class="form-label">Lokasi (Opsional)</label>
+                        <div class="location-container">
+                            <div class="form-group">
+                                <div class="input-container">
+                                    <div class="input-icon">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </div>
+                                    <input 
+                                        type="number" 
+                                        id="latitude" 
+                                        name="latitude" 
+                                        class="form-input" 
+                                        step="any"
+                                        placeholder="Latitude (contoh: -6.2088)"
+                                    >
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="input-container">
+                                    <div class="input-icon">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </div>
+                                    <input 
+                                        type="number" 
+                                        id="longitude" 
+                                        name="longitude" 
+                                        class="form-input" 
+                                        step="any"
+                                        placeholder="Longitude (contoh: 106.8456)"
+                                    >
+                                </div>
+                            </div>
+                            <button type="button" class="location-btn" onclick="getCurrentLocation()">
+                                <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Password Field -->
                     <div class="form-group">
                         <label for="password" class="form-label">Password</label>
@@ -618,12 +743,41 @@
                 return;
             }
             
+            // Validate role
+            const role = document.getElementById('role').value;
+            if (!role) {
+                document.getElementById('role').style.borderColor = '#F44336';
+                document.getElementById('role').style.borderWidth = '2px';
+                localShowAlert('Silakan pilih peran Anda', 'error');
+                return;
+            }
+            
+            // Get location data if provided
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
+            
             try {
                 // Show loading state
                 const submitBtn = document.querySelector('.submit-btn');
                 const originalText = submitBtn.innerText;
                 submitBtn.innerText = 'MENDAFTAR...';
                 submitBtn.disabled = true;
+                
+                // Prepare registration data
+                const registrationData = {
+                    name,
+                    email,
+                    phone,
+                    password,
+                    password_confirmation: passwordConfirmation,
+                    role
+                };
+
+                // Add coordinates if provided
+                if (latitude && longitude) {
+                    registrationData.latitude = parseFloat(latitude);
+                    registrationData.longitude = parseFloat(longitude);
+                }
                 
                 // Send registration request
                 const response = await fetch('/api/register', {
@@ -633,32 +787,21 @@
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
-                    body: JSON.stringify({
-                        name,
-                        email,
-                        phone,
-                        password,
-                        password_confirmation: passwordConfirmation
-                    })
+                    body: JSON.stringify(registrationData)
                 });
                 
                 const data = await response.json();
                 
                 if (response.ok && data.success) {
                     // Registration successful
-                    localShowAlert('Pendaftaran berhasil! Mengarahkan ke halaman utama...', 'success');
-                    
-                    // Store token using auth.js functions if available
-                    if (window.setAuthToken && data.data.access_token) {
-                        window.setAuthToken(data.data.access_token, false); // Don't remember for registration
-                    }
+                    localShowAlert('Pendaftaran berhasil! Silakan login dengan akun Anda.', 'success');
                     
                     // Reset form
                     document.getElementById('registerForm').reset();
                     
-                    // Redirect to fishmarket page after a delay
+                    // Redirect to login page after a delay
                     setTimeout(() => {
-                        window.location.href = '/fishmarket';
+                        window.location.href = '/login';
                     }, 2000);
                 } else {
                     // Registration failed
@@ -736,6 +879,81 @@
                 this.style.borderWidth = '';
             }
         });
+        
+        // Role selection handler
+        document.getElementById('role').addEventListener('change', function() {
+            const role = this.value;
+            const locationFields = document.getElementById('locationFields');
+            
+            // Show location fields for roles that benefit from location data
+            if (role === 'pengepul' || role === 'pemilik_tambak') {
+                locationFields.style.display = 'block';
+                locationFields.classList.add('show');
+            } else {
+                locationFields.style.display = 'none';
+                locationFields.classList.remove('show');
+                // Clear location fields when hiding
+                document.getElementById('latitude').value = '';
+                document.getElementById('longitude').value = '';
+            }
+        });
+
+        // Location functionality
+        function getCurrentLocation() {
+            if (!navigator.geolocation) {
+                localShowAlert('Geolocation tidak didukung oleh browser Anda', 'error');
+                return;
+            }
+
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 300000 // 5 minutes
+            };
+
+            // Show loading state
+            const locationBtn = document.querySelector('.location-btn');
+            const originalText = locationBtn.innerHTML;
+            locationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mendapatkan Lokasi...';
+            locationBtn.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    document.getElementById('latitude').value = latitude.toFixed(6);
+                    document.getElementById('longitude').value = longitude.toFixed(6);
+                    
+                    localShowAlert('Lokasi berhasil didapatkan!', 'success');
+                    
+                    // Reset button state
+                    locationBtn.innerHTML = originalText;
+                    locationBtn.disabled = false;
+                },
+                (error) => {
+                    let errorMessage = 'Gagal mendapatkan lokasi: ';
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage += 'Akses lokasi ditolak. Silakan izinkan akses lokasi di browser Anda.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage += 'Informasi lokasi tidak tersedia.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage += 'Waktu permintaan lokasi habis.';
+                            break;
+                        default:
+                            errorMessage += 'Terjadi kesalahan yang tidak diketahui.';
+                            break;
+                    }
+                    localShowAlert(errorMessage, 'error');
+                    
+                    // Reset button state
+                    locationBtn.innerHTML = originalText;
+                    locationBtn.disabled = false;
+                },
+                options
+            );
+        }
         
         // Focus first input on page load
         document.addEventListener('DOMContentLoaded', function() {

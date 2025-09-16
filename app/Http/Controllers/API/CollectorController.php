@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Collector;
 use App\Models\FishFarm;
 use App\Models\Appointment;
+use App\Models\User;
 use App\Services\WhatsAppService;
+use App\Services\LocationService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -61,6 +63,13 @@ class CollectorController extends Controller
     public function store(Request $request)
     {
         try {
+            $user = Auth::user();
+            
+            // Only allow pengepul to create collector businesses
+            if (!$user->isPengepul() && !$user->isAdmin()) {
+                return $this->error('Unauthorized - Only collectors can create collector businesses', 403);
+            }
+
             $validator = Validator::make($request->all(), [
                 'nama_usaha' => 'required|string|max:255',
                 'lokasi_koordinat' => 'required|array',
@@ -357,6 +366,111 @@ class CollectorController extends Controller
             return $this->success($appointment, 'Appointment completed successfully');
         } catch (\Exception $e) {
             return $this->error('Failed to complete appointment', 500, ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Get nearest collectors for fish farm owners
+     */
+    public function getNearestCollectors(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            
+            // Only allow pemilik_tambak to access this endpoint
+            if (!$user->isPemilikTambak()) {
+                return $this->error('Unauthorized - Only fish farm owners can access this endpoint', 403);
+            }
+
+            // Validate user has coordinates
+            if (!$user->hasCoordinates()) {
+                return $this->error('Your location coordinates are required to find nearest collectors', 400);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'max_distance' => 'nullable|numeric|min:1|max:500',
+                'fish_type' => 'nullable|string',
+                'min_rate' => 'nullable|numeric|min:0',
+                'max_rate' => 'nullable|numeric|min:0',
+                'min_capacity' => 'nullable|numeric|min:1',
+                'per_page' => 'nullable|integer|min:1|max:100'
+            ]);
+
+            if ($validator->fails()) {
+                return $this->error('Validation failed', 422, $validator->errors());
+            }
+
+            $maxDistance = $request->get('max_distance', 50); // Default 50km
+            $perPage = $request->get('per_page', 10);
+
+            // Get collectors with users that have coordinates
+            $collectorsQuery = Collector::with('user')
+                ->whereHas('user', function ($query) {
+                    $query->whereNotNull('latitude')
+                          ->whereNotNull('longitude');
+                })
+                ->where('status', 'aktif');
+
+            // Filter by fish type if specified
+            if ($request->has('fish_type')) {
+                $collectorsQuery->whereJsonContains('jenis_ikan_diterima', $request->fish_type);
+            }
+
+            // Filter by rate range
+            if ($request->has('min_rate')) {
+                $collectorsQuery->where('rate_per_kg', '>=', $request->min_rate);
+            }
+            if ($request->has('max_rate')) {
+                $collectorsQuery->where('rate_per_kg', '<=', $request->max_rate);
+            }
+
+            // Filter by capacity
+            if ($request->has('min_capacity')) {
+                $collectorsQuery->where('kapasitas_maximum', '>=', $request->min_capacity);
+            }
+
+            $collectors = $collectorsQuery->get();
+
+            // Calculate distances and filter by max distance
+            $collectorsWithDistance = LocationService::addDistanceToUsers($user, $collectors->map(function($collector) {
+                $collector->user->distance = null; // Will be calculated
+                return $collector;
+            }));
+
+            // Filter by distance and sort
+            $nearbyCollectors = $collectorsWithDistance->filter(function ($collector) use ($maxDistance) {
+                $distance = LocationService::calculateDistanceBetweenUsers(
+                    Auth::user(), 
+                    $collector->user
+                );
+                $collector->distance = $distance;
+                $collector->distance_formatted = LocationService::formatDistance($distance);
+                return $distance !== null && $distance <= $maxDistance;
+            })->sortBy('distance')->values();
+
+            // Paginate results manually
+            $currentPage = $request->get('page', 1);
+            $offset = ($currentPage - 1) * $perPage;
+            $paginatedCollectors = $nearbyCollectors->slice($offset, $perPage)->values();
+
+            $pagination = [
+                'current_page' => (int) $currentPage,
+                'per_page' => (int) $perPage,
+                'total' => $nearbyCollectors->count(),
+                'last_page' => ceil($nearbyCollectors->count() / $perPage),
+                'from' => $offset + 1,
+                'to' => min($offset + $perPage, $nearbyCollectors->count())
+            ];
+
+            return $this->success([
+                'data' => $paginatedCollectors,
+                'pagination' => $pagination,
+                'user_location' => $user->getCoordinates(),
+                'search_radius' => $maxDistance . ' km'
+            ], 'Nearest collectors retrieved successfully');
+
+        } catch (\Exception $e) {
+            return $this->error('Failed to retrieve nearest collectors', 500, ['error' => $e->getMessage()]);
         }
     }
 }
