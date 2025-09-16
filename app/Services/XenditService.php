@@ -51,7 +51,7 @@ class XenditService
                 'customer' => [
                     'given_names' => $data['customer_name'] ?? 'Customer',
                     'email' => $data['customer_email'] ?? 'customer@example.com',
-                    'mobile_number' => $data['customer_phone'] ?? '',
+                    'mobile_number' => $data['customer_phone'] && $data['customer_phone'] !== '' ? $data['customer_phone'] : '+6281234567890',
                 ],
                 'customer_notification_preference' => [
                     'invoice_created' => ['email'],

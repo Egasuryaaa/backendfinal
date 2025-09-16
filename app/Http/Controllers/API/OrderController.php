@@ -8,16 +8,25 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Cart;
 use App\Models\Product;
 use App\Models\Address;
+use App\Models\Payment;
+use App\Services\XenditService;
 use App\Http\Resources\OrderResource;
 use App\Http\Resources\OrderCollection;
 
 class OrderController extends Controller
 {
+    protected $xenditService;
+
+    public function __construct(XenditService $xenditService)
+    {
+        $this->xenditService = $xenditService;
+    }
     /**
      * Mendapatkan daftar pesanan pengguna.
      * PERBAIKAN: Eager loading yang konsisten
@@ -241,6 +250,8 @@ class OrderController extends Controller
             'metode_pengiriman' => 'required|string',
             'biaya_kirim' => 'required|numeric|min:0',
             'metode_pembayaran' => 'required|string',
+            'payment_method' => 'nullable|string|in:bank_transfer,e_wallet,retail,qris,credit_card',
+            'payment_channel' => 'nullable|string',
             'catatan' => 'nullable|string'
         ]);
         if ($validator->fails()) {
@@ -388,14 +399,84 @@ class OrderController extends Controller
                 }
             }
 
+            // Buat pembayaran Xendit jika metode pembayaran bukan COD
+            $paymentUrl = null;
+            $paymentId = null;
+            if ($request->metode_pembayaran !== 'cod' && $request->has('payment_method')) {
+                try {
+                    // Data untuk Xendit
+                    $paymentData = [
+                        'external_id' => 'ORDER_' . $order->id . '_' . time(),
+                        'amount' => $order->total,
+                        'description' => 'Pembayaran untuk Pesanan #' . $order->nomor_pesanan,
+                        'customer_name' => $user->name,
+                        'customer_email' => $user->email,
+                        'customer_phone' => $user->phone ?? '',
+                        'payment_method' => $request->payment_method,
+                        'payment_channel' => $request->payment_channel,
+                        'success_redirect_url' => config('app.url') . '/payment/success?order_id=' . $order->id,
+                        'failure_redirect_url' => config('app.url') . '/payment/failed?order_id=' . $order->id,
+                    ];
+
+                    // Buat invoice di Xendit
+                    $xenditResponse = $this->xenditService->createPayment($paymentData);
+
+                    if ($xenditResponse['success']) {
+                        // Simpan payment ke database
+                        $payment = Payment::create([
+                            'payment_id' => 'PAY_' . time() . '_' . Str::random(6),
+                            'order_id' => $order->id,
+                            'invoice_id' => $xenditResponse['data']['invoice_id'],
+                            'external_id' => $xenditResponse['data']['external_id'],
+                            'payment_method' => $request->payment_method ?? 'mixed',
+                            'payment_channel' => $request->payment_channel ?? '',
+                            'amount' => $order->total,
+                            'status' => Payment::STATUS_PENDING,
+                            'invoice_url' => $xenditResponse['data']['payment_url'],
+                            'expired_at' => $xenditResponse['data']['expired_at'],
+                        ]);
+
+                        $paymentUrl = $payment->invoice_url;
+                        $paymentId = $payment->uuid;
+
+                        Log::info('Payment created for order', [
+                            'order_id' => $order->id,
+                            'payment_id' => $payment->uuid,
+                            'invoice_url' => $paymentUrl
+                        ]);
+                    } else {
+                        Log::error('Failed to create Xendit payment', [
+                            'order_id' => $order->id,
+                            'error' => $xenditResponse['error']
+                        ]);
+                        // Tetap lanjutkan checkout meskipun payment gagal dibuat
+                        // User bisa membuat payment manual nanti
+                    }
+                } catch (\Exception $paymentError) {
+                    Log::error('Payment creation error during checkout', [
+                        'order_id' => $order->id,
+                        'error' => $paymentError->getMessage()
+                    ]);
+                    // Tetap lanjutkan checkout
+                }
+            }
+
             DB::commit();
 
             $order->load(['address', 'orderItems', 'orderItems.product', 'orderItems.seller']);
 
+            // Prepare response data
+            $responseData = [
+                'order' => new OrderResource($order),
+                'payment_url' => $paymentUrl,
+                'payment_id' => $paymentId,
+                'requires_payment' => $request->metode_pembayaran !== 'cod'
+            ];
+
             return response()->json([
                 'success' => true,
                 'message' => 'Checkout berhasil',
-                'data' => new OrderResource($order)
+                'data' => $responseData
             ], 201);
 
         } catch (\Exception $e) {
@@ -528,7 +609,10 @@ class OrderController extends Controller
         // Pastikan pengguna adalah penjual yang terkait dengan pesanan
         $isSellerInvolved = $order->orderItems->contains('penjual_id', $user->id);
 
-        if (!$isSellerInvolved && !$user->hasRole('admin')) {
+        // Check admin role using relationships
+        $hasAdminRole = $user->roles()->where('name', 'admin')->exists();
+
+        if (!$isSellerInvolved && !$hasAdminRole) {
             return response()->json([
                 'success' => false,
                 'message' => 'Anda tidak memiliki izin untuk mengubah status pesanan ini'
@@ -565,7 +649,7 @@ class OrderController extends Controller
 
                 // Kembalikan stok produk
                 foreach ($order->orderItems as $item) {
-                    if ($item->penjual_id === $user->id || $user->hasRole('admin')) {
+                    if ($item->penjual_id === $user->id || $hasAdminRole) {
                         $product = Product::find($item->produk_id);
                         if ($product) {
                             $product->stok += $item->jumlah;
@@ -708,57 +792,83 @@ class OrderController extends Controller
      */
     public function sellerOrders(Request $request)
     {
-        $user = $request->user();
+        try {
+            $user = $request->user();
 
-        if (!$user->hasRole('seller')) {
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+
+            // Check if user has seller role (seller = penjual_biasa in your system)
+            $hasSellerRole = $user->roles()->whereIn('name', ['seller', 'penjual_biasa', 'pemilik_tambak'])->exists();
+
+            if (!$hasSellerRole) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied. Only sellers can view orders.',
+                    'user_roles' => $user->roles->pluck('name')
+                ], 403);
+            }
+
+            // Optimized query: Get orders with seller's items only
+            $query = Order::whereHas('orderItems', function($q) use ($user) {
+                           $q->where('penjual_id', $user->id);
+                       })
+                       ->with([
+                           'user:id,name,email',
+                           'address:id,nama_penerima,alamat_lengkap,provinsi,kota',
+                           'orderItems' => function($q) use ($user) {
+                               // Only load items belonging to this seller
+                               $q->where('penjual_id', $user->id)
+                                 ->with('product:id,nama,gambar,harga');
+                           }
+                       ]);
+
+            // Filter berdasarkan status
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+            // Filter berdasarkan status pembayaran
+            if ($request->has('status_pembayaran')) {
+                $query->where('status_pembayaran', $request->status_pembayaran);
+            }
+
+            // Filter berdasarkan tanggal
+            if ($request->has('tanggal_dari') && $request->has('tanggal_sampai')) {
+                $query->whereBetween('created_at', [
+                    $request->tanggal_dari . ' 00:00:00',
+                    $request->tanggal_sampai . ' 23:59:59'
+                ]);
+            }
+
+            // Pengurutan - fix field name to 'total' not 'total_amount'
+            $sortField = $request->sort_by ?? 'created_at';
+            $sortDirection = $request->sort_direction ?? 'desc';
+
+            $allowedSortFields = ['created_at', 'total', 'status'];
+
+            if (in_array($sortField, $allowedSortFields)) {
+                $query->orderBy($sortField, $sortDirection);
+            }
+
+            // Paginasi
+            $perPage = $request->per_page ?? 10;
+            $orders = $query->paginate($perPage);
+
+            return response()->json([
+                'success' => true,
+                'data' => $orders
+            ]);
+
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized'
-            ], 403);
+                'message' => 'Internal server error: ' . $e->getMessage()
+            ], 500);
         }
-
-        $query = Order::whereHas('orderItems', function($q) use ($user) {
-                       $q->where('penjual_id', $user->id);
-                   })
-                   ->with(['user', 'address', 'orderItems' => function($q) use ($user) {
-                       $q->where('penjual_id', $user->id)->with('product');
-                   }]);
-
-        // Filter berdasarkan status
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter berdasarkan status pembayaran
-        if ($request->has('status_pembayaran')) {
-            $query->where('status_pembayaran', $request->status_pembayaran);
-        }
-
-        // Filter berdasarkan tanggal
-        if ($request->has('tanggal_dari') && $request->has('tanggal_sampai')) {
-            $query->whereBetween('created_at', [
-                $request->tanggal_dari . ' 00:00:00',
-                $request->tanggal_sampai . ' 23:59:59'
-            ]);
-        }
-
-        // Pengurutan
-        $sortField = $request->sort_by ?? 'created_at';
-        $sortDirection = $request->sort_direction ?? 'desc';
-
-        $allowedSortFields = ['created_at', 'total', 'status'];
-
-        if (in_array($sortField, $allowedSortFields)) {
-            $query->orderBy($sortField, $sortDirection);
-        }
-
-        // Paginasi
-        $perPage = $request->per_page ?? 10;
-        $orders = $query->paginate($perPage);
-
-        return response()->json([
-            'success' => true,
-            'data' => $orders
-        ]);
     }
 }

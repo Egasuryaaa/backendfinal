@@ -27,7 +27,7 @@ class RoleMiddleware
                     'message' => 'Unauthorized. Silahkan login terlebih dahulu.'
                 ], 401);
             }
-            
+
             return redirect()->route('login')->with('error', 'Silahkan login terlebih dahulu.');
         }
 
@@ -41,7 +41,8 @@ class RoleMiddleware
         // Check if user has any of the specified roles
         $hasRole = false;
         foreach ($roles as $role) {
-            if ($user->hasRole($role)) {
+            // Use direct relationship check instead of hasRole() method
+            if ($user->roles()->where('name', $role)->exists()) {
                 $hasRole = true;
                 break;
             }
@@ -49,28 +50,29 @@ class RoleMiddleware
 
         if (!$hasRole) {
             $rolesList = implode(', ', $roles);
-            
+            $userRoles = $user->roles()->pluck('name')->toArray();
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => "Akses ditolak. Role yang diperlukan: {$rolesList}",
                     'required_roles' => $roles,
-                    'user_roles' => $user->getRoleNames()->toArray()
+                    'user_roles' => $userRoles
                 ], 403);
             }
-            
+
             return redirect()->back()->with('error', "Akses ditolak. Anda memerlukan role: {$rolesList}");
         }
 
         return $next($request);
     }
 
-    /**
+        /**
      * Check if user has admin role
      */
     public static function isAdmin($user): bool
     {
-        return $user && $user->hasRole('admin');
+        return $user && $user->roles()->where('name', 'admin')->exists();
     }
 
     /**
@@ -78,15 +80,17 @@ class RoleMiddleware
      */
     public static function isPembeli($user): bool
     {
-        return $user && $user->hasRole('pembeli');
+        return $user && ($user->roles()->where('name', 'pembeli')->exists() ||
+                        $user->roles()->where('name', 'customer')->exists());
     }
 
     /**
-     * Check if user is penjual biasa
+     * Check if user is penjual biasa (seller)
      */
     public static function isPenjualBiasa($user): bool
     {
-        return $user && $user->hasRole('penjual_biasa');
+        return $user && ($user->roles()->where('name', 'penjual_biasa')->exists() ||
+                        $user->roles()->where('name', 'seller')->exists());
     }
 
     /**
@@ -94,7 +98,7 @@ class RoleMiddleware
      */
     public static function isPengepul($user): bool
     {
-        return $user && $user->hasRole('pengepul');
+        return $user && $user->roles()->where('name', 'pengepul')->exists();
     }
 
     /**
@@ -102,15 +106,17 @@ class RoleMiddleware
      */
     public static function isPemilikTambak($user): bool
     {
-        return $user && $user->hasRole('pemilik_tambak');
+        return $user && $user->roles()->where('name', 'pemilik_tambak')->exists();
     }
 
     /**
-     * Check if user is any type of seller
+     * Check if user is any type of seller (penjual_biasa = seller)
      */
     public static function isSeller($user): bool
     {
-        return $user && $user->hasAnyRole(['penjual_biasa', 'pemilik_tambak']);
+        return $user && ($user->roles()->where('name', 'penjual_biasa')->exists() ||
+                        $user->roles()->where('name', 'seller')->exists() ||
+                        $user->roles()->where('name', 'pemilik_tambak')->exists());
     }
 
     /**
@@ -118,7 +124,10 @@ class RoleMiddleware
      */
     public static function canManageProducts($user): bool
     {
-        return $user && $user->hasAnyRole(['admin', 'penjual_biasa', 'pemilik_tambak']);
+        return $user && ($user->roles()->where('name', 'admin')->exists() ||
+                        $user->roles()->where('name', 'penjual_biasa')->exists() ||
+                        $user->roles()->where('name', 'seller')->exists() ||
+                        $user->roles()->where('name', 'pemilik_tambak')->exists());
     }
 
     /**
@@ -126,7 +135,8 @@ class RoleMiddleware
      */
     public static function canBulkPurchase($user): bool
     {
-        return $user && $user->hasAnyRole(['admin', 'pengepul']);
+        return $user && ($user->roles()->where('name', 'admin')->exists() ||
+                        $user->roles()->where('name', 'pengepul')->exists());
     }
 
     /**
@@ -134,7 +144,8 @@ class RoleMiddleware
      */
     public static function canManageTambak($user): bool
     {
-        return $user && $user->hasAnyRole(['admin', 'pemilik_tambak']);
+        return $user && ($user->roles()->where('name', 'admin')->exists() ||
+                        $user->roles()->where('name', 'pemilik_tambak')->exists());
     }
 
     /**
@@ -143,13 +154,15 @@ class RoleMiddleware
     public static function getRoleLevel($user): int
     {
         if (!$user) return 0;
-        
-        if ($user->hasRole('admin')) return 100;
-        if ($user->hasRole('pemilik_tambak')) return 80;
-        if ($user->hasRole('pengepul')) return 70;
-        if ($user->hasRole('penjual_biasa')) return 60;
-        if ($user->hasRole('pembeli')) return 40;
-        
+
+        if ($user->roles()->where('name', 'admin')->exists()) return 100;
+        if ($user->roles()->where('name', 'pemilik_tambak')->exists()) return 80;
+        if ($user->roles()->where('name', 'pengepul')->exists()) return 70;
+        if ($user->roles()->where('name', 'penjual_biasa')->exists() ||
+            $user->roles()->where('name', 'seller')->exists()) return 60;
+        if ($user->roles()->where('name', 'pembeli')->exists() ||
+            $user->roles()->where('name', 'customer')->exists()) return 40;
+
         return 0;
     }
 }

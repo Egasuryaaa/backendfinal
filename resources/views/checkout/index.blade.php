@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Checkout - IwakMart</title>
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+
     <!-- Auth Script -->
     <script src="/js/auth.js"></script>
-    
+
     <style>
         /* General Styles */
         * {
@@ -24,7 +24,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Inter', sans-serif;
             background: #F0F8FF;
@@ -210,7 +210,7 @@
         .option-list .option-item {
             border: 1px solid #ddd;
             border-radius: 12px;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             transition: all 0.3s ease;
         }
         .option-list .option-item.selected {
@@ -238,6 +238,26 @@
             margin-left: auto;
             font-weight: bold;
             color: #4CAF50;
+        }
+
+        /* Payment Groups */
+        .payment-group {
+            margin-bottom: 20px;
+        }
+        .payment-group h4 {
+            margin-bottom: 12px;
+            color: #333;
+            font-size: 16px;
+            font-weight: 600;
+            padding-left: 4px;
+        }
+        .payment-channels .option-item {
+            margin-bottom: 8px;
+        }
+        .payment-icon {
+            font-size: 20px;
+            min-width: 24px;
+            text-align: center;
         }
 
         /* Notes */
@@ -502,6 +522,9 @@
             let selectedAddressId = null;
             let selectedShippingMethod = 'reguler';
             let selectedPaymentMethod = 'cod';
+            let selectedPaymentType = 'cod';
+            let selectedXenditMethod = '';
+            let selectedPaymentChannel = '';
             let shippingCost = 10000;
             let isLoading = false;
 
@@ -517,11 +540,11 @@
                 }
                 cartItems = JSON.parse(itemsFromStorage);
                 document.getElementById('itemCountHeader').textContent = `${cartItems.length} item dipilih`;
-                
+
                 renderOrderSummary();
                 fetchAddresses();
                 renderShippingMethods();
-                renderPaymentMethods();
+                fetchAndRenderPaymentMethods();
                 updateTotals();
 
                 document.getElementById('loadingState').style.display = 'none';
@@ -546,17 +569,17 @@
                 try {
                     // Get auth token from auth.js
                     const token = getAuthToken ? getAuthToken() : null;
-                    
+
                     const headers = {
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     };
-                    
+
                     // Add Authorization header if token exists
                     if (token) {
                         headers['Authorization'] = `Bearer ${token}`;
                     }
-                    
+
                     const response = await fetch('/api/addresses', {
                         headers: headers
                     });
@@ -597,7 +620,7 @@
                     </div>
                 `).join('');
             }
-            
+
             window.selectAddress = (id) => {
                 selectedAddressId = id;
                 renderAddresses();
@@ -633,14 +656,110 @@
                 updateTotals();
             };
 
-            function renderPaymentMethods() {
+            async function fetchAndRenderPaymentMethods() {
+                try {
+                    const response = await fetch('/api/payment/methods');
+                    const data = await response.json();
+
+                    if (data.success) {
+                        renderPaymentMethods(data.data);
+                    } else {
+                        console.error('Failed to fetch payment methods');
+                        renderDefaultPaymentMethods();
+                    }
+                } catch (error) {
+                    console.error('Error fetching payment methods:', error);
+                    renderDefaultPaymentMethods();
+                }
+            }
+
+            function renderPaymentMethods(paymentData) {
+                const container = document.getElementById('paymentMethodList');
+                let methodsHtml = '';
+
+                // COD Option
+                methodsHtml += `
+                    <div class="payment-group" style="margin-bottom: 20px;">
+                        <h4 style="margin-bottom: 12px; color: #333; font-size: 16px; font-weight: 600;">💰 Bayar di Tempat</h4>
+                        <div class="option-item ${selectedPaymentMethod === 'cod' ? 'selected' : ''}" onclick="selectPayment('cod', 'cod', '', '')">
+                            <div class="option-radio">
+                                <label>
+                                    <input type="radio" name="payment" value="cod" ${selectedPaymentMethod === 'cod' ? 'checked' : ''}>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="font-size: 24px;">💵</div>
+                                        <div>
+                                            <div class="option-title">Cash on Delivery (COD)</div>
+                                            <div class="option-subtitle">Bayar saat barang diterima</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Xendit Payment Methods
+                paymentData.forEach(method => {
+                    if (method.is_active) {
+                        const iconMap = {
+                            'bank_transfer': '🏦',
+                            'e_wallet': '💳',
+                            'retail': '🏪',
+                            'qris': '📱',
+                            'credit_card': '💳'
+                        };
+
+                        methodsHtml += `
+                            <div class="payment-group" style="margin-bottom: 20px;">
+                                <h4 style="margin-bottom: 12px; color: #333; font-size: 16px; font-weight: 600;">${iconMap[method.id] || '💰'} ${method.name}</h4>
+                                <div class="payment-channels">
+                        `;
+
+                        method.channels.forEach(channel => {
+                            const channelId = `${method.id}_${channel.code}`;
+                            methodsHtml += `
+                                <div class="option-item ${selectedPaymentMethod === channelId ? 'selected' : ''}" onclick="selectPayment('${channelId}', 'xendit', '${method.id}', '${channel.code}')" style="margin-bottom: 8px;">
+                                    <div class="option-radio">
+                                        <label>
+                                            <input type="radio" name="payment" value="${channelId}" ${selectedPaymentMethod === channelId ? 'checked' : ''}>
+                                            <div style="display: flex; align-items: center; gap: 12px;">
+                                                <div class="payment-icon" style="font-size: 20px;">
+                                                    ${getPaymentIcon(channel.code)}
+                                                </div>
+                                                <div>
+                                                    <div class="option-title">${channel.name}</div>
+                                                    <div class="option-subtitle">${getPaymentDescription(method.id, channel.code)}</div>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        methodsHtml += `
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                container.innerHTML = methodsHtml;
+            }
+
+            function renderDefaultPaymentMethods() {
                 const methods = [
-                    { id: 'cod', name: 'Cash on Delivery (COD)', desc: 'Bayar saat barang diterima' },
-                    { id: 'transfer', name: 'Transfer Bank', desc: 'Transfer ke rekening toko' }
+                    { id: 'cod', name: 'Cash on Delivery (COD)', desc: 'Bayar saat barang diterima', type: 'cod' },
+                    { id: 'bank_transfer_BCA', name: 'Bank BCA', desc: 'Transfer via Virtual Account BCA', type: 'xendit', payment_method: 'bank_transfer', payment_channel: 'BCA' },
+                    { id: 'bank_transfer_BRI', name: 'Bank BRI', desc: 'Transfer via Virtual Account BRI', type: 'xendit', payment_method: 'bank_transfer', payment_channel: 'BRI' },
+                    { id: 'e_wallet_OVO', name: 'OVO', desc: 'Bayar dengan OVO', type: 'xendit', payment_method: 'e_wallet', payment_channel: 'OVO' },
+                    { id: 'e_wallet_DANA', name: 'DANA', desc: 'Bayar dengan DANA', type: 'xendit', payment_method: 'e_wallet', payment_channel: 'DANA' },
+                    { id: 'qris_QRIS', name: 'QRIS', desc: 'Scan QR Code untuk bayar', type: 'xendit', payment_method: 'qris', payment_channel: 'QRIS' }
                 ];
+
                 const container = document.getElementById('paymentMethodList');
                 container.innerHTML = methods.map(method => `
-                    <div class="option-item ${selectedPaymentMethod === method.id ? 'selected' : ''}" onclick="selectPayment('${method.id}')">
+                    <div class="option-item ${selectedPaymentMethod === method.id ? 'selected' : ''}" onclick="selectPayment('${method.id}', '${method.type}', '${method.payment_method || ''}', '${method.payment_channel || ''}')">
                         <div class="option-radio">
                             <label>
                                 <input type="radio" name="payment" value="${method.id}" ${selectedPaymentMethod === method.id ? 'checked' : ''}>
@@ -654,9 +773,70 @@
                 `).join('');
             }
 
-            window.selectPayment = (id) => {
+            function renderPaymentMethodsSelection() {
+                // Re-render untuk update selection
+                fetchAndRenderPaymentMethods();
+            }
+
+            function getPaymentIcon(channelCode) {
+                const icons = {
+                    'BCA': '🔵',
+                    'BRI': '🟢',
+                    'BNI': '🟠',
+                    'MANDIRI': '🔴',
+                    'BSI': '🟢',
+                    'CIMB': '🔴',
+                    'PERMATA': '⚫',
+                    'OVO': '🟣',
+                    'DANA': '🔵',
+                    'LINKAJA': '🔴',
+                    'SHOPEEPAY': '🟠',
+                    'ALFAMART': '🔴',
+                    'INDOMARET': '🔵',
+                    'QRIS': '📱',
+                    'CREDIT_CARD': '💳'
+                };
+                return icons[channelCode] || '💰';
+            }
+
+            function getPaymentDescription(methodType, channelCode) {
+                const descriptions = {
+                    'bank_transfer': {
+                        'BCA': 'Transfer via Virtual Account BCA',
+                        'BRI': 'Transfer via Virtual Account BRI',
+                        'BNI': 'Transfer via Virtual Account BNI',
+                        'MANDIRI': 'Transfer via Virtual Account Mandiri',
+                        'BSI': 'Transfer via Virtual Account BSI',
+                        'CIMB': 'Transfer via Virtual Account CIMB',
+                        'PERMATA': 'Transfer via Virtual Account Permata'
+                    },
+                    'e_wallet': {
+                        'OVO': 'Bayar dengan saldo OVO',
+                        'DANA': 'Bayar dengan saldo DANA',
+                        'LINKAJA': 'Bayar dengan saldo LinkAja',
+                        'SHOPEEPAY': 'Bayar dengan saldo ShopeePay'
+                    },
+                    'retail': {
+                        'ALFAMART': 'Bayar di kasir Alfamart',
+                        'INDOMARET': 'Bayar di kasir Indomaret'
+                    },
+                    'qr_code': {
+                        'QRIS': 'Scan QR code dengan aplikasi e-wallet'
+                    },
+                    'credit_card': {
+                        'CREDIT_CARD': 'Visa, Mastercard, JCB'
+                    }
+                };
+
+                return descriptions[methodType]?.[channelCode] || 'Metode pembayaran digital';
+            }
+
+            window.selectPayment = (id, type, paymentMethod, paymentChannel) => {
                 selectedPaymentMethod = id;
-                renderPaymentMethods();
+                selectedPaymentType = type || 'cod';
+                selectedXenditMethod = paymentMethod || '';
+                selectedPaymentChannel = paymentChannel || '';
+                renderPaymentMethodsSelection();
             };
 
             function updateTotals() {
@@ -688,21 +868,27 @@
                     catatan: document.getElementById('notes').value
                 };
 
+                // Tambahkan data Xendit jika bukan COD
+                if (selectedPaymentType === 'xendit') {
+                    checkoutData.payment_method = selectedXenditMethod;
+                    checkoutData.payment_channel = selectedPaymentChannel;
+                }
+
                 try {
                     // Get auth token from auth.js
                     const token = getAuthToken ? getAuthToken() : null;
-                    
+
                     const headers = {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     };
-                    
+
                     // Add Authorization header if token exists
                     if (token) {
                         headers['Authorization'] = `Bearer ${token}`;
                     }
-                    
+
                     const response = await fetch('/api/orders/checkout', {
                         method: 'POST',
                         headers: headers,
@@ -712,7 +898,22 @@
                     const data = await response.json();
                     if (response.ok && data.success) {
                         sessionStorage.removeItem('checkoutItems');
-                        document.getElementById('successModal').classList.add('show');
+
+                        // Jika ada payment_url, redirect ke Xendit
+                        if (data.data.payment_url && data.data.requires_payment) {
+                            // Simpan order info untuk redirect nanti
+                            sessionStorage.setItem('checkout_success', JSON.stringify({
+                                order_id: data.data.order.id,
+                                order_number: data.data.order.nomor_pesanan,
+                                payment_id: data.data.payment_id
+                            }));
+
+                            // Redirect ke halaman pembayaran Xendit
+                            window.location.href = data.data.payment_url;
+                        } else {
+                            // COD atau tidak perlu payment, tampilkan modal sukses
+                            document.getElementById('successModal').classList.add('show');
+                        }
                     } else {
                         alert(`Checkout gagal: ${data.message || 'Terjadi kesalahan'}`);
                     }
@@ -724,7 +925,7 @@
                     updateTotals();
                 }
             }
-            
+
             document.getElementById('processCheckoutBtn').addEventListener('click', processCheckout);
 
             // Init

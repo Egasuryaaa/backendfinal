@@ -37,7 +37,7 @@ class OrderResource extends JsonResource
             'tanggal_pesan_formatted' => $this->created_at->translatedFormat('d F Y H:i'),
             'tanggal_selesai' => $this->tanggal_selesai ? $this->tanggal_selesai->format('Y-m-d H:i:s') : null,
             'tanggal_selesai_formatted' => $this->tanggal_selesai ? $this->tanggal_selesai->translatedFormat('d F Y H:i') : null,
-            
+
             // User/Pembeli
             'user' => $this->whenLoaded('user', function() {
                 return [
@@ -47,7 +47,7 @@ class OrderResource extends JsonResource
                     'phone' => $this->user->phone
                 ];
             }),
-            
+
             // Alamat pengiriman
             'address' => $this->whenLoaded('address', function() {
                 return [
@@ -64,7 +64,7 @@ class OrderResource extends JsonResource
                     'catatan_alamat' => $this->address->catatan_alamat
                 ];
             }),
-            
+
             // Order items
             'items' => $this->whenLoaded('orderItems', function() {
                 return $this->orderItems->map(function($item) {
@@ -78,24 +78,20 @@ class OrderResource extends JsonResource
                         'harga_formatted' => 'Rp ' . number_format($item->harga, 0, ',', '.'),
                         'subtotal' => $item->subtotal,
                         'subtotal_formatted' => 'Rp ' . number_format($item->subtotal, 0, ',', '.'),
-                        'product' => $item->whenLoaded('product', function() use ($item) {
-                            return [
-                                'id' => $item->product->id,
-                                'nama' => $item->product->nama,
-                                'gambar' => $item->product->gambar,
-                                'jenis_ikan' => $item->product->jenis_ikan
-                            ];
-                        }),
-                        'seller' => $item->whenLoaded('seller', function() use ($item) {
-                            return [
-                                'id' => $item->seller->id,
-                                'name' => $item->seller->name
-                            ];
-                        })
+                        'product' => $item->product ? [
+                            'id' => $item->product->id,
+                            'nama' => $item->product->nama,
+                            'gambar' => $item->product->gambar,
+                            'jenis_ikan' => $item->product->jenis_ikan
+                        ] : null,
+                        'seller' => $item->seller ? [
+                            'id' => $item->seller->id,
+                            'name' => $item->seller->name
+                        ] : null
                     ];
                 });
             }),
-            
+
             // Informasi pembayaran
             'payments' => $this->whenLoaded('payments', function() {
                 return $this->payments->map(function($payment) {
@@ -111,16 +107,16 @@ class OrderResource extends JsonResource
                     ];
                 });
             }),
-            
+
             'can_cancel' => in_array($this->status, ['menunggu', 'diproses']),
             'can_complete' => $this->status === 'dikirim',
             'can_review' => $this->status === 'selesai' && !$this->hasReviewed(),
-            
+
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s')
         ];
     }
-    
+
     /**
      * Get human-readable status label.
      *
@@ -135,10 +131,10 @@ class OrderResource extends JsonResource
             'selesai' => 'Selesai',
             'dibatalkan' => 'Dibatalkan'
         ];
-        
+
         return $labels[$this->status] ?? $this->status;
     }
-    
+
     /**
      * Get human-readable payment status label.
      *
@@ -152,10 +148,10 @@ class OrderResource extends JsonResource
             'ditolak' => 'Pembayaran Ditolak',
             'dibatalkan' => 'Dibatalkan'
         ];
-        
+
         return $labels[$this->status_pembayaran] ?? $this->status_pembayaran;
     }
-    
+
     /**
      * Get human-readable payment method label.
      *
@@ -169,10 +165,10 @@ class OrderResource extends JsonResource
             'cod' => 'Bayar di Tempat (COD)',
             'virtual_account' => 'Virtual Account'
         ];
-        
+
         return $labels[$this->metode_pembayaran] ?? $this->metode_pembayaran;
     }
-    
+
     /**
      * Check if user has reviewed this order.
      *
@@ -183,16 +179,16 @@ class OrderResource extends JsonResource
         if (!$this->orderItems->first()) {
             return false;
         }
-        
+
         // Mencari apakah ada review dari user untuk produk dalam pesanan ini
         $userId = $this->user_id;
         $productIds = $this->orderItems->pluck('produk_id')->toArray();
-        
+
         // Note: This assumes you have a Review model with user_id and product_id columns
         $hasReview = \App\Models\Review::where('user_id', $userId)
                                        ->whereIn('produk_id', $productIds)
                                        ->exists();
-        
+
         return $hasReview;
     }
 }

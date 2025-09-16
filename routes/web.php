@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\Web\PaymentPageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,6 +24,11 @@ Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
+// Route List Documentation
+Route::get('/route-list', function () {
+    return view('route-list');
+})->name('route-list');
+
 // Authentication pages (views only)
 Route::get('/login', function () {
     return view('auth.login');
@@ -42,7 +48,7 @@ Route::get('/auth-test', function () {
             'method' => 'session'
         ]);
     }
-    
+
     // Check Sanctum token auth
     if (Auth::guard('sanctum')->check()) {
         return response()->json([
@@ -51,7 +57,7 @@ Route::get('/auth-test', function () {
             'method' => 'token'
         ]);
     }
-    
+
     // Check for token in cookie
     $token = request()->cookie('auth_token');
     if ($token) {
@@ -64,13 +70,18 @@ Route::get('/auth-test', function () {
             ]);
         }
     }
-    
+
     return response()->json([
         'authenticated' => false,
         'user' => null,
         'method' => 'none'
     ]);
 })->name('auth.test');
+
+// Payment result pages - public access (no auth required untuk redirect dari Xendit)
+Route::get('/payment/success', [PaymentPageController::class, 'success'])->name('payment.success');
+Route::get('/payment/failed', [PaymentPageController::class, 'failed'])->name('payment.failed');
+Route::get('/payment/pending', [PaymentPageController::class, 'pending'])->name('payment.pending');
 
 // ============================================================================
 // PROTECTED ROUTES (Semua menggunakan API endpoints dari routes/api.php)
@@ -110,9 +121,9 @@ Route::middleware(['hybrid.auth'])->group(function () {
         return view('orders.index');
     })->name('orders');
 
-    Route::get('/order/{orderId}', function ($orderId) {
+    Route::get('/orders/{orderId}', function ($orderId) {
         return view('orders.detail', compact('orderId'));
-    })->name('order.detail');
+    })->name('orders.show');
 
     // Address pages
     Route::get('/addresses', function () {
