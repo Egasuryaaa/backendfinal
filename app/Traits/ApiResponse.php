@@ -66,4 +66,20 @@ trait ApiResponse
     {
         return $this->errorResponse($message, 403);
     }
+
+    /**
+     * Short alias for successResponse
+     */
+    protected function success($data = null, $message = 'Success', $code = 200)
+    {
+        return $this->successResponse($data, $message, $code);
+    }
+
+    /**
+     * Short alias for errorResponse
+     */
+    protected function error($message = 'Error', $code = 400, $errors = null)
+    {
+        return $this->errorResponse($message, $code, $errors);
+    }
 }

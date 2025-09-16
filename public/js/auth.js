@@ -99,6 +99,22 @@ function isAuthenticated() {
     return !!getAuthToken();
 }
 
+// Alias for backward compatibility
+function getToken() {
+    const token = getAuthToken();
+    if (!token) {
+        console.warn('No authentication token found');
+        return null;
+    }
+    return token;
+}
+
+// Check if user is authenticated with valid token
+function isLoggedIn() {
+    const token = getToken();
+    return token && token.length > 10; // Basic validation
+}
+
 function getUserData() {
     const userData = localStorage.getItem('user_data') || sessionStorage.getItem('user_data');
     return userData ? JSON.parse(userData) : null;
@@ -442,3 +458,65 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Auth check - Is authenticated:', isAuthenticated());
     console.log('Auth check - Token exists:', !!getAuthToken());
 });
+
+/**
+ * Safely parse JSON response with proper error handling
+ * This prevents "Unexpected token '<'" errors when server returns HTML error pages
+ */
+async function safeParseJSON(response) {
+    try {
+        // Check if response has JSON content type
+        const contentType = response.headers.get('Content-Type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(`Expected JSON but received ${contentType || 'unknown content type'}. Response: ${text.substring(0, 200)}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        // If JSON parsing fails, try to get the text content for better error reporting
+        if (error.name === 'SyntaxError' || error.message.includes('Unexpected token')) {
+            try {
+                const text = await response.text();
+                throw new Error(`Invalid JSON response. Server returned: ${text.substring(0, 200)}...`);
+            } catch (textError) {
+                throw new Error(`Failed to parse response as JSON and couldn't read as text: ${error.message}`);
+            }
+        }
+        throw error;
+    }
+}
+
+/**
+ * Improved fetch wrapper with better error handling
+ */
+async function apiRequest(url, options = {}) {
+    try {
+        const token = getToken();
+        const headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            ...options.headers
+        };
+        
+        if (token) {
+            headers['Authorization'] = 'Bearer ' + token;
+        }
+        
+        const response = await fetch(url, {
+            ...options,
+            headers
+        });
+        
+        const data = await safeParseJSON(response);
+        
+        if (!response.ok) {
+            throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return { response, data };
+    } catch (error) {
+        console.error('API Request failed:', error);
+        throw error;
+    }
+}

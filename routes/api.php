@@ -5,6 +5,8 @@ use App\Http\Controllers\API\AppointmentController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CartController;
 use App\Http\Controllers\API\CategoryController;
+use App\Http\Controllers\API\FishFarmController;
+use App\Http\Controllers\API\CollectorController;
 use App\Http\Controllers\API\MessageController;
 use App\Http\Controllers\API\NotificationController;
 use App\Http\Controllers\API\OrderController;
@@ -78,6 +80,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reviews', [ReviewController::class, 'store']);
     Route::put('/reviews/{review}', [ReviewController::class, 'update']);
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
+    
+    // Fish Farm routes
+    Route::apiResource('fish-farms', FishFarmController::class);
+    Route::get('/fish-farms/{id}/available-collectors', [FishFarmController::class, 'getAvailableCollectors']);
+    Route::post('/fish-farms/{id}/appointments', [FishFarmController::class, 'createAppointment']);
+    
+    // Collector routes
+    Route::apiResource('collectors', CollectorController::class);
+    Route::get('/collectors/{id}/nearby-fish-farms', [CollectorController::class, 'getNearbyFishFarms']);
+    Route::get('/collectors/{id}/pending-appointments', [CollectorController::class, 'getPendingAppointments']);
+    Route::put('/collectors/{id}/appointments/{appointmentId}', [CollectorController::class, 'handleAppointment']);
+    Route::put('/collectors/{id}/appointments/{appointmentId}/complete', [CollectorController::class, 'completeAppointment']);
     
     // Appointments
     Route::get('/appointments', [AppointmentController::class, 'index']);

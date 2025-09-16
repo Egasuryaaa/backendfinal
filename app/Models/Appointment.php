@@ -50,14 +50,31 @@ class Appointment extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'user_id',
         'penjual_id',
         'pembeli_id',
         'lokasi_penjual_id',
+        'fish_farm_id',
+        'collector_id',
         'tanggal_janji',
+        'tanggal',
+        'jenis',
         'status',
         'tujuan',
         'catatan',
+        'catatan_collector',
+        'catatan_selesai',
         'meeting_location',
+        'perkiraan_berat',
+        'berat_aktual',
+        'harga_per_kg',
+        'harga_final',
+        'total_estimasi',
+        'total_final',
+        'total_aktual',
+        'kualitas_ikan',
+        'whatsapp_sent',
+        'tanggal_selesai'
     ];
 
     /**
@@ -67,7 +84,17 @@ class Appointment extends Model
      */
     protected $casts = [
         'tanggal_janji' => 'datetime',
+        'tanggal' => 'datetime',
+        'tanggal_selesai' => 'datetime',
         'meeting_location' => 'array',
+        'perkiraan_berat' => 'decimal:2',
+        'berat_aktual' => 'decimal:2',
+        'harga_per_kg' => 'decimal:2',
+        'harga_final' => 'decimal:2',
+        'total_estimasi' => 'decimal:2',
+        'total_final' => 'decimal:2',
+        'total_aktual' => 'decimal:2',
+        'whatsapp_sent' => 'boolean'
     ];
 
     /**
@@ -104,6 +131,30 @@ class Appointment extends Model
     public function sellerLocation(): BelongsTo
     {
         return $this->belongsTo(SellerLocation::class, 'lokasi_penjual_id');
+    }
+
+    /**
+     * Mendapatkan fish farm yang terkait dengan appointment ini.
+     */
+    public function fishFarm(): BelongsTo
+    {
+        return $this->belongsTo(FishFarm::class, 'fish_farm_id');
+    }
+
+    /**
+     * Mendapatkan collector yang terkait dengan appointment ini.
+     */
+    public function collector(): BelongsTo
+    {
+        return $this->belongsTo(Collector::class, 'collector_id');
+    }
+
+    /**
+     * Mendapatkan user yang membuat appointment ini.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     /**

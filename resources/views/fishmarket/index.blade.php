@@ -338,8 +338,69 @@
 
         /* Category Section */
         .category-section {
-            margin: 0 20px 24px;
-            animation: fadeInUp 1s ease-out 0.3s both;
+            padding: 20px;
+            background: white;
+            margin-bottom: 20px;
+        }
+
+        /* Quick Actions Section */
+        .quick-actions-section {
+            padding: 20px;
+            background: white;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .quick-action-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .quick-action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            text-decoration: none;
+            color: white;
+        }
+
+        .quick-action-card.collector {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        }
+
+        .quick-action-card.collector:hover {
+            box-shadow: 0 8px 25px rgba(245, 87, 108, 0.4);
+        }
+
+        .quick-action-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .quick-action-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .quick-action-subtitle {
+            font-size: 0.75rem;
+            opacity: 0.9;
         }
 
         .section-title {
@@ -747,6 +808,9 @@
                     <a href="/locations" class="cart-button" id="locationsButton" title="Lokasi Penjual">
                         <i class="fas fa-map-marker-alt"></i>
                     </a>
+                    <a href="/fish-farms" class="cart-button" id="fishFarmButton" title="Tambak & Pengepul">
+                        <i class="fas fa-fish"></i>
+                    </a>
                     <a href="/cart" class="cart-button" id="cartButton">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="cart-badge hidden" id="cartBadge">0</span>
@@ -802,6 +866,14 @@
                             <div class="slider-subtitle">Beragam pilihan ikan laut</div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Role-based Quick Actions -->
+            <div class="quick-actions-section" id="quickActionsSection" style="display: none;">
+                <h2 class="section-title">Akses Cepat</h2>
+                <div class="quick-actions-grid" id="quickActionsGrid">
+                    <!-- Quick actions will be loaded based on user role -->
                 </div>
             </div>
 
@@ -871,7 +943,133 @@
             fetchCategories();
             fetchProducts();
             loadCartCount(); // Load cart count on page load
+            loadQuickActions(); // Load role-based quick actions
         });
+
+        // Load role-based quick actions
+        async function loadQuickActions() {
+            try {
+                const token = getToken();
+                if (!token) return;
+
+                const response = await fetch('/api/user', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    const user = userData.data || userData;
+                    displayQuickActions(user);
+                }
+            } catch (error) {
+                console.error('Error loading user data for quick actions:', error);
+            }
+        }
+
+        function displayQuickActions(user) {
+            const quickActionsSection = document.getElementById('quickActionsSection');
+            const quickActionsGrid = document.getElementById('quickActionsGrid');
+            
+            // Default actions for all users
+            let actions = [
+                {
+                    href: '/fish-farms',
+                    icon: 'fas fa-fish',
+                    title: 'Tambak Ikan',
+                    subtitle: 'Kelola tambak',
+                    class: ''
+                },
+                {
+                    href: '/collectors',
+                    icon: 'fas fa-truck',
+                    title: 'Pengepul',
+                    subtitle: 'Kelola usaha',
+                    class: 'collector'
+                }
+            ];
+
+            // Role-specific actions
+            if (user.role === 'farmer' || user.user_type === 'farmer') {
+                // Farmer-specific actions
+                actions = [
+                    {
+                        href: '/fish-farms',
+                        icon: 'fas fa-swimmer',
+                        title: 'Tambak Saya',
+                        subtitle: 'Kelola tambak ikan',
+                        class: ''
+                    },
+                    {
+                        href: '/fish-farms#collectors',
+                        icon: 'fas fa-search',
+                        title: 'Cari Pengepul',
+                        subtitle: 'Temukan pembeli',
+                        class: 'collector'
+                    },
+                    {
+                        href: '/fish-farm-appointments',
+                        icon: 'fas fa-calendar-check',
+                        title: 'Janji Saya',
+                        subtitle: 'Jadwal penjemputan',
+                        class: ''
+                    },
+                    {
+                        href: '/products',
+                        icon: 'fas fa-shopping-cart',
+                        title: 'Beli Produk',
+                        subtitle: 'Belanja kebutuhan',
+                        class: ''
+                    }
+                ];
+            } else if (user.role === 'collector' || user.user_type === 'collector') {
+                // Collector-specific actions
+                actions = [
+                    {
+                        href: '/collectors',
+                        icon: 'fas fa-store',
+                        title: 'Usaha Saya',
+                        subtitle: 'Kelola pengepul',
+                        class: 'collector'
+                    },
+                    {
+                        href: '/collector-appointments',
+                        icon: 'fas fa-calendar-alt',
+                        title: 'Janji Masuk',
+                        subtitle: 'Permintaan pickup',
+                        class: 'collector'
+                    },
+                    {
+                        href: '/fish-farms#fishfarms',
+                        icon: 'fas fa-map-marked-alt',
+                        title: 'Cari Tambak',
+                        subtitle: 'Temukan supplier',
+                        class: ''
+                    },
+                    {
+                        href: '/products',
+                        icon: 'fas fa-shopping-cart',
+                        title: 'Beli Produk',
+                        subtitle: 'Belanja kebutuhan',
+                        class: ''
+                    }
+                ];
+            }
+
+            // Generate HTML for quick actions
+            quickActionsGrid.innerHTML = actions.map(action => `
+                <a href="${action.href}" class="quick-action-card ${action.class}">
+                    <i class="${action.icon} quick-action-icon"></i>
+                    <div class="quick-action-title">${action.title}</div>
+                    <div class="quick-action-subtitle">${action.subtitle}</div>
+                </a>
+            `).join('');
+
+            // Show the quick actions section
+            quickActionsSection.style.display = 'block';
+        }
 
         // Generate loading cards
         function generateLoadingCards() {

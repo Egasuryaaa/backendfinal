@@ -28,6 +28,11 @@ Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
 
+// Test page for fish farm creation
+Route::get('/fish-farm-test', function () {
+    return view('fish-farm-test');
+})->name('fish-farm-test');
+
 Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
@@ -160,6 +165,50 @@ Route::middleware(['hybrid.auth'])->group(function () {
     Route::get('/seller/locations', function () {
         return view('seller.locations');
     })->name('seller.locations');
+
+    // Fish Farm Management (for farmers)
+    Route::get('/fish-farms', function () {
+        return view('fish-farms.index');
+    })->name('fish-farms.index');
+
+    Route::get('/fish-farms/create', function () {
+        return view('fish-farms.create');
+    })->name('fish-farms.create');
+
+    Route::get('/fish-farms/{id}', function ($id) {
+        return view('fish-farms.show', ['fishFarmId' => $id]);
+    })->name('fish-farms.show');
+
+    Route::get('/fish-farms/{id}/edit', function ($id) {
+        return view('fish-farms.edit', ['fishFarmId' => $id]);
+    })->name('fish-farms.edit');
+
+    // Collector Management (for collectors)
+    Route::get('/collectors', function () {
+        return view('collectors.index');
+    })->name('collectors.index');
+
+    Route::get('/collectors/create', function () {
+        return view('collectors.create');
+    })->name('collectors.create');
+
+    Route::get('/collectors/{id}', function ($id) {
+        return view('collectors.show', ['collectorId' => $id]);
+    })->name('collectors.show');
+
+    Route::get('/collectors/{id}/edit', function ($id) {
+        return view('collectors.edit', ['collectorId' => $id]);
+    })->name('collectors.edit');
+
+    // Fish Farm Appointments
+    Route::get('/fish-farm-appointments', function () {
+        return view('appointments.fish-farms');
+    })->name('fish-farm-appointments');
+
+    // Collector Appointments
+    Route::get('/collector-appointments', function () {
+        return view('appointments.collectors');
+    })->name('collector-appointments');
 
 });
 
