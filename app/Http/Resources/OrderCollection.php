@@ -32,11 +32,9 @@ class OrderCollection extends ResourceCollection
                         return [
                             'nama_produk' => $item->nama_produk,
                             'jumlah' => $item->jumlah,
-                            'product' => $item->whenLoaded('product', function() use ($item) {
-                                return [
-                                    'gambar' => $item->product->gambar
-                                ];
-                            })
+                            'product' => $item->relationLoaded('product') && $item->product ? [
+                                'gambar' => $item->product->gambar
+                            ] : null
                         ];
                     }),
                     'has_more_items' => $order->orderItems->count() > 2
@@ -57,7 +55,7 @@ class OrderCollection extends ResourceCollection
             ]
         ];
     }
-    
+
     /**
      * Get human-readable status label.
      *
@@ -73,7 +71,7 @@ class OrderCollection extends ResourceCollection
             'selesai' => 'Selesai',
             'dibatalkan' => 'Dibatalkan'
         ];
-        
+
         return $labels[$status] ?? $status;
     }
 }

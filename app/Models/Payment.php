@@ -21,11 +21,12 @@ class Payment extends Model
     const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
-        'uuid',
+        'payment_id',
         'order_id',
-        'xendit_invoice_id',
-        'xendit_external_id',
+        'invoice_id', // Changed from xendit_invoice_id to match migration
+        'external_id', // Changed from xendit_external_id to match migration
         'payment_method',
+        'payment_channel',
         'amount',
         'status',
         'invoice_url',
@@ -38,20 +39,6 @@ class Payment extends Model
         'paid_at' => 'datetime',
         'expired_at' => 'datetime',
     ];
-
-    protected static function boot()
-    {
-        parent::boot();
-        
-        static::creating(function ($model) {
-            if (empty($model->uuid)) {
-                $model->uuid = Str::uuid();
-            }
-            if (empty($model->xendit_external_id)) {
-                $model->xendit_external_id = 'ORDER_' . $model->order_id . '_' . time();
-            }
-        });
-    }
 
     /**
      * Get the order that owns the payment.

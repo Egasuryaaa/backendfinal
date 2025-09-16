@@ -14,6 +14,7 @@ use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\SellerController;
 use App\Http\Controllers\API\SellerLocationController;
+use App\Http\Controllers\API\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 // CSRF Cookie route
@@ -39,43 +40,55 @@ Route::get('/categories/{category}/products', [ProductController::class, 'byCate
 // Reviews (public read)
 Route::get('/products/{product}/reviews', [ReviewController::class, 'productReviews']);
 
+// Payment methods (public)
+Route::get('/payment/methods', [PaymentController::class, 'getPaymentMethods']);
+Route::get('/payment/config', [PaymentController::class, 'getPaymentConfig']);
+
 // Seller locations (public)
 Route::get('/seller-locations', [SellerLocationController::class, 'index']);
 Route::get('/seller-locations/{sellerLocation}', [SellerLocationController::class, 'show']);
 
+// Webhook endpoints (no auth required)
+Route::post('/webhooks/xendit', [PaymentController::class, 'handleWebhook']);
+
 // Protected routes with API authentication
-Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
     Route::put('/user', [AuthController::class, 'update']);
-    
+
     // Appointments moved below to avoid duplication
-    
+
     // Addresses
     Route::apiResource('addresses', AddressController::class);
     Route::put('/addresses/{address}/set-as-main', [AddressController::class, 'setAsMain']);
-    
+
     // Cart routes moved to web.php for session authentication
     // Route::get('/cart', [CartController::class, 'index']);
     // Route::post('/cart', [CartController::class, 'addToCart']);
     // Route::put('/cart/{cartItem}', [CartController::class, 'updateCartItem']);
     // Route::delete('/cart/{cartItem}', [CartController::class, 'removeFromCart']);
-    
+
     // Cart routes - restored for API usage
     Route::get('/cart', [CartController::class, 'index']);
     Route::post('/cart', [CartController::class, 'addToCart']);
     Route::put('/cart/{cartItem}', [CartController::class, 'updateCartItem']);
     Route::delete('/cart/{cartItem}', [CartController::class, 'removeFromCart']);
     Route::delete('/cart', [CartController::class, 'clearCart']);
-    
+
     // Orders
     Route::get('/orders', [OrderController::class, 'index']);
     Route::post('/orders/checkout', [OrderController::class, 'checkout']);
     Route::get('/orders/{order}', [OrderController::class, 'show']);
     Route::get('/orders/{order}/items', [OrderController::class, 'items']);
     Route::post('/orders/{order}/cancel', [OrderController::class, 'cancelOrder']);
-    
+
+    // Payments
+    Route::post('/payments', [PaymentController::class, 'createPayment']);
+    Route::get('/payments/{paymentId}/status', [PaymentController::class, 'getPaymentStatus']);
+    Route::post('/payments/{paymentId}/cancel', [PaymentController::class, 'cancelPayment']);
+
     // Reviews
     Route::post('/reviews', [ReviewController::class, 'store']);
     Route::put('/reviews/{review}', [ReviewController::class, 'update']);
@@ -100,43 +113,43 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
     Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
     Route::put('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
-    
+
     // Messages
     Route::get('/messages/{userId}', [MessageController::class, 'getConversation']);
     Route::post('/messages', [MessageController::class, 'sendMessage']);
     Route::put('/messages/{message}/read', [MessageController::class, 'markAsRead']);
     Route::get('/conversations', [MessageController::class, 'getConversations']);
-    
+
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::put('/notifications/{notification}', [NotificationController::class, 'markAsRead']);
     Route::put('/notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead']);
-    
-    // Seller routes
-    Route::middleware('role:seller')->group(function () {
+
+    // Seller routes - role checking moved to controller level
+    Route::prefix('seller')->group(function () {
         // Dashboard
-        Route::get('/seller/dashboard', [SellerController::class, 'dashboard']);
-        
+        Route::get('/dashboard', [SellerController::class, 'dashboard']);
+
         // Products
-        Route::get('/seller/products', [ProductController::class, 'sellerProducts']);
-        Route::post('/seller/products', [ProductController::class, 'store']);
-        Route::put('/seller/products/{product}', [ProductController::class, 'update']);
-        Route::delete('/seller/products/{product}', [ProductController::class, 'destroy']);
-        
+        Route::get('/products', [ProductController::class, 'sellerProducts']);
+        Route::post('/products', [ProductController::class, 'store']);
+        Route::put('/products/{product}', [ProductController::class, 'update']);
+        Route::delete('/products/{product}', [ProductController::class, 'destroy']);
+
         // Orders
-        Route::get('/seller/orders', [OrderController::class, 'sellerOrders']);
-        Route::put('/seller/orders/{order}/status', [OrderController::class, 'updateStatus']);
-        
+        Route::get('/orders', [OrderController::class, 'sellerOrders']);
+        Route::put('/orders/{order}/status', [OrderController::class, 'updateStatus']);
+
         // Reviews
         Route::post('/reviews/{review}/reply', [ReviewController::class, 'reply']);
-        
+
         // Appointments
-        Route::get('/seller/appointments', [AppointmentController::class, 'sellerAppointments']);
-        
+        Route::get('/appointments', [AppointmentController::class, 'sellerAppointments']);
+
         // Locations
-        Route::get('/seller/locations', [SellerLocationController::class, 'sellerLocations']);
-        Route::post('/seller/locations', [SellerLocationController::class, 'store']);
-        Route::put('/seller/locations/{sellerLocation}', [SellerLocationController::class, 'update']);
-        Route::delete('/seller/locations/{sellerLocation}', [SellerLocationController::class, 'destroy']);
+        Route::get('/locations', [SellerLocationController::class, 'sellerLocations']);
+        Route::post('/locations', [SellerLocationController::class, 'store']);
+        Route::put('/locations/{sellerLocation}', [SellerLocationController::class, 'update']);
+        Route::delete('/locations/{sellerLocation}', [SellerLocationController::class, 'destroy']);
     });
 });

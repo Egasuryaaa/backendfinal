@@ -101,6 +101,22 @@ class Order extends Model
     }
 
     /**
+     * Mendapatkan data pembayaran untuk pesanan ini.
+     */
+    public function payment(): BelongsTo
+    {
+        return $this->belongsTo(Payment::class, 'id', 'order_id');
+    }
+
+    /**
+     * Mendapatkan semua pembayaran untuk pesanan ini.
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'order_id');
+    }
+
+    /**
      * Mendapatkan notifikasi terkait pesanan ini.
      */
     public function notifications(): HasMany
@@ -183,15 +199,15 @@ class Order extends Model
         $prefix = 'ORD';
         $date = now()->format('Ymd');
         $random = mt_rand(1000, 9999);
-        
+
         $orderNumber = $prefix . $date . $random;
-        
+
         // Pastikan nomor pesanan unik
         while (self::where('nomor_pesanan', $orderNumber)->exists()) {
             $random = mt_rand(1000, 9999);
             $orderNumber = $prefix . $date . $random;
         }
-        
+
         return $orderNumber;
     }
 

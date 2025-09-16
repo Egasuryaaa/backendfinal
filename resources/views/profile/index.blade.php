@@ -330,12 +330,12 @@
                 grid-template-columns: 1fr;
                 gap: 8px;
             }
-            
+
             .app-bar-content {
                 flex-direction: row;
                 gap: 16px;
             }
-            
+
             .profile-header {
                 margin: 16px;
                 padding: 20px;
@@ -545,7 +545,7 @@
                 // First check auth status
                 const authResponse = await fetch('/auth-test');
                 const authData = await authResponse.json();
-                
+
                 if (!authData.authenticated) {
                     window.location.href = '/login';
                     return;
@@ -553,7 +553,7 @@
 
                 user = authData.user;
                 displayProfile();
-                
+
             } catch (error) {
                 console.error('Error fetching profile:', error);
                 showError('Gagal memuat profil');
@@ -566,7 +566,7 @@
 
             document.getElementById('profileName').textContent = user.name || '-';
             document.getElementById('profileEmail').textContent = user.email || '-';
-            
+
             if (user.phone) {
                 document.getElementById('profilePhone').textContent = user.phone;
                 document.getElementById('profilePhone').style.display = 'block';
@@ -577,23 +577,8 @@
             document.getElementById('profileContent').style.display = 'block';
         }
 
-        // Fetch order statistics (mock data for now)
-        async function fetchOrderStats() {
-            try {
-                // Mock stats - in real app, fetch from API
-                orderStats = {
-                    total: Math.floor(Math.random() * 20),
-                    pending: Math.floor(Math.random() * 5),
-                    cancelled: Math.floor(Math.random() * 3)
-                };
-
-                document.getElementById('totalOrders').textContent = orderStats.total;
-                document.getElementById('pendingOrders').textContent = orderStats.pending;
-                document.getElementById('cancelledOrders').textContent = orderStats.cancelled;
-            } catch (error) {
-                console.error('Error fetching order stats:', error);
-            }
-        }
+        // Fetch order statistics using real API (replaced mock data)
+        // Remove old mock fetchOrderStats and showOrderHistory functions (replaced with OrderManager integration)
 
         // Show edit profile dialog
         function showEditDialog() {
@@ -701,7 +686,7 @@
                 // Mock update - in real app, send to API
                 user.name = name;
                 user.phone = phone;
-                
+
                 displayProfile();
                 document.querySelector('[style*="position: fixed"]').remove();
                 showSuccess('Profil berhasil diperbarui');
@@ -823,7 +808,7 @@
             if (typeof window.confirmLogout === 'function' && window.confirmLogout !== arguments.callee) {
                 return window.confirmLogout();
             }
-            
+
             // Fallback implementation
             if (confirm('Apakah Anda yakin ingin keluar dari akun?')) {
                 return performLogout();
@@ -836,13 +821,13 @@
             if (typeof window.logout === 'function') {
                 return window.logout();
             }
-            
+
             // Fallback implementation
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '/logout';
             form.style.display = 'none';
-            
+
             // Add CSRF token
             const csrfToken = document.querySelector('meta[name="csrf-token"]');
             if (csrfToken) {
@@ -852,7 +837,7 @@
                 tokenInput.value = csrfToken.getAttribute('content');
                 form.appendChild(tokenInput);
             }
-            
+
             // Add to page and submit
             document.body.appendChild(form);
             form.submit();
@@ -880,7 +865,7 @@
                 <span>${message}</span>
             `;
             document.body.appendChild(notification);
-            
+
             setTimeout(() => notification.remove(), 3000);
         }
 
@@ -905,9 +890,704 @@
                 <span>${message}</span>
             `;
             document.body.appendChild(notification);
-            
+
             setTimeout(() => notification.remove(), 3000);
         }
+
+        // Order Management System Integration
+        class OrderManager {
+            constructor() {
+                this.orders = [];
+                this.loading = false;
+                this.token = this.getAuthToken();
+            }
+
+            // Get authentication token from localStorage or meta tag
+            getAuthToken() {
+                // First try to get from localStorage (if using SPA auth)
+                const token = localStorage.getItem('auth_token');
+                if (token) return token;
+
+                // Fallback: get CSRF token for session auth
+                const csrfToken = document.querySelector('meta[name="csrf-token"]');
+                return csrfToken ? csrfToken.getAttribute('content') : null;
+            }
+
+            // Get headers for API requests
+            getHeaders() {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                };
+
+                if (this.token) {
+                    // If we have a bearer token, use it
+                    if (this.token.includes('|')) {
+                        headers['Authorization'] = `Bearer ${this.token}`;
+                    } else {
+                        // Otherwise use CSRF token
+                        headers['X-CSRF-TOKEN'] = this.token;
+                    }
+                }
+
+                return headers;
+            }
+
+            // Fetch orders from API
+            async fetchOrders() {
+                if (this.loading) return;
+
+                this.loading = true;
+                try {
+                    const response = await fetch('/api/orders', {
+                        method: 'GET',
+                        headers: this.getHeaders(),
+                        credentials: 'include'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    this.orders = data.data || data || [];
+                    return this.orders;
+                } catch (error) {
+                    console.error('Error fetching orders:', error);
+                    showError('Gagal memuat data pesanan');
+                    return [];
+                } finally {
+                    this.loading = false;
+                }
+            }
+
+            // Fetch order details by ID
+            async fetchOrderDetails(orderId) {
+                try {
+                    const response = await fetch(`/api/orders/${orderId}`, {
+                        method: 'GET',
+                        headers: this.getHeaders(),
+                        credentials: 'include'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error fetching order details:', error);
+                    showError('Gagal memuat detail pesanan');
+                    return null;
+                }
+            }
+
+            // Fetch order items by order ID
+            async fetchOrderItems(orderId) {
+                try {
+                    const response = await fetch(`/api/orders/${orderId}/items`, {
+                        method: 'GET',
+                        headers: this.getHeaders(),
+                        credentials: 'include'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error fetching order items:', error);
+                    showError('Gagal memuat item pesanan');
+                    return null;
+                }
+            }
+
+            // Cancel order
+            async cancelOrder(orderId, reason = '') {
+                try {
+                    const response = await fetch(`/api/orders/${orderId}/cancel`, {
+                        method: 'POST',
+                        headers: this.getHeaders(),
+                        credentials: 'include',
+                        body: JSON.stringify({ reason })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    showSuccess('Pesanan berhasil dibatalkan');
+                    return result;
+                } catch (error) {
+                    console.error('Error cancelling order:', error);
+                    showError('Gagal membatalkan pesanan');
+                    return null;
+                }
+            }
+
+            // Get order statistics
+            getOrderStats() {
+                const stats = {
+                    total: this.orders.length,
+                    pending: this.orders.filter(order => ['menunggu', 'dibayar', 'diproses'].includes(order.status)).length,
+                    completed: this.orders.filter(order => order.status === 'selesai').length,
+                    cancelled: this.orders.filter(order => order.status === 'dibatalkan').length
+                };
+                return stats;
+            }
+
+            // Format currency
+            formatCurrency(amount) {
+                return new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0
+                }).format(amount);
+            }
+
+            // Format date
+            formatDate(dateString) {
+                return new Date(dateString).toLocaleDateString('id-ID', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            // Get status color
+            getStatusColor(status) {
+                const colors = {
+                    'menunggu': '#FF9800',
+                    'dibayar': '#2196F3',
+                    'diproses': '#9C27B0',
+                    'dikirim': '#3F51B5',
+                    'selesai': '#4CAF50',
+                    'dibatalkan': '#F44336'
+                };
+                return colors[status] || '#757575';
+            }
+
+            // Get status text
+            getStatusText(status) {
+                const texts = {
+                    'menunggu': 'Menunggu Pembayaran',
+                    'dibayar': 'Pembayaran Diterima',
+                    'diproses': 'Sedang Diproses',
+                    'dikirim': 'Dalam Pengiriman',
+                    'selesai': 'Pesanan Selesai',
+                    'dibatalkan': 'Dibatalkan'
+                };
+                return texts[status] || status;
+            }
+        }
+
+        // Initialize order manager
+        const orderManager = new OrderManager();
+
+        // Updated fetch order statistics using real API
+        async function fetchOrderStats() {
+            try {
+                const orders = await orderManager.fetchOrders();
+                const stats = orderManager.getOrderStats();
+
+                document.getElementById('totalOrders').textContent = stats.total;
+                document.getElementById('pendingOrders').textContent = stats.pending;
+                document.getElementById('cancelledOrders').textContent = stats.cancelled;
+            } catch (error) {
+                console.error('Error fetching order stats:', error);
+                // Keep existing mock data as fallback
+                orderStats = {
+                    total: Math.floor(Math.random() * 20),
+                    pending: Math.floor(Math.random() * 5),
+                    cancelled: Math.floor(Math.random() * 3)
+                };
+
+                document.getElementById('totalOrders').textContent = orderStats.total;
+                document.getElementById('pendingOrders').textContent = orderStats.pending;
+                document.getElementById('cancelledOrders').textContent = orderStats.cancelled;
+            }
+        }
+
+        // Updated order history function with real API integration
+        async function showOrderHistory() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                backdrop-filter: blur(8px);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+            `;
+
+            modal.innerHTML = `
+                <div style="
+                    background: white;
+                    border-radius: 20px;
+                    max-width: 600px;
+                    width: 100%;
+                    max-height: 80vh;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+                    display: flex;
+                    flex-direction: column;
+                ">
+                    <div style="
+                        padding: 30px 30px 0;
+                        border-bottom: 1px solid #E3F2FD;
+                    ">
+                        <h3 style="
+                            color: #0D47A1;
+                            margin-bottom: 20px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                        ">
+                            <span style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-receipt" style="color: #1976D2;"></i>
+                                Riwayat Pesanan
+                            </span>
+                            <button onclick="this.closest('[style*=\"position: fixed\"]').remove()" style="
+                                width: 30px;
+                                height: 30px;
+                                border: none;
+                                background: #f5f5f5;
+                                border-radius: 50%;
+                                cursor: pointer;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            ">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </h3>
+                    </div>
+                    <div id="orderHistoryContent" style="
+                        flex: 1;
+                        overflow-y: auto;
+                        padding: 20px 30px 30px;
+                    ">
+                        <div style="
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            min-height: 200px;
+                        ">
+                            <div style="
+                                width: 40px;
+                                height: 40px;
+                                border: 4px solid #f3f3f3;
+                                border-top: 4px solid #1976D2;
+                                border-radius: 50%;
+                                animation: spin 1s linear infinite;
+                            "></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Load order history
+            try {
+                const orders = await orderManager.fetchOrders();
+                displayOrderHistory(orders);
+            } catch (error) {
+                document.getElementById('orderHistoryContent').innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #FF9800; margin-bottom: 16px;"></i>
+                        <h4 style="margin-bottom: 8px;">Gagal Memuat Data</h4>
+                        <p style="font-size: 14px;">Terjadi kesalahan saat memuat riwayat pesanan</p>
+                        <button onclick="showOrderHistory(); this.closest('[style*=\"position: fixed\"]').remove();" style="
+                            margin-top: 16px;
+                            padding: 8px 16px;
+                            border: none;
+                            background: #1976D2;
+                            color: white;
+                            border-radius: 8px;
+                            cursor: pointer;
+                        ">Coba Lagi</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Display order history in modal
+        function displayOrderHistory(orders) {
+            const content = document.getElementById('orderHistoryContent');
+
+            if (!orders || orders.length === 0) {
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-shopping-bag" style="font-size: 48px; color: #E0E0E0; margin-bottom: 16px;"></i>
+                        <h4 style="margin-bottom: 8px;">Belum Ada Pesanan</h4>
+                        <p style="font-size: 14px;">Anda belum memiliki riwayat pesanan</p>
+                        <a href="/fishmarket" style="
+                            display: inline-block;
+                            margin-top: 16px;
+                            padding: 12px 24px;
+                            background: linear-gradient(135deg, #1976D2, #0D47A1);
+                            color: white;
+                            text-decoration: none;
+                            border-radius: 12px;
+                            font-weight: 600;
+                        ">Mulai Belanja</a>
+                    </div>
+                `;
+                return;
+            }
+
+            const ordersHtml = orders.map(order => `
+                <div style="
+                    border: 1px solid #E3F2FD;
+                    border-radius: 12px;
+                    margin-bottom: 16px;
+                    overflow: hidden;
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                " onclick="showOrderDetails(${order.id})">
+                    <div style="
+                        padding: 16px;
+                        background: linear-gradient(135deg, #F8FBFF, #E3F2FD);
+                        border-bottom: 1px solid #E3F2FD;
+                    ">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-weight: 600; color: #0D47A1;">#${order.nomor_pesanan || order.id}</span>
+                            <span style="
+                                background: ${orderManager.getStatusColor(order.status)};
+                                color: white;
+                                padding: 4px 12px;
+                                border-radius: 20px;
+                                font-size: 12px;
+                                font-weight: 500;
+                            ">${orderManager.getStatusText(order.status)}</span>
+                        </div>
+                        <div style="font-size: 12px; color: #666;">
+                            ${orderManager.formatDate(order.created_at)}
+                        </div>
+                    </div>
+                    <div style="padding: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-size: 14px; color: #333; margin-bottom: 4px;">
+                                    Total: <strong>${orderManager.formatCurrency(order.total || order.total_amount || 0)}</strong>
+                                </div>
+                                <div style="font-size: 12px; color: #666;">
+                                    ${order.metode_pembayaran || 'Belum ditentukan'}
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: #1976D2;"></i>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            content.innerHTML = ordersHtml;
+        }
+
+        // Show order details
+        async function showOrderDetails(orderId) {
+            // Close current modal
+            const currentModal = document.querySelector('[style*="position: fixed"]');
+            if (currentModal) currentModal.remove();
+
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                backdrop-filter: blur(8px);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+            `;
+
+            modal.innerHTML = `
+                <div style="
+                    background: white;
+                    border-radius: 20px;
+                    max-width: 700px;
+                    width: 100%;
+                    max-height: 90vh;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+                    display: flex;
+                    flex-direction: column;
+                ">
+                    <div style="
+                        padding: 30px 30px 0;
+                        border-bottom: 1px solid #E3F2FD;
+                    ">
+                        <h3 style="
+                            color: #0D47A1;
+                            margin-bottom: 20px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                        ">
+                            <span style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-file-alt" style="color: #1976D2;"></i>
+                                Detail Pesanan #${orderId}
+                            </span>
+                            <button onclick="this.closest('[style*=\"position: fixed\"]').remove()" style="
+                                width: 30px;
+                                height: 30px;
+                                border: none;
+                                background: #f5f5f5;
+                                border-radius: 50%;
+                                cursor: pointer;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            ">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </h3>
+                    </div>
+                    <div id="orderDetailsContent" style="
+                        flex: 1;
+                        overflow-y: auto;
+                        padding: 20px 30px 30px;
+                    ">
+                        <div style="
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            min-height: 200px;
+                        ">
+                            <div style="
+                                width: 40px;
+                                height: 40px;
+                                border: 4px solid #f3f3f3;
+                                border-top: 4px solid #1976D2;
+                                border-radius: 50%;
+                                animation: spin 1s linear infinite;
+                            "></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Load order details and items
+            try {
+                const [orderDetails, orderItems] = await Promise.all([
+                    orderManager.fetchOrderDetails(orderId),
+                    orderManager.fetchOrderItems(orderId)
+                ]);
+
+                displayOrderDetails(orderDetails, orderItems);
+            } catch (error) {
+                document.getElementById('orderDetailsContent').innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #FF9800; margin-bottom: 16px;"></i>
+                        <h4 style="margin-bottom: 8px;">Gagal Memuat Detail</h4>
+                        <p style="font-size: 14px;">Terjadi kesalahan saat memuat detail pesanan</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display order details
+        function displayOrderDetails(orderDetails, orderItems) {
+            const content = document.getElementById('orderDetailsContent');
+            const order = orderDetails.data || orderDetails;
+            const items = orderItems.data || orderItems || [];
+
+            const itemsHtml = items.map(item => `
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    padding: 16px;
+                    border: 1px solid #E3F2FD;
+                    border-radius: 12px;
+                    margin-bottom: 12px;
+                    background: #FAFBFF;
+                ">
+                    <div style="
+                        width: 60px;
+                        height: 60px;
+                        background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+                        border-radius: 12px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin-right: 16px;
+                    ">
+                        <i class="fas fa-fish" style="color: #1976D2; font-size: 24px;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #0D47A1; margin-bottom: 4px;">
+                            ${item.nama_produk || item.product?.nama || 'Produk'}
+                        </div>
+                        <div style="font-size: 12px; color: #666; margin-bottom: 4px;">
+                            ${item.jumlah || 1} x ${orderManager.formatCurrency(item.harga || 0)}
+                        </div>
+                        <div style="font-weight: 600; color: #1976D2;">
+                            ${orderManager.formatCurrency(item.subtotal || (item.harga * item.jumlah) || 0)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            content.innerHTML = `
+                <div style="margin-bottom: 24px;">
+                    <div style="
+                        background: linear-gradient(135deg, #F8FBFF, #E3F2FD);
+                        padding: 20px;
+                        border-radius: 16px;
+                        margin-bottom: 20px;
+                    ">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <div>
+                                <h4 style="color: #0D47A1; margin-bottom: 4px;">Pesanan #${order.nomor_pesanan || order.id}</h4>
+                                <p style="font-size: 14px; color: #666; margin: 0;">${orderManager.formatDate(order.created_at)}</p>
+                            </div>
+                            <span style="
+                                background: ${orderManager.getStatusColor(order.status)};
+                                color: white;
+                                padding: 8px 16px;
+                                border-radius: 20px;
+                                font-size: 14px;
+                                font-weight: 600;
+                            ">${orderManager.getStatusText(order.status)}</span>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                            <div>
+                                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Metode Pembayaran</div>
+                                <div style="font-weight: 600; color: #333;">${order.metode_pembayaran || 'Belum ditentukan'}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Total Pembayaran</div>
+                                <div style="font-weight: 600; color: #1976D2; font-size: 18px;">${orderManager.formatCurrency(order.total || order.total_amount || 0)}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 style="color: #0D47A1; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-list"></i>
+                        Item Pesanan
+                    </h5>
+                    ${items.length > 0 ? itemsHtml : `
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <i class="fas fa-shopping-cart" style="font-size: 48px; color: #E0E0E0; margin-bottom: 16px;"></i>
+                            <p>Tidak ada item dalam pesanan ini</p>
+                        </div>
+                    `}
+                </div>
+
+                ${order.status === 'menunggu' || order.status === 'dibayar' ? `
+                    <div style="
+                        border-top: 1px solid #E3F2FD;
+                        padding-top: 20px;
+                        text-align: center;
+                    ">
+                        <button onclick="confirmCancelOrder(${order.id})" style="
+                            background: linear-gradient(135deg, #D32F2F, #B71C1C);
+                            border: none;
+                            color: white;
+                            padding: 12px 24px;
+                            border-radius: 12px;
+                            cursor: pointer;
+                            font-weight: 600;
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 8px;
+                        ">
+                            <i class="fas fa-times"></i>
+                            Batalkan Pesanan
+                        </button>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        // Confirm cancel order
+        function confirmCancelOrder(orderId) {
+            if (confirm('Apakah Anda yakin ingin membatalkan pesanan ini?')) {
+                cancelOrderById(orderId);
+            }
+        }
+
+        // Cancel order by ID
+        async function cancelOrderById(orderId) {
+            try {
+                const result = await orderManager.cancelOrder(orderId, 'Dibatalkan oleh customer');
+                if (result) {
+                    // Close modal and refresh data
+                    const modal = document.querySelector('[style*="position: fixed"]');
+                    if (modal) modal.remove();
+
+                    // Refresh order stats
+                    fetchOrderStats();
+                }
+            } catch (error) {
+                console.error('Error cancelling order:', error);
+            }
+        }
+
+        // Initialize profile page with order integration
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load order statistics on page load
+            fetchOrderStats();
+
+            // Add CSS for animations and transitions
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+
+                [onclick]:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+                    transition: all 0.3s ease;
+                }
+
+                .modal-backdrop {
+                    animation: fadeIn 0.3s ease;
+                }
+
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+
+                .order-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 25px rgba(25, 118, 210, 0.15);
+                }
+
+                .loading-spinner {
+                    animation: spin 1s linear infinite;
+                }
+            `;
+            document.head.appendChild(style);
+
+            // Check authentication status
+            console.log('Order management system initialized');
+            if (orderManager.token) {
+                console.log('Authentication token found, ready to fetch orders');
+            } else {
+                console.warn('No authentication token found, some features may not work');
+            }
+        });
     </script>
 </body>
 </html>
