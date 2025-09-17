@@ -357,17 +357,17 @@
 
     <div class="header">
         <h1><i class="fas fa-fish"></i> Manajemen Tambak Ikan</h1>
-        <p>Kelola tambak dan temukan pengepul terbaik</p>
+        <p>Kelola tambak dan hubungi pemilik untuk kerjasama</p>
     </div>
 
     <div class="container">
-        <!-- Tabs -->
+        <!-- Tab Navigation -->
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('fishfarms')">
-                <i class="fas fa-swimmer"></i> Tambak Saya
+            <button class="tab active" onclick="switchTab('fish-farms')">
+                <i class="fas fa-fish"></i> Tambak Ikan
             </button>
             <button class="tab" onclick="switchTab('collectors')">
-                <i class="fas fa-truck"></i> Cari Pengepul
+                <i class="fas fa-users"></i> Cari Pengepul
             </button>
             <button class="tab" onclick="switchTab('nearest-collectors')">
                 <i class="fas fa-map-marker-alt"></i> Pengepul Terdekat
@@ -375,7 +375,7 @@
         </div>
 
         <!-- Fish Farms Tab -->
-        <div id="fishfarms-tab" class="tab-content active">
+        <div id="fish-farms" class="tab-content active">
             <div class="action-bar">
                 <div class="search-box">
                     <input type="text" class="search-input" placeholder="Cari tambak..." id="fishFarmSearch">
@@ -397,30 +397,19 @@
         </div>
 
         <!-- Collectors Tab -->
-        <div id="collectors-tab" class="tab-content">
+        <div id="collectors" class="tab-content">
             <div class="action-bar">
                 <div class="search-box">
                     <input type="text" class="search-input" placeholder="Cari pengepul..." id="collectorSearch">
-                    <select class="search-input" id="fishTypeFilter">
-                        <option value="">Semua Jenis Ikan</option>
-                        <option value="Lele">Lele</option>
-                        <option value="Nila">Nila</option>
-                        <option value="Mujair">Mujair</option>
-                        <option value="Gurame">Gurame</option>
-                        <option value="Patin">Patin</option>
-                        <option value="Bandeng">Bandeng</option>
-                        <option value="Mas">Mas</option>
-                        <option value="Bawal">Bawal</option>
-                    </select>
                     <button class="btn btn-secondary" onclick="searchCollectors()">
                         <i class="fas fa-search"></i> Cari
                     </button>
                 </div>
-                <a href="{{ route('collectors.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Daftar Usaha
+                <a href="/collectors/create" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Kelola Usaha Pengepul
                 </a>
             </div>
-
+            
             <div id="collectorsContainer" class="grid">
                 <div class="loading">
                     <i class="fas fa-spinner fa-spin fa-2x"></i>
@@ -430,44 +419,20 @@
         </div>
 
         <!-- Nearest Collectors Tab -->
-        <div id="nearest-collectors-tab" class="tab-content">
+        <div id="nearest-collectors" class="tab-content">
             <div class="action-bar">
                 <div class="search-box">
-                    <input type="number" class="search-input" placeholder="Jarak maksimal (km)" id="maxDistanceFilter" value="50" min="1" max="500">
-                    <select class="search-input" id="nearestFishTypeFilter">
-                        <option value="">Semua Jenis Ikan</option>
-                        <option value="Lele">Lele</option>
-                        <option value="Nila">Nila</option>
-                        <option value="Mujair">Mujair</option>
-                        <option value="Gurame">Gurame</option>
-                        <option value="Patin">Patin</option>
-                        <option value="Bandeng">Bandeng</option>
-                        <option value="Mas">Mas</option>
-                        <option value="Bawal">Bawal</option>
-                    </select>
-                    <input type="number" class="search-input" placeholder="Rate min (Rp/kg)" id="minRateFilter" min="0">
-                    <input type="number" class="search-input" placeholder="Rate max (Rp/kg)" id="maxRateFilter" min="0">
-                    <button class="btn btn-secondary" onclick="loadNearestCollectors()">
-                        <i class="fas fa-search"></i> Cari Terdekat
+                    <button class="btn btn-primary" onclick="searchNearestCollectors()">
+                        <i class="fas fa-search"></i> Cari Pengepul Terdekat
                     </button>
                 </div>
-                <button class="btn btn-info" onclick="getCurrentLocation()">
-                    <i class="fas fa-location-arrow"></i> Update Lokasi Saya
-                </button>
             </div>
-
-            <div id="locationInfo" class="location-info" style="display: none;">
-                <div class="info-card">
-                    <h4><i class="fas fa-map-marker-alt"></i> Lokasi Anda</h4>
-                    <p id="userLocationText">Memuat lokasi...</p>
-                    <p><small>Pencarian berdasarkan lokasi Anda saat ini</small></p>
-                </div>
-            </div>
-
+            
             <div id="nearestCollectorsContainer" class="grid">
-                <div class="loading">
-                    <i class="fas fa-spinner fa-spin fa-2x"></i>
-                    <p>Memuat pengepul terdekat...</p>
+                <div class="empty-state">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <h3>Cari Pengepul Terdekat</h3>
+                    <p>Klik tombol di atas untuk menemukan pengepul terdekat dari lokasi Anda</p>
                 </div>
             </div>
         </div>
@@ -475,12 +440,46 @@
 
     <script src="/js/auth.js"></script>
     <script>
-        let currentTab = 'fishfarms';
         let fishFarms = [];
+        let currentUserId = null;
         let collectors = [];
         let nearestCollectors = [];
-        let currentUserId = null;
-        let userLocation = null;
+
+        // Tab switching function
+        function switchTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab content
+            const selectedTab = document.getElementById(tabName);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+
+            // Add active class to clicked tab
+            const clickedTab = document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`);
+            if (clickedTab) {
+                clickedTab.classList.add('active');
+            }
+
+            // Load content based on tab
+            if (tabName === 'fish-farms') {
+                loadFishFarms();
+            } else if (tabName === 'collectors') {
+                loadCollectors();
+            } else if (tabName === 'nearest-collectors') {
+                // Don't auto-load, let user click search button
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             // Check if user is logged in
@@ -490,30 +489,9 @@
                 return;
             }
             
-            loadFishFarms();
-            loadCollectors();
+            // Initialize with fish farms tab
+            switchTab('fish-farms');
         });
-
-        function switchTab(tab) {
-            // Update tab buttons
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
-
-            // Update tab content
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById(`${tab}-tab`).classList.add('active');
-
-            currentTab = tab;
-
-            // Load data if not already loaded
-            if (tab === 'fishfarms' && fishFarms.length === 0) {
-                loadFishFarms();
-            } else if (tab === 'collectors' && collectors.length === 0) {
-                loadCollectors();
-            } else if (tab === 'nearest-collectors') {
-                loadNearestCollectors();
-            }
-        }
 
         async function loadFishFarms() {
             try {
@@ -585,7 +563,7 @@
             }
 
             container.innerHTML = farms.map(farm => `
-                <div class="card">
+                <div class="card farm-card" onclick="viewFishFarm(${farm.id})" style="cursor: pointer;">
                     <div class="card-header">
                         <div class="card-image">
                             ${farm.foto ? `<img src="/storage/${farm.foto}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">` : '<i class="fas fa-fish"></i>'}
@@ -608,17 +586,21 @@
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Estimasi Produksi</span>
-                            <span class="detail-value">${(farm.banyak_bibit * 0.8 * 0.5).toFixed(0)} kg</span>
+                            <span class="detail-value">${(farm.banyak_bibit * 0.4).toFixed(0)} kg</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Alamat</span>
                             <span class="detail-value">${farm.alamat.substring(0, 50)}...</span>
                         </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Pemilik</span>
+                            <span class="detail-value">${farm.user?.name || 'Pemilik lain'}</span>
+                        </div>
                     </div>
                     
-                    <div class="card-actions">
-                        <button class="btn btn-success" onclick="findCollectors(${farm.id})">
-                            <i class="fas fa-search"></i> Cari Pengepul
+                    <div class="card-actions" onclick="event.stopPropagation();">
+                        <button class="btn btn-primary" onclick="contactOwner(${farm.id})">
+                            <i class="fas fa-phone"></i> Hubungi Pemilik Tambak
                         </button>
                         ${farm.user_id === currentUserId ? `
                             <button class="btn btn-warning" onclick="editFishFarm(${farm.id})">
@@ -631,7 +613,6 @@
                             <button class="btn btn-info" onclick="viewFishFarm(${farm.id})">
                                 <i class="fas fa-eye"></i> Lihat Detail
                             </button>
-                            <small class="text-muted">Milik: ${farm.user?.name || 'Pemilik lain'}</small>
                         `}
                     </div>
                 </div>
@@ -651,158 +632,240 @@
             `;
         }
 
-        async function loadCollectors() {
+        function contactOwner(farmId) {
+            const farm = fishFarms.find(f => f.id === farmId);
+            if (!farm) {
+                alert('Tambak tidak ditemukan');
+                return;
+            }
+
+            const owner = farm.user;
+            if (!owner) {
+                alert('Informasi pemilik tidak tersedia');
+                return;
+            }
+
+            // Format WhatsApp number with +62 prefix and remove leading 0
+            function formatWhatsAppNumber(phoneNumber) {
+                if (!phoneNumber) return '';
+                
+                // Remove all non-numeric characters
+                let cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
+                
+                // Remove leading 0 if present
+                if (cleanNumber.startsWith('0')) {
+                    cleanNumber = cleanNumber.substring(1);
+                }
+                
+                // Add +62 prefix if not already present
+                if (!cleanNumber.startsWith('62')) {
+                    cleanNumber = '62' + cleanNumber;
+                }
+                
+                return cleanNumber;
+            }
+
+            const whatsappNumber = formatWhatsAppNumber(farm.no_telepon);
+
+            // Create contact modal content
+            const contactInfo = `
+                <div class="contact-info">
+                    <h3><i class="fas fa-phone"></i> Hubungi Pemilik Tambak</h3>
+                    <div class="contact-details">
+                        <h4>${farm.nama}</h4>
+                        <p><strong>Pemilik:</strong> ${owner.name}</p>
+                        <p><strong>Alamat:</strong> ${farm.alamat}</p>
+                        <p><strong>Jenis Ikan:</strong> ${farm.jenis_ikan}</p>
+                        ${(() => {
+                            let lat, lng;
+                            if (farm.lokasi_koordinat && typeof farm.lokasi_koordinat === 'object') {
+                                lat = farm.lokasi_koordinat.lat;
+                                lng = farm.lokasi_koordinat.lng;
+                            } else {
+                                lat = farm.latitude || farm.lat || farm.koordinat_latitude;
+                                lng = farm.longitude || farm.lng || farm.lon || farm.koordinat_longitude;
+                            }
+                            
+                            if (lat && lng && parseFloat(lat) !== 0 && parseFloat(lng) !== 0) {
+                                return `<p><strong>Koordinat:</strong> ${lat}, ${lng}</p>`;
+                            } else {
+                                return '<p><strong>Koordinat:</strong> <span style="color: orange;">Akan dicari berdasarkan alamat</span></p>';
+                            }
+                        })()}
+                        <p><small>Updated: ${new Date().toLocaleString()}</small></p>
+                    </div>
+                    <div class="contact-actions">
+                        ${farm.no_telepon ? `
+                            <a href="https://wa.me/+${whatsappNumber}" target="_blank" class="btn btn-success" style="background-color: #25D366;">
+                                <i class="fab fa-whatsapp"></i> WhatsApp
+                            </a>
+                        ` : ''}
+                        <button class="btn btn-primary" onclick="navigateToFarmLocation(${farm.id})">
+                            <i class="fas fa-map-marker-alt"></i> Menuju Lokasi
+                        </button>
+                        <button class="btn btn-secondary" onclick="closeDetailModal()">
+                            <i class="fas fa-times"></i> Tutup
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Show contact modal
+            showContactModal(contactInfo);
+        }
+
+        function showContactModal(content) {
+            const modal = document.getElementById('detailModal');
+            const title = document.getElementById('detailModalTitle');
+            const body = document.getElementById('detailModalBody');
+
+            title.innerHTML = '<i class="fas fa-phone"></i> Hubungi Pemilik';
+            body.innerHTML = content;
+            modal.style.display = 'block';
+        }
+
+        async function navigateToFarmLocation(farmId) {
             try {
-                const token = getToken();
-                if (!token) {
-                    alert('Anda harus login terlebih dahulu');
-                    window.location.href = '/login';
+                // Find the farm in our current data
+                const farm = fishFarms.find(f => f.id === farmId);
+                if (!farm) {
+                    alert('Data tambak tidak ditemukan');
                     return;
                 }
 
-                const response = await fetch('/api/collectors?status=aktif', {
-                    headers: {
-                        'Authorization': 'Bearer ' + token,
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    const result = await safeParseJSON(response);
-                    collectors = result.data.data || [];
-                    displayCollectors(collectors);
+                // Debug: Log farm data to see what's available
+                console.log('Farm data:', farm);
+                console.log('All farm keys:', Object.keys(farm));
+                console.log('lokasi_koordinat:', farm.lokasi_koordinat);
+                
+                // Koordinat disimpan dalam field lokasi_koordinat sebagai object dengan lat dan lng
+                let lat, lng;
+                
+                if (farm.lokasi_koordinat && typeof farm.lokasi_koordinat === 'object') {
+                    lat = farm.lokasi_koordinat.lat;
+                    lng = farm.lokasi_koordinat.lng;
                 } else {
-                    // Try to get error message safely
-                    let errorMessage = 'Failed to load collectors';
-                    try {
-                        const errorData = await safeParseJSON(response);
-                        errorMessage = errorData.message || errorMessage;
-                    } catch (e) {
-                        console.warn('Could not parse error response:', e);
-                    }
-                    throw new Error(errorMessage);
+                    // Fallback ke field terpisah jika ada
+                    lat = farm.latitude || farm.lat || farm.koordinat_latitude || farm.coord_lat || farm.location_lat;
+                    lng = farm.longitude || farm.lng || farm.lon || farm.koordinat_longitude || farm.coord_lng || farm.location_lng;
                 }
+
+                console.log('Raw coordinates from farm:', { 
+                    lokasi_koordinat: farm.lokasi_koordinat,
+                    latitude: farm.latitude, 
+                    longitude: farm.longitude,
+                    extractedLat: lat,
+                    extractedLng: lng
+                });
+                console.log('Extracted coordinates:', { lat, lng });
+
+                // PRIORITAS: Gunakan koordinat jika ada, bahkan jika alamat juga tersedia
+                if (lat && lng) {
+                    const latFloat = parseFloat(lat);
+                    const lngFloat = parseFloat(lng);
+                    
+                    console.log('Parsed coordinates:', { latFloat, lngFloat });
+
+                    if (!isNaN(latFloat) && !isNaN(lngFloat) && latFloat !== 0 && lngFloat !== 0) {
+                        console.log(`✅ USING COORDINATES: ${latFloat}, ${lngFloat}`);
+                        // URL format dengan pin/marker untuk koordinat yang tepat
+                        const googleMapsUrl = `https://www.google.com/maps?q=${latFloat},${lngFloat}&hl=id`;
+                        console.log('Google Maps URL with pin:', googleMapsUrl);
+                        window.open(googleMapsUrl, '_blank');
+                        return;
+                    } else {
+                        console.log('❌ Invalid coordinates - values are 0, NaN, or invalid');
+                    }
+                } else {
+                    console.log('❌ No coordinates found in any field');
+                }
+
+                // Fallback: Use address ONLY if coordinates really not available
+                console.log('⚠️ FALLING BACK TO ADDRESS');
+                if (farm.alamat) {
+                    console.log(`Using farm address: ${farm.alamat}`);
+                    const googleMapsUrl = `https://maps.google.com/maps?q=${encodeURIComponent(farm.alamat)}&hl=id`;
+                    console.log('Address Google Maps URL:', googleMapsUrl);
+                    window.open(googleMapsUrl, '_blank');
+                } else {
+                    alert('Lokasi tambak tidak tersedia');
+                }
+
             } catch (error) {
-                console.error('Error loading collectors:', error);
-                displayCollectorsError();
+                console.error('Error navigating to farm location:', error);
+                alert('Terjadi kesalahan saat membuka lokasi');
             }
         }
 
-        function displayCollectors(collectorsList) {
-            const container = document.getElementById('collectorsContainer');
-            
-            if (collectorsList.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-truck"></i>
-                        <h3>Belum Ada Pengepul</h3>
-                        <p>Belum ada pengepul yang terdaftar di area ini</p>
-                        <a href="{{ route('collectors.create') }}" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Daftarkan Usaha Pengepul
-                        </a>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = collectorsList.map(collector => `
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-image" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                            ${collector.foto ? `<img src="/storage/${collector.foto}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">` : '<i class="fas fa-truck"></i>'}
-                        </div>
-                        <div class="card-info">
-                            <h3>${collector.nama}</h3>
-                            <p><i class="fas fa-user"></i> ${collector.user?.name || 'Pengepul'}</p>
-                            <span class="status-badge status-${collector.status}">${collector.status}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="card-details">
-                        <div class="detail-item">
-                            <span class="detail-label">Harga/kg</span>
-                            <span class="detail-value">Rp ${parseInt(collector.rate_per_kg || collector.rate_harga_per_kg || 0).toLocaleString()}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Kapasitas</span>
-                            <span class="detail-value">${collector.kapasitas_maximum || collector.kapasitas_maksimal || 0} kg/hari</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Jam Operasional</span>
-                            <span class="detail-value">${collector.jam_operasional_mulai || collector.jam_operasional || 'Tidak tersedia'}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Jenis Ikan</span>
-                            <span class="detail-value">${Array.isArray(collector.jenis_ikan_diterima) ? collector.jenis_ikan_diterima.join(', ') : (collector.jenis_ikan_diterima || 'Semua jenis')}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="card-actions">
-                        <button class="btn btn-primary" onclick="createAppointment(${collector.id})">
-                            <i class="fas fa-calendar-plus"></i> Buat Janji
-                        </button>
-                        <button class="btn btn-secondary" onclick="viewCollector(${collector.id})">
-                            <i class="fas fa-eye"></i> Detail
-                        </button>
-                        <a href="https://wa.me/${collector.no_telepon?.replace(/[^0-9]/g, '')}" target="_blank" class="btn btn-success">
-                            <i class="fab fa-whatsapp"></i> WhatsApp
-                        </a>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function displayCollectorsError() {
-            document.getElementById('collectorsContainer').innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h3>Gagal Memuat Data</h3>
-                    <p>Terjadi kesalahan saat memuat data pengepul</p>
-                    <button class="btn btn-primary" onclick="loadCollectors()">
-                        <i class="fas fa-refresh"></i> Coba Lagi
-                    </button>
-                </div>
-            `;
-        }
-
-        async function findCollectors(fishFarmId) {
+        async function navigateToCollectorLocation(collectorId) {
             try {
-                const response = await fetch(`/api/fish-farms/${fishFarmId}/available-collectors`, {
-                    headers: {
-                        'Authorization': 'Bearer ' + getToken(),
-                        'Accept': 'application/json'
-                    }
+                // Find the collector in our current data
+                const collector = nearestCollectors.find(c => c.id === collectorId);
+                if (!collector) {
+                    alert('Data pengepul tidak ditemukan');
+                    return;
+                }
+
+                // Debug: Log collector data to see what's available
+                console.log('Collector data:', collector);
+                console.log('All collector keys:', Object.keys(collector));
+                console.log('lokasi_koordinat:', collector.lokasi_koordinat);
+
+                // Koordinat disimpan dalam field lokasi_koordinat sebagai object dengan lat dan lng
+                let lat, lng;
+                
+                if (collector.lokasi_koordinat && typeof collector.lokasi_koordinat === 'object') {
+                    lat = collector.lokasi_koordinat.lat;
+                    lng = collector.lokasi_koordinat.lng;
+                } else {
+                    // Fallback ke field terpisah jika ada
+                    lat = collector.latitude || collector.lat || collector.koordinat_latitude;
+                    lng = collector.longitude || collector.lng || collector.lon || collector.koordinat_longitude;
+                }
+
+                console.log('Raw coordinates from collector:', { 
+                    lokasi_koordinat: collector.lokasi_koordinat,
+                    latitude: collector.latitude, 
+                    longitude: collector.longitude,
+                    extractedLat: lat,
+                    extractedLng: lng
                 });
 
-                if (response.ok) {
-                    const result = await safeParseJSON(response);
-                    collectors = result.data || [];
-                    switchTab('collectors');
-                    displayCollectors(collectors);
-                } else {
-                    let errorMessage = 'Gagal mencari pengepul';
-                    try {
-                        const errorData = await safeParseJSON(response);
-                        errorMessage = errorData.message || errorMessage;
-                    } catch (e) {
-                        console.warn('Could not parse error response:', e);
-                    }
-                    alert(errorMessage);
-                }
-            } catch (error) {
-                console.error('Error finding collectors:', error);
-                alert('Terjadi kesalahan saat mencari pengepul');
-            }
-        }
+                // Use coordinates directly from database
+                if (lat && lng) {
+                    const latFloat = parseFloat(lat);
+                    const lngFloat = parseFloat(lng);
+                    
+                    console.log('Parsed coordinates:', { latFloat, lngFloat });
 
-        function createAppointment(collectorId) {
-            const collector = collectors.find(c => c.id === collectorId);
-            if (!collector) {
-                alert('Pengepul tidak ditemukan');
-                return;
+                    if (!isNaN(latFloat) && !isNaN(lngFloat) && latFloat !== 0 && lngFloat !== 0) {
+                        console.log(`✅ USING COORDINATES: ${latFloat}, ${lngFloat}`);
+                        // URL format dengan pin/marker untuk koordinat yang tepat
+                        const googleMapsUrl = `https://www.google.com/maps?q=${latFloat},${lngFloat}&hl=id`;
+                        console.log('Google Maps URL with pin:', googleMapsUrl);
+                        window.open(googleMapsUrl, '_blank');
+                        return;
+                    } else {
+                        console.log('Invalid coordinates - using address fallback');
+                    }
+                } else {
+                    console.log('No coordinates found - using address fallback');
+                }
+
+                // Fallback: Use address if coordinates not available
+                if (collector.alamat) {
+                    console.log(`Navigating to collector address: ${collector.alamat}`);
+                    const googleMapsUrl = `https://maps.google.com/maps?q=${encodeURIComponent(collector.alamat)}&hl=id`;
+                    console.log('Address Google Maps URL:', googleMapsUrl);
+                    window.open(googleMapsUrl, '_blank');
+                } else {
+                    alert('Lokasi pengepul tidak tersedia');
+                }
+
+            } catch (error) {
+                console.error('Error navigating to collector location:', error);
+                alert('Terjadi kesalahan saat membuka lokasi');
             }
-            
-            showAppointmentModal(collector);
         }
 
         function editFishFarm(farmId) {
@@ -812,8 +875,99 @@
         function viewFishFarm(farmId) {
             const farm = fishFarms.find(f => f.id === farmId);
             if (farm) {
-                alert(`Tambak: ${farm.nama}\nPemilik: ${farm.user?.name || 'Tidak diketahui'}\nJenis Ikan: ${farm.jenis_ikan}\nAlamat: ${farm.alamat}`);
+                showDetailModal('fish-farm', farm);
             }
+        }
+
+        function showDetailModal(type, data) {
+            const modal = document.getElementById('detailModal');
+            const title = document.getElementById('detailModalTitle');
+            const body = document.getElementById('detailModalBody');
+
+            if (type === 'fish-farm') {
+                title.innerHTML = '<i class="fas fa-fish"></i> Detail Tambak Ikan';
+                body.innerHTML = generateFishFarmDetailHTML(data);
+            }
+
+            modal.style.display = 'block';
+        }
+
+        function generateFishFarmDetailHTML(farm) {
+            return `
+                <div class="detail-section">
+                    <h4>📋 Informasi Dasar</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Nama Tambak</span>
+                            <span class="detail-value">${farm.nama || 'Belum diisi'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Status</span>
+                            <span class="status-badge-detail status-${farm.status || 'unknown'}">${(farm.status || 'Tidak diset').toUpperCase()}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Pemilik</span>
+                            <span class="detail-value">${farm.user?.name || 'Tidak ada'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">No. Telepon</span>
+                            <span class="detail-value">${farm.no_telepon || 'Belum diisi'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4>🐟 Detail Produksi</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Jenis Ikan</span>
+                            <span class="detail-value">${farm.jenis_ikan || 'Belum diisi'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Jumlah Bibit</span>
+                            <span class="detail-value">${farm.banyak_bibit ? farm.banyak_bibit.toLocaleString() + ' ekor' : 'Belum diisi'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Luas Tambak</span>
+                            <span class="detail-value">${farm.luas_tambak ? farm.luas_tambak.toLocaleString() + ' m²' : 'Belum diisi'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Estimasi Produksi</span>
+                            <span class="detail-value">${farm.banyak_bibit ? (farm.banyak_bibit * 0.4).toFixed(0) + ' kg' : 'Belum diisi'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4>📍 Lokasi</h4>
+                    <div class="detail-item">
+                        <span class="detail-label">Alamat</span>
+                        <span class="detail-value">${farm.alamat || 'Belum diisi'}</span>
+                    </div>
+                </div>
+
+                ${farm.deskripsi ? `
+                <div class="detail-section">
+                    <h4>📝 Deskripsi</h4>
+                    <div class="detail-item">
+                        <span class="detail-value">${farm.deskripsi}</span>
+                    </div>
+                </div>
+                ` : ''}
+
+                ${farm.foto ? `
+                <div class="detail-section">
+                    <h4>📸 Foto Tambak</h4>
+                    <div class="detail-image">
+                        <img src="/storage/${farm.foto}" alt="Foto Tambak">
+                    </div>
+                </div>
+                ` : ''}
+            `;
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').style.display = 'none';
         }
 
         async function deleteFishFarm(farmId) {
@@ -842,10 +996,6 @@
             }
         }
 
-        function viewCollector(collectorId) {
-            window.location.href = `/collectors/${collectorId}`;
-        }
-
         function searchFishFarms() {
             const query = document.getElementById('fishFarmSearch').value.toLowerCase();
             const filtered = fishFarms.filter(farm => 
@@ -856,24 +1006,314 @@
             displayFishFarms(filtered);
         }
 
-        function searchCollectors() {
-            const query = document.getElementById('collectorSearch').value.toLowerCase();
-            const fishType = document.getElementById('fishTypeFilter').value;
-            
-            let filtered = collectors.filter(collector => 
-                collector.nama.toLowerCase().includes(query) ||
-                collector.alamat.toLowerCase().includes(query)
-            );
+        // Collectors Functions
+        async function loadCollectors() {
+            try {
+                const token = getToken();
+                if (!token) {
+                    alert('Anda harus login terlebih dahulu');
+                    window.location.href = '/login';
+                    return;
+                }
 
-            if (fishType) {
-                filtered = filtered.filter(collector => 
-                    collector.jenis_ikan_diterima && 
-                    Array.isArray(collector.jenis_ikan_diterima) &&
-                    collector.jenis_ikan_diterima.includes(fishType)
-                );
+                const response = await fetch('/api/collectors', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await safeParseJSON(response);
+                    console.log('Collectors API response:', result);
+                    // Handle paginated response - data is in result.data.data
+                    collectors = result.data?.data || result.data || [];
+                    console.log('Processed collectors:', collectors);
+                    displayCollectors(collectors);
+                } else {
+                    console.error('Collectors API error:', response.status, response.statusText);
+                    displayCollectorsError();
+                }
+            } catch (error) {
+                console.error('Error loading collectors:', error);
+                displayCollectorsError();
+            }
+        }
+
+        function displayCollectors(collectorsData) {
+            const container = document.getElementById('collectorsContainer');
+            
+            // Ensure collectorsData is an array
+            if (!Array.isArray(collectorsData)) {
+                console.error('collectorsData is not an array:', collectorsData);
+                displayCollectorsError();
+                return;
+            }
+            
+            if (collectorsData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <h3>Belum Ada Pengepul</h3>
+                        <p>Daftarkan usaha pengepul Anda untuk mulai melayani petani</p>
+                        <a href="/collectors/create" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Daftarkan Usaha Pengepul
+                        </a>
+                    </div>
+                `;
+                return;
             }
 
+            container.innerHTML = collectorsData.map(collector => `
+                <div class="card collector-card">
+                    <div class="card-header">
+                        <div class="card-image">
+                            ${collector.foto ? `<img src="/storage/${collector.foto}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">` : '<i class="fas fa-users"></i>'}
+                        </div>
+                        <div class="card-info">
+                            <h3>${collector.nama_usaha || collector.nama || 'Nama tidak tersedia'}</h3>
+                            <p><i class="fas fa-map-marker-alt"></i> ${collector.alamat || 'Alamat tidak tersedia'}</p>
+                            <span class="status-badge status-${collector.status || 'active'}">${collector.status || 'Aktif'}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Kontak</span>
+                            <span class="detail-value">${collector.no_telepon || 'Tidak tersedia'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Rate per KG</span>
+                            <span class="detail-value">Rp ${collector.rate_per_kg ? parseInt(collector.rate_per_kg).toLocaleString() : 'Tidak tersedia'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Kapasitas Max</span>
+                            <span class="detail-value">${collector.kapasitas_maximum ? collector.kapasitas_maximum + ' kg' : 'Tidak tersedia'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Email</span>
+                            <span class="detail-value">${collector.user?.email || collector.email || 'Tidak tersedia'}</span>
+                        </div>
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="btn btn-primary" onclick="editCollector(${collector.id})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteCollector(${collector.id})">
+                            <i class="fas fa-trash"></i> Hapus
+                        </button>
+                        <button class="btn btn-info" onclick="navigateToCollectorLocation(${collector.id})">
+                            <i class="fas fa-map-marker-alt"></i> Lokasi
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displayCollectorsError() {
+            document.getElementById('collectorsContainer').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Gagal Memuat Data</h3>
+                    <p>Terjadi kesalahan saat memuat data pengepul</p>
+                    <button class="btn btn-primary" onclick="loadCollectors()">
+                        <i class="fas fa-refresh"></i> Coba Lagi
+                    </button>
+                </div>
+            `;
+        }
+
+        function searchCollectors() {
+            const query = document.getElementById('collectorSearch').value.toLowerCase();
+            const filtered = collectors.filter(collector => 
+                (collector.nama_usaha && collector.nama_usaha.toLowerCase().includes(query)) ||
+                (collector.nama && collector.nama.toLowerCase().includes(query)) ||
+                (collector.alamat && collector.alamat.toLowerCase().includes(query)) ||
+                (collector.no_telepon && collector.no_telepon.includes(query))
+            );
             displayCollectors(filtered);
+        }
+
+        async function searchNearestCollectors() {
+            try {
+                const container = document.getElementById('nearestCollectorsContainer');
+                container.innerHTML = `
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        <p>Mencari pengepul terdekat...</p>
+                    </div>
+                `;
+
+                // Get user's current location
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const { latitude, longitude } = position.coords;
+                    
+                    const token = getToken();
+                    const response = await fetch(`/api/collectors/nearest?lat=${latitude}&lng=${longitude}`, {
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const result = await safeParseJSON(response);
+                        nearestCollectors = result.data || [];
+                        displayNearestCollectors(nearestCollectors);
+                    } else {
+                        displayNearestCollectorsError();
+                    }
+                }, (error) => {
+                    console.error('Geolocation error:', error);
+                    alert('Tidak dapat mengakses lokasi Anda. Pastikan Anda mengizinkan akses lokasi.');
+                    displayNearestCollectorsError();
+                });
+
+            } catch (error) {
+                console.error('Error searching nearest collectors:', error);
+                displayNearestCollectorsError();
+            }
+        }
+
+        function displayNearestCollectors(collectorsData) {
+            const container = document.getElementById('nearestCollectorsContainer');
+            
+            if (collectorsData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <h3>Tidak Ada Pengepul Terdekat</h3>
+                        <p>Tidak ditemukan pengepul di sekitar lokasi Anda</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = collectorsData.map(collector => `
+                <div class="card collector-card">
+                    <div class="card-header">
+                        <div class="card-image">
+                            ${collector.foto ? `<img src="/storage/${collector.foto}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">` : '<i class="fas fa-users"></i>'}
+                        </div>
+                        <div class="card-info">
+                            <h3>${collector.nama_usaha || collector.nama || 'Nama tidak tersedia'}</h3>
+                            <p><i class="fas fa-map-marker-alt"></i> ${collector.alamat || 'Alamat tidak tersedia'}</p>
+                            <p><i class="fas fa-road"></i> ${collector.distance ? collector.distance.toFixed(1) + ' km' : 'Jarak tidak tersedia'}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Kontak</span>
+                            <span class="detail-value">${collector.no_telepon || 'Tidak tersedia'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Email</span>
+                            <span class="detail-value">${collector.email || 'Tidak tersedia'}</span>
+                        </div>
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="btn btn-success" onclick="contactCollector(${collector.id})">
+                            <i class="fas fa-phone"></i> Hubungi
+                        </button>
+                        <button class="btn btn-info" onclick="navigateToCollectorLocation(${collector.id})">
+                            <i class="fas fa-map-marker-alt"></i> Lokasi
+                        </button>
+                        <button class="btn btn-primary" onclick="makeAppointment(${collector.id})">
+                            <i class="fas fa-calendar"></i> Buat Janji
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displayNearestCollectorsError() {
+            document.getElementById('nearestCollectorsContainer').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Gagal Mencari Pengepul</h3>
+                    <p>Terjadi kesalahan saat mencari pengepul terdekat</p>
+                    <button class="btn btn-primary" onclick="searchNearestCollectors()">
+                        <i class="fas fa-refresh"></i> Coba Lagi
+                    </button>
+                </div>
+            `;
+        }
+
+        function contactCollector(collectorId) {
+            const collector = collectors.find(c => c.id === collectorId) || 
+                             nearestCollectors.find(c => c.id === collectorId);
+            
+            if (!collector) {
+                alert('Data pengepul tidak ditemukan');
+                return;
+            }
+
+            if (collector.no_telepon) {
+                // Format WhatsApp number
+                function formatWhatsAppNumber(phoneNumber) {
+                    if (!phoneNumber) return '';
+                    let cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
+                    if (cleanNumber.startsWith('0')) {
+                        cleanNumber = cleanNumber.substring(1);
+                    }
+                    if (!cleanNumber.startsWith('62')) {
+                        cleanNumber = '62' + cleanNumber;
+                    }
+                    return cleanNumber;
+                }
+
+                const whatsappNumber = formatWhatsAppNumber(collector.no_telepon);
+                const collectorName = collector.nama_usaha || collector.nama || 'Pengepul';
+                const message = `Halo, saya tertarik dengan layanan pengepul ikan ${collectorName}. Bisakah kita diskusi lebih lanjut?`;
+                const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, '_blank');
+            } else {
+                alert('Nomor telepon pengepul tidak tersedia');
+            }
+        }
+
+        function editCollector(collectorId) {
+            window.location.href = `/collectors/${collectorId}/edit`;
+        }
+
+        async function deleteCollector(collectorId) {
+            if (!confirm('Apakah Anda yakin ingin menghapus data pengepul ini?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/collectors/${collectorId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken(),
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    alert('Data pengepul berhasil dihapus');
+                    loadCollectors();
+                } else {
+                    alert('Gagal menghapus data pengepul');
+                }
+            } catch (error) {
+                console.error('Error deleting collector:', error);
+                alert('Terjadi kesalahan saat menghapus data pengepul');
+            }
+        }
+
+        function makeAppointment(collectorId) {
+            const collector = nearestCollectors.find(c => c.id === collectorId);
+            if (!collector) {
+                alert('Data pengepul tidak ditemukan');
+                return;
+            }
+
+            // For now, redirect to appointment creation page
+            window.location.href = `/appointments/create?collector_id=${collectorId}`;
         }
 
         // Appointment Modal Functions
@@ -1145,6 +1585,22 @@
                         <p><i class="fas fa-user"></i> ${collector.user?.name || 'Pengepul'}</p>
                         <p><i class="fas fa-phone"></i> ${collector.no_telepon}</p>
                         <p><i class="fas fa-map-marker-alt"></i> ${collector.alamat}</p>
+                        ${(() => {
+                            let lat, lng;
+                            if (collector.lokasi_koordinat && typeof collector.lokasi_koordinat === 'object') {
+                                lat = collector.lokasi_koordinat.lat;
+                                lng = collector.lokasi_koordinat.lng;
+                            } else {
+                                lat = collector.latitude || collector.lat || collector.koordinat_latitude;
+                                lng = collector.longitude || collector.lng || collector.lon || collector.koordinat_longitude;
+                            }
+                            
+                            if (lat && lng && parseFloat(lat) !== 0 && parseFloat(lng) !== 0) {
+                                return `<p><i class="fas fa-crosshairs"></i> Koordinat: ${lat}, ${lng}</p>`;
+                            } else {
+                                return '<p><i class="fas fa-crosshairs"></i> <span style="color: orange;">Lokasi berdasarkan alamat</span></p>';
+                            }
+                        })()}
                         <p><i class="fas fa-fish"></i> ${Array.isArray(collector.jenis_ikan_diterima) ? collector.jenis_ikan_diterima.join(', ') : (collector.jenis_ikan_diterima || 'Semua jenis ikan')}</p>
                         <p><i class="fas fa-money-bill-wave"></i> Rp ${parseInt(collector.rate_per_kg || 0).toLocaleString('id-ID')}/kg</p>
                         <p><i class="fas fa-weight"></i> Kapasitas: ${collector.kapasitas_maximum} kg</p>
@@ -1159,7 +1615,10 @@
                             <button class="btn btn-secondary" onclick="viewCollector(${collector.id})">
                                 <i class="fas fa-eye"></i> Lihat Detail
                             </button>
-                            <button class="btn btn-primary" onclick="openAppointmentModal(${collector.id}, '${collector.nama_usaha}')">
+                            <button class="btn btn-primary" onclick="navigateToCollectorLocation(${collector.id})">
+                                <i class="fas fa-map-marker-alt"></i> Menuju Lokasi
+                            </button>
+                            <button class="btn btn-success" onclick="openAppointmentModal(${collector.id}, '${collector.nama_usaha}')">
                                 <i class="fas fa-calendar-plus"></i> Buat Janji
                             </button>
                         </div>
@@ -1251,9 +1710,15 @@
 
         // Close modal when clicking outside
         window.onclick = function(event) {
-            const modal = document.getElementById('appointmentModal');
-            if (event.target === modal) {
+            const appointmentModal = document.getElementById('appointmentModal');
+            const detailModal = document.getElementById('detailModal');
+            
+            if (event.target === appointmentModal) {
                 closeAppointmentModal();
+            }
+            
+            if (event.target === detailModal) {
+                closeDetailModal();
             }
         }
     </script>
@@ -1308,6 +1773,20 @@
         </div>
     </div>
 
+    <!-- Detail Modal for Fish Farm and Collector -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content detail-modal">
+            <div class="modal-header">
+                <h3 id="detailModalTitle"><i class="fas fa-info-circle"></i> Detail</h3>
+                <span class="close" onclick="closeDetailModal()">&times;</span>
+            </div>
+            
+            <div class="modal-body" id="detailModalBody">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
     <style>
         /* Modal Styles */
         .modal {
@@ -1329,6 +1808,12 @@
             max-width: 500px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.1);
             animation: modalSlideIn 0.3s ease-out;
+        }
+
+        .detail-modal {
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         @keyframes modalSlideIn {
@@ -1428,6 +1913,124 @@
 
         .form-actions .btn {
             padding: 0.8rem 1.5rem;
+        }
+
+        /* Detail Modal Styles */
+        .detail-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+        }
+
+        .detail-section h4 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .detail-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .detail-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            font-weight: 500;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-value {
+            font-size: 1rem;
+            color: #212529;
+            font-weight: 600;
+        }
+
+        .status-badge-detail {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-aktif { background: #d4edda; color: #155724; }
+        .status-nonaktif { background: #f8d7da; color: #721c24; }
+        .status-maintenance { background: #fff3cd; color: #856404; }
+
+        .detail-image {
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .detail-image img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* Clickable Card Styles */
+        .farm-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .farm-card {
+            transition: all 0.3s ease;
+        }
+
+        .farm-card:hover .card-header h3 {
+            color: #667eea;
+        }
+
+        /* Contact Modal Styles */
+        .contact-info {
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .contact-info h3 {
+            color: #667eea;
+            margin-bottom: 1.5rem;
+        }
+
+        .contact-details {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .contact-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+
+        .contact-actions .btn {
+            min-width: 120px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
     </style>
 </body>
