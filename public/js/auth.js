@@ -5,15 +5,15 @@
 
 // Token utility functions
 function getAuthToken() {
-    return localStorage.getItem('auth_token') || 
-           sessionStorage.getItem('auth_token') || 
+    return localStorage.getItem('auth_token') ||
+           sessionStorage.getItem('auth_token') ||
            getCookie('auth_token');
 }
 
 function setAuthToken(token, remember = false) {
     console.log('setAuthToken called with token:', token ? token.substring(0, 10) + '...' : 'null');
     console.log('setAuthToken remember:', remember);
-    
+
     if (remember) {
         localStorage.setItem('auth_token', token);
         sessionStorage.removeItem('auth_token');
@@ -23,12 +23,12 @@ function setAuthToken(token, remember = false) {
         localStorage.removeItem('auth_token');
         console.log('Token saved to sessionStorage, removed from localStorage');
     }
-    
+
     // Also set as cookie for web route authentication
     const cookieDays = remember ? 30 : 1; // Use 1 day instead of 0 for session
     setCookie('auth_token', token, cookieDays);
     console.log('Token saved to cookie with days:', cookieDays);
-    
+
     // Verify cookie was set immediately
     setTimeout(() => {
         const cookieValue = getCookie('auth_token');
@@ -44,7 +44,7 @@ function clearAuthToken() {
     sessionStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
     sessionStorage.removeItem('user_data');
-    
+
     // Clear cookie too
     setCookie('auth_token', '', -1);
 }
@@ -57,7 +57,7 @@ function setCookie(name, value, days) {
         date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
         expires = "; expires=" + date.toUTCString();
     }
-    
+
     // Ensure value is properly encoded
     const encodedValue = encodeURIComponent(value || "");
     const cookieString = name + "=" + encodedValue + expires + "; path=/; SameSite=Lax";
@@ -131,35 +131,117 @@ function setUserData(userData, remember = false) {
     }
 }
 
-// HTTP utilities with Bearer token
+// CSRF token utility
+async function getCsrfToken() {
+    try {
+        // First try to get from meta tag
+        const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (metaToken) {
+            return metaToken;
+        }
+
+        // If not available, get from API
+        const response = await fetch('/api/csrf-cookie', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            // Get CSRF token from cookie after the request
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'XSRF-TOKEN') {
+                    return decodeURIComponent(value);
+                }
+            }
+        }
+
+        return '';
+    } catch (error) {
+        console.error('Failed to get CSRF token:', error);
+        return '';
+    }
+}
+
+// HTTP utilities with Bearer token and CSRF protection
 async function authenticatedFetch(url, options = {}) {
     const token = getAuthToken();
-    
+    const csrfToken = await getCsrfToken();
+
+    const isFormData = options.body instanceof FormData;
+
     const defaultHeaders = {
-        'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        'X-Requested-With': 'XMLHttpRequest'
     };
-    
+
+    // Only set Content-Type for non-FormData requests
+    if (!isFormData) {
+        defaultHeaders['Content-Type'] = 'application/json';
+    }
+
+    // Add CSRF token for state-changing requests
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes((options.method || 'GET').toUpperCase())) {
+        if (csrfToken) {
+            defaultHeaders['X-CSRF-TOKEN'] = csrfToken;
+        }
+        // Also try meta tag as fallback
+        const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (metaToken && !defaultHeaders['X-CSRF-TOKEN']) {
+            defaultHeaders['X-CSRF-TOKEN'] = metaToken;
+        }
+
+        // For FormData, add CSRF token as form field too
+        if (isFormData && csrfToken) {
+            options.body.append('_token', csrfToken);
+        }
+    }
+
     if (token) {
         defaultHeaders['Authorization'] = `Bearer ${token}`;
     }
-    
+
     const finalOptions = {
+        credentials: 'same-origin', // Include cookies for CSRF protection
         ...options,
         headers: {
             ...defaultHeaders,
             ...options.headers
         }
     };
-    
+
     try {
         const response = await fetch(url, finalOptions);
-        
+
+        // Handle CSRF token mismatch (419)
+        if (response.status === 419) {
+            console.log('CSRF token mismatch, retrying...');
+            // Clear any cached token and retry once
+            const newCsrfToken = await getCsrfToken();
+            if (newCsrfToken && newCsrfToken !== csrfToken) {
+                finalOptions.headers['X-CSRF-TOKEN'] = newCsrfToken;
+                if (isFormData) {
+                    // Update FormData with new token
+                    finalOptions.body.delete('_token');
+                    finalOptions.body.append('_token', newCsrfToken);
+                }
+                const retryResponse = await fetch(url, finalOptions);
+                if (retryResponse.ok || retryResponse.status !== 419) {
+                    return retryResponse;
+                }
+            }
+            showAlert('CSRF token tidak valid. Silakan refresh halaman.', 'error');
+            return null;
+        }
+
         // Check if token is invalid (401 Unauthorized)
         if (response.status === 401) {
             clearAuthToken();
-            
+
             // Redirect to login if not already on login page
             if (!window.location.pathname.includes('login') && !window.location.pathname.includes('register')) {
                 showAlert('Sesi Anda telah berakhir. Silakan login kembali.', 'error');
@@ -169,7 +251,7 @@ async function authenticatedFetch(url, options = {}) {
             }
             return null;
         }
-        
+
         return response;
     } catch (error) {
         console.error('Authenticated fetch error:', error);
@@ -186,7 +268,7 @@ async function addToCart(productId, quantity = 1) {
         }, 2000);
         return null;
     }
-    
+
     try {
         const response = await authenticatedFetch('/api/cart/add', {
             method: 'POST',
@@ -195,7 +277,7 @@ async function addToCart(productId, quantity = 1) {
                 quantity: quantity
             })
         });
-        
+
         if (response && response.ok) {
             const data = await response.json();
             showAlert('Produk berhasil ditambahkan ke keranjang', 'success');
@@ -204,7 +286,7 @@ async function addToCart(productId, quantity = 1) {
             const data = await response.json();
             showAlert(data.message || 'Gagal menambahkan ke keranjang', 'error');
         }
-        
+
         return null;
     } catch (error) {
         console.error('Add to cart error:', error);
@@ -217,15 +299,15 @@ async function getCartItems() {
     if (!isAuthenticated()) {
         return [];
     }
-    
+
     try {
         const response = await authenticatedFetch('/api/cart');
-        
+
         if (response && response.ok) {
             const data = await response.json();
             return data.data || [];
         }
-        
+
         return [];
     } catch (error) {
         console.error('Get cart items error:', error);
@@ -237,7 +319,7 @@ async function updateCartItem(cartItemId, quantity) {
     if (!isAuthenticated()) {
         return null;
     }
-    
+
     try {
         const response = await authenticatedFetch(`/api/cart/${cartItemId}`, {
             method: 'PUT',
@@ -245,7 +327,7 @@ async function updateCartItem(cartItemId, quantity) {
                 quantity: quantity
             })
         });
-        
+
         if (response && response.ok) {
             const data = await response.json();
             showAlert('Keranjang berhasil diperbarui', 'success');
@@ -254,7 +336,7 @@ async function updateCartItem(cartItemId, quantity) {
             const data = await response.json();
             showAlert(data.message || 'Gagal memperbarui keranjang', 'error');
         }
-        
+
         return null;
     } catch (error) {
         console.error('Update cart item error:', error);
@@ -267,12 +349,12 @@ async function removeFromCart(cartItemId) {
     if (!isAuthenticated()) {
         return null;
     }
-    
+
     try {
         const response = await authenticatedFetch(`/api/cart/${cartItemId}`, {
             method: 'DELETE'
         });
-        
+
         if (response && response.ok) {
             const data = await response.json();
             showAlert('Item berhasil dihapus dari keranjang', 'success');
@@ -281,7 +363,7 @@ async function removeFromCart(cartItemId) {
             const data = await response.json();
             showAlert(data.message || 'Gagal menghapus dari keranjang', 'error');
         }
-        
+
         return null;
     } catch (error) {
         console.error('Remove from cart error:', error);
@@ -293,7 +375,7 @@ async function removeFromCart(cartItemId) {
 // Logout function - supports both API and session-based auth
 async function logout() {
     const token = getAuthToken();
-    
+
     // Try API logout first if we have a token
     if (token) {
         try {
@@ -306,7 +388,7 @@ async function logout() {
             console.error('Logout API error:', error);
         }
     }
-    
+
     // Always try session-based logout for web auth
     try {
         console.log('Attempting session logout...');
@@ -320,7 +402,7 @@ async function logout() {
             },
             credentials: 'same-origin'
         });
-        
+
         if (response.ok) {
             console.log('Session logout successful');
         } else {
@@ -329,11 +411,11 @@ async function logout() {
     } catch (error) {
         console.error('Session logout error:', error);
     }
-    
+
     // Clear all tokens regardless of logout success
     clearAuthToken();
     showAlert('Logout berhasil', 'success');
-    
+
     setTimeout(() => {
         window.location.href = '/login';
     }, 1500);
@@ -353,19 +435,19 @@ function createAlert(message, type = 'info') {
     // Create alert element
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type}`;
-    
+
     const iconMap = {
         'success': 'fas fa-check-circle',
         'error': 'fas fa-exclamation-circle',
         'warning': 'fas fa-exclamation-triangle',
         'info': 'fas fa-info-circle'
     };
-    
+
     alertDiv.innerHTML = `
         <i class="${iconMap[type] || iconMap['info']}"></i>
         <span>${message}</span>
     `;
-    
+
     // Add styles if not already present
     if (!document.querySelector('#alert-styles')) {
         const style = document.createElement('style');
@@ -397,9 +479,9 @@ function createAlert(message, type = 'info') {
         `;
         document.head.appendChild(style);
     }
-    
+
     document.body.appendChild(alertDiv);
-    
+
     // Remove alert after 5 seconds
     setTimeout(() => {
         if (alertDiv.parentNode) {
@@ -414,7 +496,7 @@ function showAlert(message, type = 'info') {
     if (typeof window.localShowAlert === 'function') {
         return window.localShowAlert(message, type);
     }
-    
+
     // Otherwise use the global alert function
     return createAlert(message, type);
 }
@@ -443,7 +525,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (userData) {
             console.log('User authenticated:', userData.name);
         }
-        
+
         // Update cookie to ensure it's set for web routes
         const token = getAuthToken();
         if (token) {
@@ -452,7 +534,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Token cookie updated for web routes');
         }
     }
-    
+
     // Log current auth status for debugging
     console.log('Auth check - Current path:', window.location.pathname);
     console.log('Auth check - Is authenticated:', isAuthenticated());
@@ -471,7 +553,7 @@ async function safeParseJSON(response) {
             const text = await response.text();
             throw new Error(`Expected JSON but received ${contentType || 'unknown content type'}. Response: ${text.substring(0, 200)}`);
         }
-        
+
         return await response.json();
     } catch (error) {
         // If JSON parsing fails, try to get the text content for better error reporting
@@ -498,22 +580,22 @@ async function apiRequest(url, options = {}) {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = 'Bearer ' + token;
         }
-        
+
         const response = await fetch(url, {
             ...options,
             headers
         });
-        
+
         const data = await safeParseJSON(response);
-        
+
         if (!response.ok) {
             throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
         }
-        
+
         return { response, data };
     } catch (error) {
         console.error('API Request failed:', error);

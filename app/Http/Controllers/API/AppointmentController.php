@@ -422,7 +422,7 @@ class AppointmentController extends Controller
     {
         $user = $request->user();
         
-        if (!$user->hasRole('seller')) {
+        if (!$user->isSeller()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'
@@ -487,3 +487,4 @@ class AppointmentController extends Controller
         ]);
     }
 }
+

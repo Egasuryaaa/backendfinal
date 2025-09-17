@@ -43,6 +43,14 @@ Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
 
+// Logout route
+Route::post('/logout', function () {
+    Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect('/');
+})->name('logout');
+
 // Auth status check route (untuk frontend authentication check)
 Route::get('/auth-test', function () {
     // Check session auth first
@@ -98,6 +106,10 @@ Route::middleware(['hybrid.auth'])->group(function () {
     Route::get('/fishmarket', function () {
         return view('fishmarket.index');
     })->name('fishmarket');
+
+    Route::get('/locations', function () {
+        return view('locations.index');
+    })->name('locations');
 
     Route::get('/profile', function () {
         return view('profile.index');
@@ -176,6 +188,10 @@ Route::middleware(['hybrid.auth'])->group(function () {
     Route::get('/seller/locations', function () {
         return view('seller.locations');
     })->name('seller.locations');
+
+    Route::get('/seller/profile', function () {
+        return view('seller.profile');
+    })->name('seller.profile');
 
     // Fish Farm Management (for farmers)
     Route::get('/fish-farms', function () {

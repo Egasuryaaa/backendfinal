@@ -17,7 +17,7 @@ class SellerMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || !$request->user()->hasRole('seller')) {
+        if (!$request->user() || !$request->user()->isSeller()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Akses ditolak. Hanya penjual yang dapat mengakses fitur ini.'

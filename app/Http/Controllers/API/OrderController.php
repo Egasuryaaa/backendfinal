@@ -802,14 +802,12 @@ class OrderController extends Controller
                 ], 401);
             }
 
-            // Check if user has seller role (seller = penjual_biasa in your system)
-            $hasSellerRole = $user->roles()->whereIn('name', ['seller', 'penjual_biasa', 'pemilik_tambak'])->exists();
-
-            if (!$hasSellerRole) {
+            // Check if user has seller role
+            if (!$user->isSeller()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Access denied. Only sellers can view orders.',
-                    'user_roles' => $user->roles->pluck('name')
+                    'user_role' => $user->role
                 ], 403);
             }
 
@@ -872,3 +870,4 @@ class OrderController extends Controller
         }
     }
 }
+

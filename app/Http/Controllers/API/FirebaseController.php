@@ -159,7 +159,7 @@ class FirebaseController extends Controller
         // Check if user has seller role using a simple method
         // Adjust this based on your user role implementation
         if (method_exists($user, 'hasRole')) {
-            return $user->hasRole('seller') ? 'seller' : 'buyer';
+            return $user->isSeller() ? 'seller' : 'buyer';
         }
 
         // Alternative: check for seller-related fields
@@ -206,3 +206,4 @@ class FirebaseController extends Controller
         }
     }
 }
+

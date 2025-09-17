@@ -244,7 +244,7 @@ class ProductController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->hasRole('seller')) {
+        if (!$user->isSeller()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'
@@ -294,7 +294,15 @@ class ProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $products
+            'data' => $products->items(),
+            'meta' => [
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+                'from' => $products->firstItem(),
+                'to' => $products->lastItem()
+            ]
         ]);
     }
 
@@ -308,7 +316,7 @@ class ProductController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->hasRole('seller')) {
+        if (!$user->isSeller()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'
@@ -342,7 +350,10 @@ class ProductController extends Controller
         if ($request->hasFile('gambar')) {
             foreach ($request->file('gambar') as $image) {
                 $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
-                $image->storeAs('public/products', $imageName);
+
+                // Store directly to public disk with correct path
+                Storage::disk('public')->put('products/' . $imageName, file_get_contents($image));
+
                 $imageNames[] = 'products/' . $imageName;
             }
         }
@@ -383,7 +394,7 @@ class ProductController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->hasRole('seller') || $product->penjual_id !== $user->id) {
+        if (!$user->isSeller() || $product->penjual_id !== $user->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'
@@ -433,7 +444,10 @@ class ProductController extends Controller
         if ($request->hasFile('gambar_baru')) {
             foreach ($request->file('gambar_baru') as $image) {
                 $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
-                $image->storeAs('public/products', $imageName);
+
+                // Store directly to public disk with correct path
+                Storage::disk('public')->put('products/' . $imageName, file_get_contents($image));
+
                 $imageNames[] = 'products/' . $imageName;
             }
         }
@@ -474,7 +488,7 @@ class ProductController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->hasRole('seller') || $product->penjual_id !== $user->id) {
+        if (!$user->isSeller() || $product->penjual_id !== $user->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'
@@ -496,3 +510,4 @@ class ProductController extends Controller
         ]);
     }
 }
+
