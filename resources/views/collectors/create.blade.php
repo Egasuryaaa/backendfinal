@@ -18,7 +18,7 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 2rem 0;
         }
@@ -82,9 +82,9 @@
 
         .form-control:focus {
             outline: none;
-            border-color: #f5576c;
+            border-color: #667eea;
             background: white;
-            box-shadow: 0 0 0 3px rgba(245, 87, 108, 0.1);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         .form-grid {
@@ -115,8 +115,8 @@
         }
 
         .checkbox-item:hover {
-            border-color: #f5576c;
-            background: #fdf2f3;
+            border-color: #667eea;
+            background: #f0f3ff;
         }
 
         .checkbox-item input[type="checkbox"] {
@@ -124,8 +124,8 @@
         }
 
         .checkbox-item.checked {
-            border-color: #f5576c;
-            background: #fdf2f3;
+            border-color: #667eea;
+            background: #f0f3ff;
         }
 
         .coordinate-input {
@@ -164,17 +164,17 @@
             align-items: center;
             justify-content: center;
             padding: 2rem;
-            border: 2px dashed #f5576c;
+            border: 2px dashed #667eea;
             border-radius: 12px;
-            background: #fdf2f3;
+            background: #f0f3ff;
             cursor: pointer;
             transition: all 0.3s ease;
             text-align: center;
         }
 
         .file-upload-label:hover {
-            background: #fce8ea;
-            border-color: #e74c3c;
+            background: #e6ebff;
+            border-color: #5a67d8;
         }
 
         .btn {
@@ -192,13 +192,13 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(245, 87, 108, 0.4);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
         }
 
         .btn-secondary {
@@ -232,7 +232,7 @@
             align-items: center;
             justify-content: center;
             text-decoration: none;
-            color: #f5576c;
+            color: #667eea;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             z-index: 1000;
@@ -240,7 +240,7 @@
 
         .back-button:hover {
             transform: scale(1.1);
-            color: #f5576c;
+            color: #667eea;
         }
 
         .alert {
@@ -288,6 +288,10 @@
             <div class="form-header">
                 <h1><i class="fas fa-truck"></i> Daftarkan Usaha Pengepul</h1>
                 <p>Daftarkan usaha pengepul Anda untuk menerima penjemputan ikan</p>
+                <div class="alert alert-info" style="background: #e3f2fd; color: #1565c0; border-radius: 8px; padding: 1rem; margin-top: 1rem; font-size: 0.9rem;">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Info:</strong> Akun Anda akan otomatis diupgrade menjadi akun Pengepul setelah mendaftarkan usaha ini.
+                </div>
             </div>
 
             <div id="alertContainer"></div>
@@ -320,8 +324,17 @@
 
                     <!-- Jam Operasional -->
                     <div class="form-group form-grid-full">
-                        <label for="jam_operasional">Jam Operasional <span class="required">*</span></label>
-                        <input type="text" id="jam_operasional" name="jam_operasional" class="form-control" placeholder="Contoh: Senin-Sabtu 08:00-16:00" required>
+                        <label>Jam Operasional <span class="required">*</span></label>
+                        <div class="coordinate-input">
+                            <div>
+                                <label for="jam_mulai">Jam Mulai</label>
+                                <input type="time" id="jam_mulai" name="jam_mulai" class="form-control" value="08:00" required>
+                            </div>
+                            <div>
+                                <label for="jam_selesai">Jam Selesai</label>
+                                <input type="time" id="jam_selesai" name="jam_selesai" class="form-control" value="17:00" required>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Alamat -->
@@ -564,6 +577,47 @@
             submitBtn.disabled = true;
 
             try {
+                // Frontend validation
+                const requiredFields = [
+                    { id: 'nama_usaha', name: 'Nama Usaha' },
+                    { id: 'alamat', name: 'Alamat' },
+                    { id: 'no_telepon', name: 'No. Telepon' },
+                    { id: 'rate_per_kg', name: 'Rate per KG' },
+                    { id: 'kapasitas_maximum', name: 'Kapasitas Maximum' },
+                    { id: 'jam_mulai', name: 'Jam Mulai' },
+                    { id: 'jam_selesai', name: 'Jam Selesai' },
+                    { id: 'latitude', name: 'Latitude' },
+                    { id: 'longitude', name: 'Longitude' }
+                ];
+
+                // Check all required fields
+                for (let field of requiredFields) {
+                    const element = document.getElementById(field.id);
+                    if (!element.value.trim()) {
+                        throw new Error(`${field.name} harus diisi`);
+                    }
+                }
+
+                // Validate coordinates
+                const lat = parseFloat(document.getElementById('latitude').value);
+                const lng = parseFloat(document.getElementById('longitude').value);
+                if (isNaN(lat) || lat < -90 || lat > 90) {
+                    throw new Error('Latitude harus berupa angka antara -90 dan 90');
+                }
+                if (isNaN(lng) || lng < -180 || lng > 180) {
+                    throw new Error('Longitude harus berupa angka antara -180 dan 180');
+                }
+
+                // Validate rate and capacity
+                const rate = parseFloat(document.getElementById('rate_per_kg').value);
+                const capacity = parseFloat(document.getElementById('kapasitas_maximum').value);
+                if (isNaN(rate) || rate < 0) {
+                    throw new Error('Rate per KG harus berupa angka positif');
+                }
+                if (isNaN(capacity) || capacity < 1) {
+                    throw new Error('Kapasitas maximum harus minimal 1');
+                }
+
                 // Validate at least one fish type is selected
                 const selectedFishTypes = Array.from(document.querySelectorAll('input[name="jenis_ikan_diterima"]:checked')).map(cb => cb.value);
                 if (selectedFishTypes.length === 0) {
@@ -574,42 +628,43 @@
                 
                 // Append all form fields with correct database field names
                 formData.append('nama', document.getElementById('nama_usaha').value);
+                formData.append('alamat', document.getElementById('alamat').value);
                 formData.append('no_telepon', document.getElementById('no_telepon').value);
                 formData.append('rate_harga_per_kg', document.getElementById('rate_per_kg').value);
                 formData.append('kapasitas_maksimal', document.getElementById('kapasitas_maximum').value);
-                
-                // Handle jam operasional - split into start and end times
-                const jamOperasional = document.getElementById('jam_operasional').value;
-                // Try to extract start and end times from input like "08:00-16:00"
-                const timeMatch = jamOperasional.match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
-                if (timeMatch) {
-                    formData.append('jam_operasional_mulai', timeMatch[1]);
-                    formData.append('jam_operasional_selesai', timeMatch[2]);
-                } else {
-                    // Default fallback
-                    formData.append('jam_operasional_mulai', '08:00');
-                    formData.append('jam_operasional_selesai', '17:00');
-                }
-                
-                formData.append('alamat', document.getElementById('alamat').value);
                 formData.append('deskripsi', document.getElementById('deskripsi').value);
                 
-                // Append coordinates as comma-separated string
+                // Handle jam operasional as separate fields
+                formData.append('jam_operasional_mulai', document.getElementById('jam_mulai').value);
+                formData.append('jam_operasional_selesai', document.getElementById('jam_selesai').value);
+                
+                // Append coordinates as separate lat/lng fields
                 const latitude = document.getElementById('latitude').value;
                 const longitude = document.getElementById('longitude').value;
                 if (latitude && longitude) {
-                    formData.append('lokasi_koordinat', `${latitude},${longitude}`);
+                    formData.append('lokasi_koordinat[lat]', latitude);
+                    formData.append('lokasi_koordinat[lng]', longitude);
                 } else {
-                    formData.append('lokasi_koordinat', '');
+                    // Required validation will catch this
+                    formData.append('lokasi_koordinat[lat]', '');
+                    formData.append('lokasi_koordinat[lng]', '');
                 }
                 
-                // Append selected fish types as JSON array
-                formData.append('jenis_ikan_diterima', JSON.stringify(selectedFishTypes));
+                // Append selected fish types as individual array elements
+                selectedFishTypes.forEach((fishType, index) => {
+                    formData.append(`jenis_ikan_diterima[${index}]`, fishType);
+                });
                 
                 // Append photo if selected
                 const photoFile = document.getElementById('foto').files[0];
                 if (photoFile) {
                     formData.append('foto', photoFile);
+                }
+
+                // Debug: Log all form data
+                console.log('Form data being sent:');
+                for (let pair of formData.entries()) {
+                    console.log(pair[0] + ': ' + pair[1]);
                 }
 
                 const response = await fetch('/api/collectors', {
@@ -622,14 +677,22 @@
                 });
 
                 const result = await response.json();
+                console.log('API Response:', result);
 
                 if (response.ok) {
-                    showAlert('Usaha pengepul berhasil didaftarkan!', 'success');
+                    showAlert('Usaha pengepul berhasil didaftarkan! Akun Anda telah diupgrade menjadi akun Pengepul.', 'success');
                     setTimeout(() => {
                         window.location.href = '/collectors';
-                    }, 2000);
+                    }, 3000);
                 } else {
-                    throw new Error(result.message || 'Terjadi kesalahan');
+                    console.error('Validation errors:', result.errors);
+                    if (result.errors) {
+                        // Show specific validation errors
+                        const errorMessages = Object.values(result.errors).flat().join(', ');
+                        throw new Error(`Validation failed: ${errorMessages}`);
+                    } else {
+                        throw new Error(result.message || 'Terjadi kesalahan');
+                    }
                 }
             } catch (error) {
                 console.error('Error:', error);

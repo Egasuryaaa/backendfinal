@@ -150,11 +150,27 @@ class Appointment extends Model
     }
 
     /**
-     * Mendapatkan user yang membuat appointment ini.
+     * Mendapatkan user yang membuat appointment ini (penjual/pemilik tambak).
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'penjual_id');
+    }
+
+    /**
+     * Mendapatkan penjual/pemilik tambak.
+     */
+    public function penjual(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'penjual_id');
+    }
+
+    /**
+     * Mendapatkan pembeli/pengepul.
+     */
+    public function pembeli(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'pembeli_id');
     }
 
     /**

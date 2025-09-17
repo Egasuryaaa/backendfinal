@@ -225,6 +225,8 @@ class FishFarmCollectorSeeder extends Seeder
             [
                 'fish_farm_id' => $createdFishFarms[0]->id,
                 'collector_id' => $createdCollectors[0]->id,
+                'penjual_id' => $createdFishFarms[0]->user_id, // Add fish farm owner as penjual
+                'pembeli_id' => $createdCollectors[0]->user_id, // Add collector as pembeli
                 'lokasi_penjual_id' => $sellerLocation->id,
                 'tanggal_janji' => now()->addDays(2)->format('Y-m-d H:i:s'),
                 'estimated_weight' => 500,
@@ -236,6 +238,8 @@ class FishFarmCollectorSeeder extends Seeder
             [
                 'fish_farm_id' => $createdFishFarms[1]->id,
                 'collector_id' => $createdCollectors[1]->id,
+                'penjual_id' => $createdFishFarms[1]->user_id, // Add fish farm owner as penjual
+                'pembeli_id' => $createdCollectors[1]->user_id, // Add collector as pembeli
                 'lokasi_penjual_id' => $sellerLocation->id,
                 'tanggal_janji' => now()->addDays(1)->format('Y-m-d H:i:s'),
                 'estimated_weight' => 400,
@@ -247,6 +251,8 @@ class FishFarmCollectorSeeder extends Seeder
             [
                 'fish_farm_id' => $createdFishFarms[2]->id,
                 'collector_id' => $createdCollectors[2]->id,
+                'penjual_id' => $createdFishFarms[2]->user_id, // Add fish farm owner as penjual
+                'pembeli_id' => $createdCollectors[2]->user_id, // Add collector as pembeli
                 'lokasi_penjual_id' => $sellerLocation->id,
                 'tanggal_janji' => now()->subDays(1)->format('Y-m-d H:i:s'),
                 'estimated_weight' => 300,

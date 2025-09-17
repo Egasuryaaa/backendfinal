@@ -486,5 +486,266 @@ class AppointmentController extends Controller
             'data' => $appointments
         ]);
     }
-}
 
+    /**
+     * Create appointment request to collector
+     */
+    public function createCollectorAppointment(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'fish_farm_id' => 'required|exists:fish_farms,id',
+            'collector_id' => 'required|exists:collectors,id',
+            'tanggal_janji' => 'required|date|after:today',
+            'waktu_janji' => 'nullable|string',
+            'perkiraan_berat' => 'required|numeric|min:1',
+            'pesan_pemilik' => 'nullable|string|max:500'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $user = $request->user();
+
+            // Check if fish farm belongs to user
+            $fishFarm = \App\Models\FishFarm::where('id', $request->fish_farm_id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$fishFarm) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Fish farm not found or unauthorized'
+                ], 404);
+            }
+
+            // Get collector to calculate estimated price
+            $collector = \App\Models\Collector::findOrFail($request->collector_id);
+            $estimatedPrice = $request->perkiraan_berat * $collector->rate_harga_per_kg;
+
+            $appointment = Appointment::create([
+                'fish_farm_id' => $request->fish_farm_id,
+                'collector_id' => $request->collector_id,
+                'user_id' => $user->id,
+                'tanggal_janji' => $request->tanggal_janji,
+                'tanggal' => $request->tanggal_janji,
+                'waktu_janji' => $request->waktu_janji,
+                'perkiraan_berat' => $request->perkiraan_berat,
+                'harga_per_kg' => $collector->rate_harga_per_kg,
+                'total_estimasi' => $estimatedPrice,
+                'pesan_pemilik' => $request->pesan_pemilik,
+                'catatan' => $request->pesan_pemilik,
+                'status' => 'pending',
+                'jenis' => 'penjemputan'
+            ]);
+
+            // Load relationships for response
+            $appointment->load(['fishFarm', 'collector.user']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Appointment request sent successfully',
+                'data' => $appointment
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create appointment',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get user's appointments with collectors
+     */
+    public function getCollectorAppointments(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            $query = Appointment::with(['fishFarm', 'collector'])
+                ->where('user_id', $user->id)
+                ->where('jenis', 'penjemputan');
+
+            // Filter by status
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+            // Filter by date range
+            if ($request->has('date_from')) {
+                $query->whereDate('tanggal_janji', '>=', $request->date_from);
+            }
+
+            if ($request->has('date_to')) {
+                $query->whereDate('tanggal_janji', '<=', $request->date_to);
+            }
+
+            $appointments = $query->orderBy('tanggal_janji', 'desc')
+                ->paginate($request->get('per_page', 15));
+
+            return response()->json([
+                'success' => true,
+                'data' => $appointments
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve appointments',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Cancel collector appointment
+     */
+    public function cancelCollectorAppointment($id, Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            $appointment = Appointment::where('id', $id)
+                ->where('user_id', $user->id)
+                ->whereIn('status', ['pending', 'diterima'])
+                ->first();
+
+            if (!$appointment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Appointment not found or cannot be cancelled'
+                ], 404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'alasan_pembatalan' => 'nullable|string|max:500'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $appointment->update([
+                'status' => 'dibatalkan',
+                'catatan' => $request->alasan_pembatalan
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Appointment cancelled successfully',
+                'data' => $appointment
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to cancel appointment',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Send WhatsApp summary for completed appointment
+     */
+    public function sendWhatsAppSummary($id): JsonResponse
+    {
+        try {
+            $user = request()->user();
+
+            $appointment = Appointment::with(['fishFarm', 'collector.user'])
+                ->where('id', $id)
+                ->where('user_id', $user->id)
+                ->where('status', 'selesai')
+                ->first();
+
+            if (!$appointment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Completed appointment not found'
+                ], 404);
+            }
+
+            // Generate WhatsApp summary
+            $summary = $this->generateWhatsAppSummary($appointment);
+
+            // Mark as sent
+            $appointment->update(['whatsapp_sent' => true]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'WhatsApp summary generated successfully',
+                'data' => $summary
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate WhatsApp summary',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate WhatsApp summary message
+     */
+    private function generateWhatsAppSummary($appointment)
+    {
+        $fishFarmName = $appointment->fishFarm->nama ?? 'Tambak';
+        $ownerName = $appointment->fishFarm->user->name ?? 'Pemilik';
+        $collectorName = $appointment->collector->nama ?? 'Pengepul';
+        $collectorPhone = $appointment->collector->user->phone ?? '';
+        
+        $message = "📋 *SUMMARY PENJEMPUTAN IKAN* 📋\n\n";
+        $message .= "🏪 *Tambak:* {$fishFarmName}\n";
+        $message .= "👤 *Pemilik:* {$ownerName}\n";
+        $message .= "🚛 *Pengepul:* {$collectorName}\n\n";
+        $message .= "📅 *Tanggal:* " . $appointment->tanggal_janji->format('d/m/Y') . "\n";
+        
+        if ($appointment->berat_aktual) {
+            $message .= "⚖️ *Berat Aktual:* " . number_format($appointment->berat_aktual, 2) . " kg\n";
+        }
+        if ($appointment->kualitas_ikan) {
+            $message .= "🏷️ *Kualitas:* {$appointment->kualitas_ikan}\n";
+        }
+        if ($appointment->harga_final) {
+            $message .= "💰 *Harga per Kg:* Rp " . number_format($appointment->harga_final, 0, ',', '.') . "\n";
+        }
+        if ($appointment->total_final) {
+            $message .= "💵 *Total Pembayaran:* Rp " . number_format($appointment->total_final, 0, ',', '.') . "\n";
+        }
+        
+        $message .= "\n✅ *Status:* SELESAI\n\n";
+        $message .= "_Terima kasih atas kerjasamanya!_\n";
+        $message .= "*IwakMart - Connecting Fish Farmers*";
+
+        // Generate WhatsApp URL
+        if ($collectorPhone) {
+            $whatsappUrl = "https://wa.me/{$collectorPhone}?text=" . urlencode($message);
+            return [
+                'message' => $message,
+                'whatsapp_url' => $whatsappUrl,
+                'phone_number' => $collectorPhone
+            ];
+        }
+
+        return [
+            'message' => $message,
+            'whatsapp_url' => null,
+            'phone_number' => null
+        ];
+    }
+}

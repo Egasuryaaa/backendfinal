@@ -13,14 +13,15 @@ class Collector extends Model
 
     protected $fillable = [
         'user_id',
-        'nama_usaha',
+        'nama',
         'lokasi_koordinat',
         'alamat',
         'no_telepon',
         'jenis_ikan_diterima',
-        'rate_per_kg',
-        'kapasitas_maximum',
-        'jam_operasional',
+        'rate_harga_per_kg',
+        'kapasitas_maksimal',
+        'jam_operasional_mulai',
+        'jam_operasional_selesai',
         'foto',
         'status',
         'deskripsi'
@@ -29,8 +30,8 @@ class Collector extends Model
     protected $casts = [
         'lokasi_koordinat' => 'array',
         'jenis_ikan_diterima' => 'array',
-        'rate_per_kg' => 'decimal:2',
-        'kapasitas_maximum' => 'decimal:2'
+        'rate_harga_per_kg' => 'decimal:2',
+        'kapasitas_maksimal' => 'decimal:2'
     ];
 
     /**

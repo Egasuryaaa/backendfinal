@@ -65,13 +65,18 @@ class CollectorController extends Controller
         try {
             $user = Auth::user();
             
-            // Only allow pengepul to create collector businesses
+            // Auto-assign pengepul role if user doesn't have it
             if (!$user->isPengepul() && !$user->isAdmin()) {
-                return $this->error('Unauthorized - Only collectors can create collector businesses', 403);
+                // Update user role to pengepul
+                $user->role = 'pengepul';
+                $user->save();
+                
+                // Log the role change
+                \Log::info("User {$user->id} role updated to 'pengepul' during collector business registration");
             }
 
             $validator = Validator::make($request->all(), [
-                'nama_usaha' => 'required|string|max:255',
+                'nama' => 'required|string|max:255',
                 'lokasi_koordinat' => 'required|array',
                 'lokasi_koordinat.lat' => 'required|numeric|between:-90,90',
                 'lokasi_koordinat.lng' => 'required|numeric|between:-180,180',
@@ -79,14 +84,19 @@ class CollectorController extends Controller
                 'no_telepon' => 'required|string|max:20',
                 'jenis_ikan_diterima' => 'required|array',
                 'jenis_ikan_diterima.*' => 'string|max:255',
-                'rate_per_kg' => 'required|numeric|min:0',
-                'kapasitas_maximum' => 'required|numeric|min:1',
-                'jam_operasional' => 'required|string|max:255',
+                'rate_harga_per_kg' => 'required|numeric|min:0',
+                'kapasitas_maksimal' => 'required|numeric|min:1',
+                'jam_operasional_mulai' => 'required|date_format:H:i',
+                'jam_operasional_selesai' => 'required|date_format:H:i',
                 'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'deskripsi' => 'nullable|string'
             ]);
 
             if ($validator->fails()) {
+                \Log::error('Collector validation failed', [
+                    'errors' => $validator->errors()->toArray(),
+                    'request_data' => $request->except(['foto'])
+                ]);
                 return $this->error('Validation failed', 422, $validator->errors());
             }
 
@@ -238,21 +248,31 @@ class CollectorController extends Controller
     public function getPendingAppointments($id)
     {
         try {
+            \Log::info("Getting pending appointments for collector ID: $id");
+            
             $collector = Collector::findOrFail($id);
+            \Log::info("Found collector: " . $collector->nama_pengepul);
             
             // Check ownership
             if ($collector->user_id !== Auth::id()) {
+                \Log::warning("Unauthorized access attempt by user " . Auth::id() . " for collector " . $collector->user_id);
                 return $this->error('Unauthorized', 403);
             }
 
+            \Log::info("Searching appointments with collector_id: " . $collector->id . " and status: menunggu");
+            
             $appointments = Appointment::with(['fishFarm', 'user'])
                 ->where('collector_id', $collector->id)
-                ->where('status', 'pending')
-                ->orderBy('tanggal', 'asc')
+                ->where('status', 'menunggu') // Fix: use correct status value
+                ->orderBy('tanggal_janji', 'asc') // Fix: use correct column name
                 ->get();
 
+            \Log::info("Found " . $appointments->count() . " pending appointments");
+            
             return $this->success($appointments, 'Pending appointments retrieved successfully');
         } catch (\Exception $e) {
+            \Log::error("Error in getPendingAppointments: " . $e->getMessage());
+            \Log::error($e->getTraceAsString());
             return $this->error('Failed to retrieve appointments', 500, ['error' => $e->getMessage()]);
         }
     }
@@ -382,17 +402,17 @@ class CollectorController extends Controller
                 return $this->error('User not authenticated', 401);
             }
 
-            // Only allow pemilik_tambak to access this endpoint
-            if (!$user->isPemilikTambak() && !$user->isAdmin()) {
-                return $this->error('Unauthorized - Only fish farm owners can access this endpoint', 403);
-            }
-
-            // Validate user has coordinates
-            if (!$user->hasCoordinates()) {
-                return $this->error('Your location coordinates are required to find nearest collectors', 400);
+            // Get current user coordinates - prioritize request params, then user profile
+            $latitude = $request->get('lat') ?: $user->latitude;
+            $longitude = $request->get('lng') ?: $user->longitude;
+            
+            if (!$latitude || !$longitude) {
+                return $this->error('Location coordinates are required to find nearest collectors. Please update your location first.', 400);
             }
 
             $validator = Validator::make($request->all(), [
+                'lat' => 'nullable|numeric|between:-90,90',
+                'lng' => 'nullable|numeric|between:-180,180',
                 'max_distance' => 'nullable|numeric|min:1|max:500',
                 'fish_type' => 'nullable|string',
                 'min_rate' => 'nullable|numeric|min:0',
@@ -405,23 +425,25 @@ class CollectorController extends Controller
                 return $this->error('Validation failed', 422, $validator->errors());
             }
 
-            $maxDistance = $request->get('max_distance', 50); // Default 50km
-            $perPage = $request->get('per_page', 10);
+            $maxDistance = $request->get('max_distance', 100); // Increased default to 100km
+            $perPage = $request->get('per_page', 20); // Increased default results
 
-            // Get collectors with users that have coordinates
-            $collectorsQuery = Collector::with('user')
-                ->whereHas('user', function ($query) {
-                    $query->whereNotNull('latitude')
-                          ->whereNotNull('longitude');
-                })
+            \Log::info('Searching nearest collectors', [
+                'user_id' => $user->id,
+                'user_coordinates' => [$latitude, $longitude],
+                'max_distance' => $maxDistance,
+                'filters' => $request->only(['fish_type', 'min_rate', 'max_rate', 'min_capacity'])
+            ]);
+
+            // Get all active collectors with their user information
+            $collectorsQuery = Collector::with(['user'])
                 ->where('status', 'aktif');
 
-            // Filter by fish type if specified
+            // Apply filters
             if ($request->has('fish_type') && $request->fish_type) {
                 $collectorsQuery->whereJsonContains('jenis_ikan_diterima', $request->fish_type);
             }
 
-            // Filter by rate range
             if ($request->has('min_rate') && $request->min_rate) {
                 $collectorsQuery->where('rate_per_kg', '>=', $request->min_rate);
             }
@@ -429,14 +451,12 @@ class CollectorController extends Controller
                 $collectorsQuery->where('rate_per_kg', '<=', $request->max_rate);
             }
 
-            // Filter by capacity
             if ($request->has('min_capacity') && $request->min_capacity) {
                 $collectorsQuery->where('kapasitas_maximum', '>=', $request->min_capacity);
             }
 
             $collectors = $collectorsQuery->get();
 
-            // If no collectors found, return empty results
             if ($collectors->isEmpty()) {
                 return $this->success([
                     'data' => [],
@@ -448,49 +468,113 @@ class CollectorController extends Controller
                         'from' => 0,
                         'to' => 0
                     ],
-                    'user_location' => $user->getCoordinates(),
+                    'user_location' => [
+                        'lat' => (float) $latitude,
+                        'lng' => (float) $longitude
+                    ],
                     'search_radius' => $maxDistance . ' km'
                 ], 'No collectors found matching your criteria');
             }
 
-            // Calculate distances and filter by max distance
+            // Calculate distances and collect nearby collectors
             $nearbyCollectors = collect();
             
             foreach ($collectors as $collector) {
-                if ($collector->user && $collector->user->hasCoordinates()) {
-                    $distance = LocationService::calculateDistanceBetweenUsers($user, $collector->user);
+                // Try to get coordinates from multiple sources
+                $collectorLat = null;
+                $collectorLng = null;
+                
+                // Priority 1: User profile coordinates
+                if ($collector->user && $collector->user->latitude && $collector->user->longitude) {
+                    $collectorLat = $collector->user->latitude;
+                    $collectorLng = $collector->user->longitude;
+                }
+                
+                // Priority 2: Collector lokasi_koordinat if available
+                if (!$collectorLat && $collector->lokasi_koordinat) {
+                    if (is_array($collector->lokasi_koordinat)) {
+                        $collectorLat = $collector->lokasi_koordinat['lat'] ?? null;
+                        $collectorLng = $collector->lokasi_koordinat['lng'] ?? null;
+                    } elseif (is_string($collector->lokasi_koordinat)) {
+                        $coords = json_decode($collector->lokasi_koordinat, true);
+                        if ($coords && isset($coords['lat'], $coords['lng'])) {
+                            $collectorLat = $coords['lat'];
+                            $collectorLng = $coords['lng'];
+                        }
+                    }
+                }
+                
+                if ($collectorLat && $collectorLng) {
+                    $distance = $this->calculateDistance(
+                        $latitude, 
+                        $longitude, 
+                        $collectorLat, 
+                        $collectorLng
+                    );
                     
                     if ($distance !== null && $distance <= $maxDistance) {
-                        $collector->distance = $distance;
-                        $collector->distance_formatted = LocationService::formatDistance($distance);
+                        // Add distance information to collector
+                        $collector->distance = round($distance, 3); // More precision for calculation
+                        $collector->distance_formatted = $this->formatDistance($distance); // Use new format function
+                        $collector->collector_coordinates = [
+                            'lat' => (float) $collectorLat,
+                            'lng' => (float) $collectorLng
+                        ];
+                        
                         $nearbyCollectors->push($collector);
                     }
+                } else {
+                    \Log::warning('Collector without coordinates', [
+                        'collector_id' => $collector->id,
+                        'collector_name' => $collector->nama_usaha,
+                        'user_coordinates' => $collector->user ? [$collector->user->latitude, $collector->user->longitude] : null
+                    ]);
                 }
             }
 
-            // Sort by distance
+            // Sort by distance (ascending - nearest first)
             $nearbyCollectors = $nearbyCollectors->sortBy('distance')->values();
 
-            // Paginate results manually
-            $currentPage = $request->get('page', 1);
+            \Log::info('Found nearby collectors', [
+                'total_collectors_checked' => $collectors->count(),
+                'nearby_collectors_found' => $nearbyCollectors->count(),
+                'within_radius' => $maxDistance . ' km'
+            ]);
+
+            // Manual pagination
+            $currentPage = max(1, (int) $request->get('page', 1));
             $offset = ($currentPage - 1) * $perPage;
             $paginatedCollectors = $nearbyCollectors->slice($offset, $perPage)->values();
 
+            $totalItems = $nearbyCollectors->count();
+            $lastPage = $totalItems > 0 ? ceil($totalItems / $perPage) : 1;
+
             $pagination = [
-                'current_page' => (int) $currentPage,
+                'current_page' => $currentPage,
                 'per_page' => (int) $perPage,
-                'total' => $nearbyCollectors->count(),
-                'last_page' => ceil($nearbyCollectors->count() / $perPage) ?: 1,
-                'from' => $nearbyCollectors->count() > 0 ? $offset + 1 : 0,
-                'to' => min($offset + $perPage, $nearbyCollectors->count())
+                'total' => $totalItems,
+                'last_page' => $lastPage,
+                'from' => $totalItems > 0 ? $offset + 1 : 0,
+                'to' => min($offset + $perPage, $totalItems)
             ];
 
             return $this->success([
                 'data' => $paginatedCollectors,
                 'pagination' => $pagination,
-                'user_location' => $user->getCoordinates(),
-                'search_radius' => $maxDistance . ' km'
-            ], 'Nearest collectors retrieved successfully');
+                'user_location' => [
+                    'lat' => (float) $latitude,
+                    'lng' => (float) $longitude
+                ],
+                'search_radius' => $maxDistance . ' km',
+                'search_summary' => [
+                    'total_collectors_checked' => $collectors->count(),
+                    'collectors_within_radius' => $totalItems,
+                    'current_page_showing' => $paginatedCollectors->count()
+                ]
+            ], $totalItems > 0 
+                ? "Found {$totalItems} collectors within {$maxDistance}km radius" 
+                : 'No collectors found within the specified radius'
+            );
 
         } catch (\Exception $e) {
             \Log::error('Error in getNearestCollectors: ' . $e->getMessage(), [
@@ -503,6 +587,148 @@ class CollectorController extends Controller
                 'error' => $e->getMessage(),
                 'debug' => config('app.debug') ? $e->getTraceAsString() : null
             ]);
+        }
+    }
+
+    /**
+     * Get statistics for current user's collector
+     */
+    public function getCurrentUserStatistics(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $collector = Collector::where('user_id', $user->id)->first();
+            
+            if (!$collector) {
+                return $this->error('No collector found for current user', 404);
+            }
+            
+            return $this->getStatistics($collector->id);
+        } catch (\Exception $e) {
+            return $this->error('Failed to get statistics', 500, [
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get statistics for a specific collector
+     */
+    public function getStatistics($id)
+    {
+        try {
+            $collector = Collector::findOrFail($id);
+            
+            // Get appointment statistics
+            $totalAppointments = Appointment::where('collector_id', $collector->id)->count();
+            $acceptedAppointments = Appointment::where('collector_id', $collector->id)
+                ->where('status', 'diterima')->count();
+            $completedAppointments = Appointment::where('collector_id', $collector->id)
+                ->where('status', 'selesai')->count();
+            
+            // Calculate total weight and revenue
+            $completedData = Appointment::where('collector_id', $collector->id)
+                ->where('status', 'selesai')
+                ->selectRaw('SUM(berat_aktual) as total_kg, SUM(total_final) as total_revenue')
+                ->first();
+            
+            $totalKg = $completedData->total_kg ?? 0;
+            $totalRevenue = $completedData->total_revenue ?? 0;
+            
+            // Get fish types statistics
+            $fishTypes = Appointment::where('collector_id', $collector->id)
+                ->where('status', 'selesai')
+                ->whereNotNull('kualitas_ikan')
+                ->selectRaw('kualitas_ikan as type, COUNT(*) as count')
+                ->groupBy('kualitas_ikan')
+                ->get();
+            
+            return $this->success([
+                'total' => $totalAppointments,
+                'accepted' => $acceptedAppointments,
+                'completed' => $completedAppointments,
+                'total_kg' => $totalKg,
+                'revenue' => $totalRevenue,
+                'fish_types' => $fishTypes
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->error('Failed to get collector statistics', 500, [
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Calculate distance between two coordinates using Haversine formula
+     */
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        if (!$lat1 || !$lon1 || !$lat2 || !$lon2) {
+            \Log::warning('Missing coordinates for distance calculation', [
+                'lat1' => $lat1, 'lon1' => $lon1, 'lat2' => $lat2, 'lon2' => $lon2
+            ]);
+            return null;
+        }
+
+        // Convert to float to ensure numeric calculation
+        $lat1 = (float) $lat1;
+        $lon1 = (float) $lon1;
+        $lat2 = (float) $lat2;
+        $lon2 = (float) $lon2;
+
+        // Check if coordinates are valid
+        if ($lat1 == 0 && $lon1 == 0 || $lat2 == 0 && $lon2 == 0) {
+            \Log::warning('Invalid coordinates (0,0) detected', [
+                'user_coords' => [$lat1, $lon1], 
+                'collector_coords' => [$lat2, $lon2]
+            ]);
+            return null;
+        }
+
+        $earth_radius = 6371; // Earth's radius in kilometers
+
+        $lat1_rad = deg2rad($lat1);
+        $lon1_rad = deg2rad($lon1);
+        $lat2_rad = deg2rad($lat2);
+        $lon2_rad = deg2rad($lon2);
+
+        $delta_lat = $lat2_rad - $lat1_rad;
+        $delta_lon = $lon2_rad - $lon1_rad;
+
+        $a = sin($delta_lat / 2) * sin($delta_lat / 2) +
+             cos($lat1_rad) * cos($lat2_rad) *
+             sin($delta_lon / 2) * sin($delta_lon / 2);
+        
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        
+        $distance = $earth_radius * $c;
+        
+        \Log::info('Distance calculated', [
+            'from' => [$lat1, $lon1],
+            'to' => [$lat2, $lon2], 
+            'distance_km' => $distance
+        ]);
+        
+        return $distance;
+    }
+
+    /**
+     * Format distance with appropriate unit (meters for close, km for far)
+     */
+    private function formatDistance($distanceKm)
+    {
+        if ($distanceKm === null) {
+            return 'Jarak tidak diketahui';
+        }
+
+        if ($distanceKm < 1) {
+            // Convert to meters for distances less than 1km
+            $meters = round($distanceKm * 1000);
+            return $meters . ' m';
+        } else {
+            // Use kilometers for distances 1km and above
+            return number_format($distanceKm, 1) . ' km';
         }
     }
 }

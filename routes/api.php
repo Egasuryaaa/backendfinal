@@ -121,10 +121,12 @@ Route::post('/register-seller', [AuthController::class, 'registerAsSeller'])->mi
         ]);
     });
     Route::apiResource('collectors', CollectorController::class);
+    Route::get('/collectors/statistics', [CollectorController::class, 'getCurrentUserStatistics']);
     Route::get('/collectors/{id}/nearby-fish-farms', [CollectorController::class, 'getNearbyFishFarms']);
     Route::get('/collectors/{id}/pending-appointments', [CollectorController::class, 'getPendingAppointments']);
     Route::put('/collectors/{id}/appointments/{appointmentId}', [CollectorController::class, 'handleAppointment']);
     Route::put('/collectors/{id}/appointments/{appointmentId}/complete', [CollectorController::class, 'completeAppointment']);
+    Route::get('/collectors/{id}/statistics', [CollectorController::class, 'getStatistics']);
 
     // Appointments
     Route::get('/appointments', [AppointmentController::class, 'index']);
@@ -133,6 +135,12 @@ Route::post('/register-seller', [AuthController::class, 'registerAsSeller'])->mi
     Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
     Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
     Route::put('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
+    
+    // Collector Appointments
+    Route::post('/appointments/collector', [AppointmentController::class, 'createCollectorAppointment']);
+    Route::get('/appointments/collector', [AppointmentController::class, 'getCollectorAppointments']);
+    Route::put('/appointments/collector/{id}/cancel', [AppointmentController::class, 'cancelCollectorAppointment']);
+    Route::post('/appointments/{id}/whatsapp-summary', [AppointmentController::class, 'sendWhatsAppSummary']);
 
     // Messages
     Route::get('/messages/{userId}', [MessageController::class, 'getConversation']);

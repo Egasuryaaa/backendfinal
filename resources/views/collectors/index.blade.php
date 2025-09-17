@@ -24,7 +24,7 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
             color: white;
             padding: 2rem 0;
             text-align: center;
@@ -68,7 +68,7 @@
         }
 
         .tab.active {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
             color: white;
         }
 
@@ -117,7 +117,7 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
             color: white;
         }
 
@@ -175,7 +175,7 @@
             width: 80px;
             height: 80px;
             border-radius: 12px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -284,7 +284,7 @@
             align-items: center;
             justify-content: center;
             text-decoration: none;
-            color: #f5576c;
+            color: #3b82f6;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             z-index: 1000;
@@ -292,7 +292,7 @@
 
         .back-button:hover {
             transform: scale(1.1);
-            color: #f5576c;
+            color: #3b82f6;
         }
 
         .loading {
@@ -649,7 +649,7 @@
                 }
 
                 // First get current collector info
-                const collectorResponse = await fetch('/api/collectors', {
+                const collectorResponse = await fetch('/api/collectors?user_only=true', {
                     headers: {
                         'Authorization': 'Bearer ' + token,
                         'Accept': 'application/json'
@@ -661,7 +661,7 @@
                 }
 
                 const collectorResult = await safeParseJSON(collectorResponse);
-                const currentCollector = collectorResult.data?.[0]; // Assuming first collector is current user's
+                const currentCollector = collectorResult.data?.data?.[0]; // Get first collector from paginated result
 
                 if (!currentCollector) {
                     throw new Error('No collector found for current user');
@@ -756,6 +756,13 @@
                             <button class="btn btn-success" onclick="completeAppointment(${appointment.id})">
                                 <i class="fas fa-check-circle"></i> Selesai
                             </button>
+                        </div>
+                    ` : appointment.status === 'selesai' ? `
+                        <div class="card-actions">
+                            <button class="btn btn-success" onclick="sendWhatsAppSummary(${appointment.id})" style="background-color: #25D366;">
+                                <i class="fab fa-whatsapp"></i> Kirim Summary WA
+                            </button>
+                            <span class="status-text">Status: ${getStatusText(appointment.status)}</span>
                         </div>
                     ` : `
                         <div class="card-actions">
@@ -854,7 +861,7 @@
 
             try {
                 // Get current collector info first
-                const collectorResponse = await fetch('/api/collectors', {
+                const collectorResponse = await fetch('/api/collectors?user_only=true', {
                     headers: {
                         'Authorization': 'Bearer ' + getToken(),
                         'Accept': 'application/json'
@@ -866,7 +873,7 @@
                 }
 
                 const collectorResult = await safeParseJSON(collectorResponse);
-                const currentCollector = collectorResult.data?.[0];
+                const currentCollector = collectorResult.data?.data?.[0];
 
                 if (!currentCollector) {
                     throw new Error('No collector found');
@@ -913,7 +920,7 @@
 
             try {
                 // Get current collector info first
-                const collectorResponse = await fetch('/api/collectors', {
+                const collectorResponse = await fetch('/api/collectors?user_only=true', {
                     headers: {
                         'Authorization': 'Bearer ' + getToken(),
                         'Accept': 'application/json'
@@ -925,7 +932,7 @@
                 }
 
                 const collectorResult = await safeParseJSON(collectorResponse);
-                const currentCollector = collectorResult.data?.[0];
+                const currentCollector = collectorResult.data?.data?.[0];
 
                 if (!currentCollector) {
                     throw new Error('No collector found');
@@ -959,22 +966,10 @@
                     }
                     throw new Error(errorMessage);
                 }
-                    headers: {
-                        'Authorization': 'Bearer ' + getToken(),
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        action: 'reject',
-                        catatan_collector: reason
-                    })
-                });
-
             } catch (error) {
                 console.error('Error rejecting appointment:', error);
                 alert('Terjadi kesalahan saat menolak janji penjemputan: ' + error.message);
             }
-        }
         }
 
         async function completeAppointment(appointmentId) {
@@ -994,7 +989,7 @@
 
             try {
                 // Get current collector info first
-                const collectorResponse = await fetch('/api/collectors', {
+                const collectorResponse = await fetch('/api/collectors?user_only=true', {
                     headers: {
                         'Authorization': 'Bearer ' + getToken(),
                         'Accept': 'application/json'
@@ -1006,7 +1001,7 @@
                 }
 
                 const collectorResult = await safeParseJSON(collectorResponse);
-                const currentCollector = collectorResult.data?.[0];
+                const currentCollector = collectorResult.data?.data?.[0];
 
                 if (!currentCollector) {
                     throw new Error('No collector found');
@@ -1059,10 +1054,19 @@
 
                 if (response.ok) {
                     const result = await safeParseJSON(response);
-                    alert('Summary berhasil dikirim via WhatsApp');
-                    // Optionally open WhatsApp with the message
-                    if (result.whatsapp_url) {
-                        window.open(result.whatsapp_url, '_blank');
+                    
+                    // Show success message
+                    alert('Summary WhatsApp berhasil digenerate!');
+                    
+                    // Open WhatsApp with the message if URL available
+                    if (result.data?.whatsapp_url) {
+                        const openWA = confirm('Buka WhatsApp untuk mengirim summary?');
+                        if (openWA) {
+                            window.open(result.data.whatsapp_url, '_blank');
+                        }
+                    } else if (result.data?.message) {
+                        // Show message in alert if no URL
+                        alert('Summary Message:\n\n' + result.data.message);
                     }
                 } else {
                     let errorMessage = 'Gagal mengirim summary WhatsApp';
@@ -1076,7 +1080,7 @@
                 }
             } catch (error) {
                 console.error('Error sending WhatsApp summary:', error);
-                alert('Terjadi kesalahan saat mengirim summary WhatsApp');
+                alert('Terjadi kesalahan saat mengirim summary WhatsApp: ' + error.message);
             }
         }
 
