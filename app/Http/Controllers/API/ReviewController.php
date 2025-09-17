@@ -153,7 +153,7 @@ class ReviewController extends Controller
         $user = $request->user();
         
         // Periksa apakah ulasan milik pengguna atau ulasan untuk produk penjual
-        $isSeller = $user->hasRole('seller');
+        $isSeller = $user->isSeller();
         $isReviewOwner = $review->user_id === $user->id;
         $isSellerOfProduct = false;
         
@@ -328,7 +328,7 @@ class ReviewController extends Controller
         
         // Periksa apakah pengguna adalah penjual produk
         $product = Product::find($review->produk_id);
-        if (!$user->hasRole('seller') || $product->penjual_id !== $user->id) {
+        if (!$user->isSeller() || $product->penjual_id !== $user->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'
@@ -435,3 +435,4 @@ class ReviewController extends Controller
         ]);
     }
 }
+

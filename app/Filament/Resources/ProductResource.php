@@ -131,14 +131,14 @@ class ProductResource extends Resource
                                     ->required()
                                     ->createOptionForm([])
                                     ->createOptionAction(function ($action) {
-                                        return $action->hidden(fn () => auth()->user() && auth()->user()->hasRole('seller'));
+                                        return $action->hidden(fn () => auth()->user() && auth()->user()->isSeller());
                                     }),
                                 Forms\Components\Select::make('penjual_id')
                                     ->label('Penjual')
                                     ->relationship('seller', 'name')
                                     ->required()
-                                    ->default(fn () => auth()->user() && auth()->user()->hasRole('seller') ? auth()->id() : null)
-                                    ->disabled(fn () => auth()->user() && auth()->user()->hasRole('seller')),
+                                    ->default(fn () => auth()->user() && auth()->user()->isSeller() ? auth()->id() : null)
+                                    ->disabled(fn () => auth()->user() && auth()->user()->isSeller()),
                                 Forms\Components\Toggle::make('aktif')
                                     ->label('Status Aktif')
                                     ->default(true)
@@ -313,7 +313,7 @@ class ProductResource extends Resource
             return true;
         }
         
-        if ($user->hasRole('seller')) {
+        if ($user->isSeller()) {
             return $record->penjual_id === $user->id;
         }
         
@@ -328,7 +328,7 @@ class ProductResource extends Resource
             return true;
         }
         
-        if ($user->hasRole('seller')) {
+        if ($user->isSeller()) {
             return $record->penjual_id === $user->id;
         }
         
@@ -342,7 +342,7 @@ class ProductResource extends Resource
         $user = auth()->user();
         
         // Jika user adalah seller, hanya tampilkan produk mereka sendiri
-        if ($user && $user->hasRole('seller')) {
+        if ($user && $user->isSeller()) {
             $query->where('penjual_id', $user->id);
         }
         

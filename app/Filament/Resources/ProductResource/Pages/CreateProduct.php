@@ -20,7 +20,7 @@ class CreateProduct extends CreateRecord
         $user = auth()->user();
         
         // Jika user adalah seller, otomatis set penjual_id ke ID mereka
-        if ($user && $user->hasRole('seller')) {
+        if ($user && $user->isSeller()) {
             $data['penjual_id'] = $user->id;
         }
         

@@ -50,8 +50,8 @@ class SellerLocationResource extends Resource
                                     ->label('Penjual')
                                     ->relationship('user', 'name')
                                     ->required()
-                                    ->default(fn () => auth()->user() && auth()->user()->hasRole('seller') ? auth()->id() : null)
-                                    ->disabled(fn () => auth()->user() && auth()->user()->hasRole('seller')),
+                                    ->default(fn () => auth()->user() && auth()->user()->isSeller() ? auth()->id() : null)
+                                    ->disabled(fn () => auth()->user() && auth()->user()->isSeller()),
                                 
                                 Forms\Components\TextInput::make('nama_usaha')
                                     ->label('Nama Usaha')
@@ -344,7 +344,7 @@ class SellerLocationResource extends Resource
             return true;
         }
         
-        if ($user->hasRole('seller')) {
+        if ($user->isSeller()) {
             return $record->user_id === $user->id;
         }
         
@@ -359,7 +359,7 @@ class SellerLocationResource extends Resource
             return true;
         }
         
-        if ($user->hasRole('seller')) {
+        if ($user->isSeller()) {
             return $record->user_id === $user->id;
         }
         
@@ -373,7 +373,7 @@ class SellerLocationResource extends Resource
         $user = auth()->user();
         
         // Jika user adalah seller, hanya tampilkan lokasi mereka sendiri
-        if ($user && $user->hasRole('seller')) {
+        if ($user && $user->isSeller()) {
             $query->where('user_id', $user->id);
         }
         

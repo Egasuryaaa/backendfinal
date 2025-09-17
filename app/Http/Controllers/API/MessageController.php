@@ -68,7 +68,7 @@ class MessageController extends Controller
         $chatPartner = [
             'id' => $otherUser->id,
             'name' => $otherUser->name,
-            'is_seller' => $otherUser->hasRole('seller'),
+            'is_seller' => $otherUser->isSeller(),
             'avatar' => $otherUser->avatar ? asset('storage/' . $otherUser->avatar) : null,
         ];
 
@@ -264,7 +264,7 @@ class MessageController extends Controller
                     'user' => [
                         'id' => $otherUser->id,
                         'name' => $otherUser->name,
-                        'is_seller' => $otherUser->hasRole('seller'),
+                        'is_seller' => $otherUser->isSeller(),
                         'avatar' => $otherUser->avatar ? asset('storage/' . $otherUser->avatar) : null,
                     ],
                     'last_message' => [
@@ -291,3 +291,4 @@ class MessageController extends Controller
         ]);
     }
 }
+

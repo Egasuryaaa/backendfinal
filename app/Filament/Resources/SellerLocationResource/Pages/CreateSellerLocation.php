@@ -20,7 +20,7 @@ class CreateSellerLocation extends CreateRecord
         $user = auth()->user();
         
         // Jika user adalah seller, otomatis set user_id ke ID mereka
-        if ($user && $user->hasRole('seller')) {
+        if ($user && $user->isSeller()) {
             $data['user_id'] = $user->id;
         }
         

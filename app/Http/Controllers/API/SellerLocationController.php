@@ -90,7 +90,7 @@ class SellerLocationController extends Controller
         $user = $request->user();
         
         // Pastikan pengguna adalah penjual
-        if (!$user->hasRole('seller')) {
+        if (!$user->isSeller()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Hanya penjual yang dapat membuat lokasi usaha'
@@ -359,7 +359,7 @@ class SellerLocationController extends Controller
         $user = $request->user();
         
         // Pastikan pengguna adalah penjual
-        if (!$user->hasRole('seller')) {
+        if (!$user->isSeller()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'
@@ -389,3 +389,4 @@ class SellerLocationController extends Controller
         ]);
     }
 }
+

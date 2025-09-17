@@ -31,6 +31,14 @@ class User extends Authenticatable
         'latitude',
         'longitude',
         'avatar',
+        'nama_toko',
+        'alamat',
+        'kota',
+        'provinsi',
+        'deskripsi',
+        'jam_buka',
+        'jam_tutup',
+        'active',
     ];
 
     /**
@@ -55,6 +63,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'latitude' => 'decimal:8',
             'longitude' => 'decimal:8',
+            'active' => 'boolean',
         ];
     }
 
@@ -97,7 +106,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(SellerLocation::class);
     }
-    
+
     /**
      * Mendapatkan lokasi penjual utama (singular).
      */
@@ -125,7 +134,7 @@ class User extends Authenticatable
     /**
      * Role Helper Methods
      */
-    
+
     /**
      * Check if user is admin
      */
@@ -254,9 +263,10 @@ class User extends Authenticatable
      */
     public function setCoordinates(float $latitude, float $longitude): void
     {
-        $this->latitude = $latitude;
-        $this->longitude = $longitude;
-        $this->save();
+        $this->update([
+            'latitude' => $latitude,
+            'longitude' => $longitude
+        ]);
     }
 
     /**

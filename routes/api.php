@@ -52,12 +52,18 @@ Route::get('/seller-locations/{sellerLocation}', [SellerLocationController::clas
 // Webhook endpoints (no auth required)
 Route::post('/webhooks/xendit', [PaymentController::class, 'handleWebhook']);
 
+// Alternative route for seller registration (bypass stateful middleware)
+Route::post('/register-seller', [AuthController::class, 'registerAsSeller'])->middleware('auth:sanctum');
+
 // Protected routes with API authentication
     Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
     Route::put('/user', [AuthController::class, 'update']);
+    Route::post('/user/register-seller', [AuthController::class, 'registerAsSeller']);
+    Route::get('/user/profile', [AuthController::class, 'profile']);
+    Route::put('/user/store-info', [AuthController::class, 'updateStoreInfo']);
 
     // Appointments moved below to avoid duplication
 
@@ -94,23 +100,24 @@ Route::post('/webhooks/xendit', [PaymentController::class, 'handleWebhook']);
     Route::post('/reviews', [ReviewController::class, 'store']);
     Route::put('/reviews/{review}', [ReviewController::class, 'update']);
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
-    
+
     // Fish Farm routes
     Route::apiResource('fish-farms', FishFarmController::class);
     Route::get('/fish-farms/{id}/available-collectors', [FishFarmController::class, 'getAvailableCollectors']);
     Route::post('/fish-farms/{id}/appointments', [FishFarmController::class, 'createAppointment']);
-    
+
     // Collector routes
     Route::get('/collectors/nearest', [CollectorController::class, 'getNearestCollectors']);
     Route::get('/collectors/debug', function() {
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
         return response()->json([
             'authenticated' => !!$user,
-            'user_id' => $user ? $user->id : null,
-            'user_role' => $user ? $user->role : null,
-            'has_coordinates' => $user ? $user->hasCoordinates() : false,
-            'coordinates' => $user ? $user->getCoordinates() : null,
-            'is_pemilik_tambak' => $user ? $user->isPemilikTambak() : false,
+            'user_id' => $user?->id,
+            'user_role' => $user?->role,
+            'has_coordinates' => $user?->hasCoordinates() ?? false,
+            'coordinates' => $user?->getCoordinates(),
+            'is_pemilik_tambak' => $user?->isPemilikTambak() ?? false,
         ]);
     });
     Route::apiResource('collectors', CollectorController::class);
@@ -118,7 +125,7 @@ Route::post('/webhooks/xendit', [PaymentController::class, 'handleWebhook']);
     Route::get('/collectors/{id}/pending-appointments', [CollectorController::class, 'getPendingAppointments']);
     Route::put('/collectors/{id}/appointments/{appointmentId}', [CollectorController::class, 'handleAppointment']);
     Route::put('/collectors/{id}/appointments/{appointmentId}/complete', [CollectorController::class, 'completeAppointment']);
-    
+
     // Appointments
     Route::get('/appointments', [AppointmentController::class, 'index']);
     Route::post('/appointments', [AppointmentController::class, 'store']);

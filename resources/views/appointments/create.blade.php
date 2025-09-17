@@ -28,7 +28,7 @@
             line-height: 1.6;
             color: #333;
         }
-        
+
         .custom-app-bar {
             background: linear-gradient(135deg, #1565C0, #0D47A1, #002171);
             padding: 20px;
@@ -112,7 +112,7 @@
             background: rgba(255, 255, 255, 0.3);
             transform: translateY(-2px);
         }
-        
+
         .card {
             background: white;
             border-radius: 16px;
@@ -121,7 +121,7 @@
             margin-bottom: 24px;
             border: none;
         }
-        
+
         .card-header {
             background: linear-gradient(135deg, #1565C0, #0D47A1);
             color: white;
@@ -129,27 +129,27 @@
             font-weight: 600;
             border: none;
         }
-        
+
         .card-header h5 {
             margin: 0;
             font-size: 18px;
         }
-        
+
         .card-body {
             padding: 25px;
         }
-        
+
         .form-group {
             margin-bottom: 1.8rem;
         }
-        
+
         .form-label {
             font-weight: 500;
             margin-bottom: 8px;
             display: block;
             color: #333;
         }
-        
+
         .form-control {
             width: 100%;
             padding: 12px 15px;
@@ -161,46 +161,46 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             font-size: 16px;
         }
-        
+
         .form-control:focus {
             outline: none;
             border-color: #1565C0;
             box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.15);
             transform: translateY(-1px);
         }
-        
+
         .form-text {
             color: #666;
             font-size: 13px;
             margin-top: 5px;
             display: block;
         }
-        
+
         .container {
             width: 100%;
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 15px;
         }
-        
+
         .row {
             display: flex;
             flex-wrap: wrap;
             margin: 0 -15px;
         }
-        
+
         .col-md-8 {
             width: 100%;
             padding: 0 15px;
             max-width: 800px;
             margin: 0 auto;
         }
-        
+
         .py-5 {
             padding-top: 3rem;
             padding-bottom: 3rem;
         }
-        
+
         .btn {
             padding: 10px 16px;
             border-radius: 8px;
@@ -209,58 +209,58 @@
             transition: all 0.2s ease;
             border: none;
         }
-        
+
         .btn {
             padding: 10px 20px;
             border-radius: 6px;
             font-weight: 500;
             transition: all 0.3s ease;
         }
-        
+
         .btn-primary {
             background: linear-gradient(135deg, #1565C0, #0D47A1);
             color: white;
             border: none;
             box-shadow: 0 4px 8px rgba(0,105,217,0.2);
         }
-        
+
         .btn-primary:hover {
             background: linear-gradient(135deg, #0D47A1, #002171);
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(0,105,217,0.3);
         }
-        
+
         .btn-outline-secondary {
             background: transparent;
             color: #666;
             border: 1px solid #ddd;
         }
-        
+
         .btn-outline-secondary:hover {
             background: #f5f5f5;
             border-color: #bbb;
             color: #444;
         }
-        
+
         .btn-success {
             background: #28a745;
             color: white;
         }
-        
+
         .btn-success:hover {
             background: #218838;
         }
-        
+
         .btn-outline-primary {
             background: transparent;
             color: #1565C0;
             border: 1px solid #1565C0;
         }
-        
+
         .btn-outline-primary:hover {
             background: rgba(21, 101, 192, 0.1);
         }
-        
+
         .seller-icon {
             width: 40px;
             height: 40px;
@@ -268,103 +268,103 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         .icon-wrapper {
             width: 20px;
             display: flex;
             justify-content: center;
         }
-        
+
         .mb-3 {
             margin-bottom: 1rem;
         }
-        
+
         .mb-4 {
             margin-bottom: 1.5rem;
         }
-        
+
         .p-3 {
             padding: 1rem;
         }
-        
+
         .rounded {
             border-radius: 8px;
         }
-        
+
         .bg-light {
             background-color: #f8f9fa;
         }
-        
+
         .rounded-circle {
             border-radius: 50%;
         }
-        
+
         .p-2 {
             padding: 0.5rem;
         }
-        
+
         .me-3 {
             margin-right: 1rem;
         }
-        
+
         .me-2 {
             margin-right: 0.5rem;
         }
-        
+
         .mb-0 {
             margin-bottom: 0;
         }
-        
+
         .d-flex {
             display: flex;
         }
-        
+
         .text-white {
             color: white;
         }
-        
+
         .text-primary {
             color: #1565C0;
         }
-        
+
         .text-muted {
             color: #6c757d;
         }
-        
+
         .btn-sm {
             padding: 0.25rem 0.5rem;
             font-size: 0.875rem;
         }
-        
+
         .align-items-center {
             align-items: center;
         }
-        
+
         .justify-content-between {
             justify-content: space-between;
         }
-        
+
         .fw-bold {
             font-weight: 700;
         }
-        
+
         .alert {
             padding: 1rem;
             margin-bottom: 1rem;
             border-radius: 0.25rem;
             position: relative;
         }
-        
+
         .alert-danger {
             color: #721c24;
             background-color: #f8d7da;
             border-color: #f5c6cb;
         }
-        
+
         .is-invalid {
             border-color: #dc3545 !important;
         }
-        
+
         .invalid-feedback {
             display: block;
             width: 100%;
@@ -372,7 +372,7 @@
             font-size: 80%;
             color: #dc3545;
         }
-        
+
         .form-select {
             width: 100%;
             padding: 12px;
@@ -381,13 +381,13 @@
             font-family: 'Inter', sans-serif;
             background-color: white;
         }
-        
+
         .form-select:focus {
             outline: none;
             border-color: #1565C0;
             box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.1);
         }
-        
+
         /* Contact Information Styles */
         .contact-info {
             background-color: #f8f9fa;
@@ -395,20 +395,20 @@
             padding: 20px;
             margin-bottom: 25px;
         }
-        
+
         .contact-info h6 {
             font-weight: 600;
             margin-bottom: 15px;
             color: #333;
         }
-        
+
         .contact-item {
             display: flex;
             align-items: flex-start;
             margin-bottom: 12px;
             color: #555;
         }
-        
+
         .contact-item i {
             margin-right: 10px;
             color: #0070ba;
@@ -416,14 +416,14 @@
             text-align: center;
             margin-top: 3px;
         }
-        
+
         .action-buttons {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             margin-top: 15px;
         }
-        
+
         .btn-whatsapp {
             background-color: #25d366;
             color: white;
@@ -433,12 +433,12 @@
             text-align: center;
             border-radius: 6px;
         }
-        
+
         .btn-whatsapp:hover {
             background-color: #1da851;
             color: white;
         }
-        
+
         .btn-maps {
             background-color: #4285F4;
             color: white;
@@ -448,7 +448,7 @@
             text-align: center;
             border-radius: 6px;
         }
-        
+
         .btn-maps:hover {
             background-color: #3367d6;
             color: white;
@@ -474,7 +474,7 @@
             font-size: 16px;
             margin-bottom: 15px;
         }
-        
+
         .page-title-underline {
             height: 4px;
             width: 60px;
@@ -490,13 +490,13 @@
             padding: 0 16px 32px;
             flex: 1;
         }
-        
+
         .container {
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
-        
+
         @media (max-width: 768px) {
             .app-title {
                 font-size: 20px;
@@ -521,7 +521,7 @@
                     </div>
                 </div>
                 <div class="app-bar-right">
-                    <a href="{{ route('appointments.history') }}" class="history-button" title="Lihat Riwayat Janji Temu">
+                    <a href="{{ route('appointments') }}" class="history-button" title="Lihat Riwayat Janji Temu">
                         <i class="fas fa-calendar-check"></i> Riwayat Janji Temu
                     </a>
                 </div>
@@ -534,14 +534,14 @@
             <p>Jadwalkan pertemuan dengan penjual ikan untuk pembelian atau konsultasi</p>
             <div class="page-title-underline"></div>
         </div>
-        
+
         <!-- Main Content -->
         <div class="main-content">
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0"><i class="fas fa-calendar-plus me-2"></i> Form Janji Temu</h5>
                 </div>
-                    
+
                 <div class="card-body">
                     @if($errors->any())
                         <div class="alert alert-danger">
@@ -552,26 +552,26 @@
                             </ul>
                         </div>
                     @endif
-                    
+
                     @if(session('success'))
                         <div class="alert alert-success">
                             <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
                         </div>
                     @endif
-                    
+
                     <p class="text-muted mb-4">Silahkan isi formulir di bawah untuk membuat janji temu dengan penjual. Pastikan informasi yang Anda berikan benar dan sesuai.</p>
-                    
+
                     <!-- Contact Information -->
                     <div class="contact-info">
                         <h6><strong>Informasi Kontak Penjual</strong></h6>
-                        
+
                         <div class="contact-item">
                             <i class="fas fa-store"></i>
                             <div>
                                 <strong>{{ $sellerLocation->nama_usaha }}</strong>
                             </div>
                         </div>
-                        
+
                         <div class="contact-item">
                             <i class="fas fa-map-marker-alt"></i>
                             <div>
@@ -579,55 +579,55 @@
                                 <span>{{ $sellerLocation->kota }}, {{ $sellerLocation->provinsi }}</span>
                             </div>
                         </div>
-                        
+
                         <div class="contact-item">
                             <i class="fas fa-phone"></i>
                             <span>{{ $sellerLocation->telepon }}</span>
                         </div>
-                        
+
                         <div class="contact-item">
                             <i class="fas fa-clock"></i>
                             <div>
                                 <span>Senin-Jumat: {{ $sellerLocation->jam_buka }} - {{ $sellerLocation->jam_tutup }}</span>
                             </div>
                         </div>
-                        
+
                         <div class="action-buttons">
                             <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $sellerLocation->telepon) }}" target="_blank" class="btn btn-whatsapp">
                                 <i class="fab fa-whatsapp me-2"></i> Hubungi via WhatsApp
                             </a>
-                            
+
                             <a href="https://www.google.com/maps?q={{ $sellerLocation->latitude }},{{ $sellerLocation->longitude }}" target="_blank" class="btn btn-maps">
                                 <i class="fas fa-map-marked-alt me-2"></i> Lihat di Maps
                             </a>
                         </div>
                     </div>
-                    
+
                     <form method="POST" action="{{ route('appointments.store') }}">
                         @csrf
                         <input type="hidden" name="location_id" value="{{ $sellerLocation->id }}">
                         <input type="hidden" name="seller_id" value="{{ $sellerLocation->user_id }}">
-                        
+
                         <div class="form-group">
                             <label for="date" class="form-label">Tanggal Janji Temu*</label>
-                            <input type="date" class="form-control @error('date') is-invalid @enderror" id="date" name="date" 
+                            <input type="date" class="form-control @error('date') is-invalid @enderror" id="date" name="date"
                                    value="{{ old('date') }}" min="{{ date('Y-m-d') }}" required>
                             @error('date')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                             <small class="form-text">Pilih tanggal sesuai dengan jam operasional lokasi</small>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="time" class="form-label">Waktu Janji Temu*</label>
-                            <input type="time" class="form-control @error('time') is-invalid @enderror" id="time" name="time" 
+                            <input type="time" class="form-control @error('time') is-invalid @enderror" id="time" name="time"
                                    value="{{ old('time') }}" required>
                             @error('time')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                             <small class="form-text">Pilih waktu antara {{ $sellerLocation->jam_buka }} - {{ $sellerLocation->jam_tutup }}</small>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="purpose" class="form-label">Tujuan Janji Temu*</label>
                             <select class="form-control @error('purpose') is-invalid @enderror" id="purpose" name="purpose" required>
@@ -641,10 +641,10 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="notes" class="form-label">Catatan Tambahan</label>
-                            <textarea class="form-control @error('notes') is-invalid @enderror" id="notes" name="notes" 
+                            <textarea class="form-control @error('notes') is-invalid @enderror" id="notes" name="notes"
                                       rows="4" placeholder="Tambahkan catatan atau detail tambahan...">{{ old('notes') }}</textarea>
                             @error('notes')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -655,16 +655,16 @@
                         <div class="form-group">
                             <label class="form-label">Lokasi Pertemuan (Opsional)</label>
                             <small class="form-text mb-2">Pilih lokasi khusus untuk pertemuan, atau kosongkan untuk menggunakan lokasi penjual</small>
-                            
+
                             <!-- Search input -->
                             <div class="mb-3">
-                                <input type="text" id="locationSearch" class="form-control" 
+                                <input type="text" id="locationSearch" class="form-control"
                                        placeholder="Cari lokasi pertemuan...">
                             </div>
 
                             <!-- Map container -->
                             <div id="meetingLocationMap" style="height: 300px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px;"></div>
-                            
+
                             <!-- Selected location info -->
                             <div id="selectedLocationInfo" style="display: none;" class="alert alert-info">
                                 <strong>Lokasi Terpilih:</strong>
@@ -677,12 +677,12 @@
                             <input type="hidden" id="meetingLongitude" name="meeting_longitude">
                             <input type="hidden" id="meetingAddress" name="meeting_address">
                         </div>
-                        
+
                         <div style="display: flex; justify-content: space-between; margin-top: 32px;">
                             <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">
                                 <i class="fas fa-arrow-left me-1"></i> Kembali
                             </a>
-                            
+
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-calendar-check me-1"></i> Buat Janji Temu
                             </button>
@@ -691,7 +691,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Footer -->
         <div class="footer">
             <div class="footer-content">
@@ -737,7 +737,7 @@ function initMap() {
 
     // Default location (Lamongan)
     const defaultLocation = [-7.1192, 112.4186];
-    
+
     // Seller location (if available)
     @if($sellerLocation->latitude && $sellerLocation->longitude)
         const sellerLocation = [{{ $sellerLocation->latitude }}, {{ $sellerLocation->longitude }}];
@@ -804,7 +804,7 @@ function selectLocation(lat, lng) {
 
     // Update form with coordinates
     updateLocationInfo(lat, lng, '');
-    
+
     // Reverse geocode to get address
     reverseGeocode(lat, lng);
 }
@@ -813,7 +813,7 @@ async function reverseGeocode(lat, lng) {
     try {
         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=id,en`);
         const data = await response.json();
-        
+
         if (data && data.display_name) {
             updateLocationInfo(lat, lng, data.display_name);
         } else {
@@ -832,12 +832,12 @@ async function searchLocation() {
     try {
         const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(query)}&countrycodes=id&limit=5&accept-language=id,en`);
         const results = await response.json();
-        
+
         if (results && results.length > 0) {
             const result = results[0];
             const lat = parseFloat(result.lat);
             const lng = parseFloat(result.lon);
-            
+
             map.setView([lat, lng], 15);
             selectLocation(lat, lng);
             updateLocationInfo(lat, lng, result.display_name);

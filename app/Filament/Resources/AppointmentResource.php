@@ -311,7 +311,7 @@ class AppointmentResource extends Resource
             return true;
         }
         
-        if ($user->hasRole('seller')) {
+        if ($user->isSeller()) {
             return $record->penjual_id === $user->id;
         }
         
@@ -326,7 +326,7 @@ class AppointmentResource extends Resource
             return true;
         }
         
-        if ($user->hasRole('seller')) {
+        if ($user->isSeller()) {
             return $record->penjual_id === $user->id;
         }
         
@@ -340,7 +340,7 @@ class AppointmentResource extends Resource
         $user = auth()->user();
         
         // Jika user adalah seller, hanya tampilkan appointment mereka sendiri
-        if ($user && $user->hasRole('seller')) {
+        if ($user && $user->isSeller()) {
             $query->where('penjual_id', $user->id);
         }
         

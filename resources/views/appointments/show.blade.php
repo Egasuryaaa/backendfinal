@@ -24,7 +24,7 @@
             line-height: 1.6;
             color: #333;
         }
-        
+
         .custom-app-bar {
             background: linear-gradient(135deg, #2563EB, #1D4ED8, #1E40AF);
             padding: 12px 0;
@@ -117,7 +117,7 @@
             background: rgba(255, 255, 255, 0.2);
             color: white;
         }
-        
+
         .container {
             min-height: 100vh;
             display: flex;
@@ -160,7 +160,7 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
+
         .card-header {
             background: linear-gradient(135deg, #1565C0, #0D47A1);
             color: white;
@@ -168,7 +168,7 @@
             font-weight: 600;
             font-size: 18px;
         }
-        
+
         .card-body {
             padding: 32px;
         }
@@ -218,7 +218,7 @@
         .detail-full .detail-value {
             line-height: 1.6;
         }
-        
+
         .badge {
             padding: 8px 16px;
             border-radius: 20px;
@@ -227,34 +227,34 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .bg-warning {
             background: linear-gradient(135deg, #FFC107, #FF8F00);
             color: #000;
         }
-        
+
         .bg-success {
             background: linear-gradient(135deg, #28a745, #20c997);
             color: white;
         }
-        
+
         .bg-primary {
             background: linear-gradient(135deg, #1565C0, #0D47A1);
             color: white;
         }
-        
+
         .bg-danger {
             background: linear-gradient(135deg, #dc3545, #c82333);
             color: white;
         }
-        
+
         .alert {
             padding: 16px 20px;
             border-radius: 12px;
             margin-bottom: 24px;
             border: none;
         }
-        
+
         .alert-success {
             background: linear-gradient(135deg, rgba(40, 167, 69, 0.1), rgba(32, 201, 151, 0.1));
             color: #155724;
@@ -275,7 +275,7 @@
             font-size: 18px;
             margin-bottom: 20px;
         }
-        
+
         .seller-header {
             display: flex;
             align-items: center;
@@ -356,58 +356,58 @@
             gap: 8px;
             font-size: 14px;
         }
-        
+
         .btn-primary {
             background: linear-gradient(135deg, #1565C0, #0D47A1);
             color: white;
             box-shadow: 0 4px 12px rgba(21, 101, 192, 0.3);
         }
-        
+
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(21, 101, 192, 0.4);
         }
-        
+
         .btn-outline-secondary {
             background: transparent;
             color: #666;
             border: 2px solid #ddd;
         }
-        
+
         .btn-outline-secondary:hover {
             background: #f8f9fa;
             border-color: #999;
             transform: translateY(-1px);
         }
-        
+
         .btn-danger {
             background: linear-gradient(135deg, #dc3545, #c82333);
             color: white;
             box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
         }
-        
+
         .btn-danger:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
         }
-        
+
         .btn-success {
             background: linear-gradient(135deg, #28a745, #20c997);
             color: white;
             box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
         }
-        
+
         .btn-success:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
         }
-        
+
         .btn-outline-primary {
             background: transparent;
             color: #1565C0;
             border: 2px solid #1565C0;
         }
-        
+
         .btn-outline-primary:hover {
             background: rgba(21, 101, 192, 0.1);
             transform: translateY(-1px);
@@ -436,7 +436,7 @@
             margin-top: 16px;
             flex-wrap: wrap;
         }
-        
+
         .footer {
             background: linear-gradient(135deg, #0D47A1, #002171);
             color: white;
@@ -579,7 +579,7 @@
         <div class="custom-app-bar">
             <div class="app-bar-content">
                 <div class="app-bar-left">
-                    <a href="{{ route('appointments.history') }}" class="back-button" title="Kembali ke Riwayat Janji Temu">
+                    <a href="{{ route('appointments') }}" class="back-button" title="Kembali ke Riwayat Janji Temu">
                         <i class="fas fa-arrow-left"></i>
                     </a>
                     <div class="logo-section">
@@ -602,7 +602,7 @@
             <h1>Detail Janji Temu</h1>
             <p>Informasi lengkap tentang janji temu Anda</p>
         </div>
-        
+
         <div class="main-content">
             <div class="card">
                 <div class="card-header">
@@ -668,7 +668,7 @@
                                 <p>{{ $appointment->seller->name }}</p>
                             </div>
                         </div>
-                        
+
                         <div class="location-details">
                             <div class="location-item">
                                 <div class="icon-wrapper">
@@ -682,7 +682,7 @@
                                 </div>
                                 <span>{{ $appointment->sellerLocation->telepon }}</span>
                             </div>
-                            
+
                             <div class="action-buttons">
                                 <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $appointment->sellerLocation->telepon) }}" target="_blank" class="btn btn-success btn-sm">
                                     <i class="fab fa-whatsapp"></i> Hubungi via WhatsApp
@@ -698,7 +698,7 @@
                     @if($appointment->meeting_location || ($appointment->sellerLocation->latitude && $appointment->sellerLocation->longitude))
                     <div class="seller-location-info">
                         <h6><i class="fas fa-map-marked-alt"></i> Lokasi Pertemuan</h6>
-                        
+
                         @if($appointment->meeting_location)
                             <div class="location-item">
                                 <div class="icon-wrapper">
@@ -720,7 +720,7 @@
                         @endif
 
                         <div id="appointmentMap" style="height: 350px; border: 1px solid #ddd; border-radius: 8px; margin: 15px 0;"></div>
-                        
+
                         <div class="action-buttons">
                             @if($appointment->meeting_location)
                                 <a href="https://www.google.com/maps?q={{ $appointment->meeting_location['lat'] }},{{ $appointment->meeting_location['lng'] }}" target="_blank" class="btn btn-primary btn-sm">
@@ -735,7 +735,7 @@
                     @endif
 
                     <div class="button-group">
-                        <a href="{{ route('appointments.history') }}" class="btn btn-outline-secondary">
+                        <a href="{{ route('appointments') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left"></i> Kembali ke Riwayat
                         </a>
                         @if($appointment->status == 'menunggu')
@@ -752,7 +752,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="footer">
             <div class="footer-content">
                 <div class="footer-text">
@@ -793,7 +793,7 @@
                         this.style.pointerEvents = 'none';
                         const originalText = this.innerHTML;
                         this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
-                        
+
                         setTimeout(() => {
                             this.innerHTML = originalText;
                             this.style.pointerEvents = 'auto';
@@ -805,16 +805,16 @@
 
         function initMap() {
             // Seller location
-            const sellerLocation = { 
-                lat: {{ $appointment->sellerLocation->latitude }}, 
-                lng: {{ $appointment->sellerLocation->longitude }} 
+            const sellerLocation = {
+                lat: {{ $appointment->sellerLocation->latitude }},
+                lng: {{ $appointment->sellerLocation->longitude }}
             };
 
             @if($appointment->meeting_location)
                 // Meeting location (if exists)
-                const meetingLocation = { 
-                    lat: {{ $appointment->meeting_location['lat'] }}, 
-                    lng: {{ $appointment->meeting_location['lng'] }} 
+                const meetingLocation = {
+                    lat: {{ $appointment->meeting_location['lat'] }},
+                    lng: {{ $appointment->meeting_location['lng'] }}
                 };
                 const centerLocation = meetingLocation;
             @else

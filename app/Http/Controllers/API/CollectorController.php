@@ -506,3 +506,4 @@ class CollectorController extends Controller
         }
     }
 }
+
