@@ -172,7 +172,7 @@ class User extends Authenticatable
      */
     public function isPengepul(): bool
     {
-        return $this->role === 'pengepul';
+        return $this->hasRole('pengepul') || $this->role === 'pengepul';
     }
 
     /**
@@ -180,7 +180,7 @@ class User extends Authenticatable
      */
     public function isPemilikTambak(): bool
     {
-        return $this->role === 'pemilik_tambak';
+        return $this->hasRole('pemilik_tambak') || $this->role === 'pemilik_tambak';
     }
 
     /**

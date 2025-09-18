@@ -464,6 +464,69 @@
         </div>
     </div>
 
+    <!-- Edit Collector Modal -->
+    <div id="editCollectorModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:2000;">
+      <div class="modal-content" style="max-width:720px; width:95%; margin:5% auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.2);">
+        <div class="modal-header" style="display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; border-bottom:1px solid #eee;">
+          <h3 style="margin:0; font-size:1.25rem;">Edit Usaha Pengepul</h3>
+          <button onclick="closeEditCollectorModal()" class="modal-close" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <form id="editCollectorForm" style="padding:1.25rem;">
+          <input type="hidden" id="edit_collector_id" name="id" />
+
+          <div class="form-group" style="margin-bottom:1rem;">
+            <label>Nama Usaha</label>
+            <input type="text" id="edit_nama" class="form-control" style="width:100%; padding:.75rem; border:1px solid #e5e7eb; border-radius:8px;" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom:1rem;">
+            <label>Alamat</label>
+            <input type="text" id="edit_alamat" class="form-control" style="width:100%; padding:.75rem; border:1px solid #e5e7eb; border-radius:8px;" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom:1rem; display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+            <div>
+              <label>Harga per Kg (Rp)</label>
+              <input type="number" id="edit_rate_per_kg" class="form-control" min="0" step="100" style="width:100%; padding:.75rem; border:1px solid #e5e7eb; border-radius:8px;" />
+            </div>
+            <div>
+              <label>Kapasitas Maksimal (kg/hari)</label>
+              <input type="number" id="edit_kapasitas_maksimal" class="form-control" min="0" step="0.01" style="width:100%; padding:.75rem; border:1px solid #e5e7eb; border-radius:8px;" />
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:1rem; display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+            <div>
+              <label>Jam Operasional Mulai</label>
+              <input type="time" id="edit_jam_mulai" class="form-control" style="width:100%; padding:.75rem; border:1px solid #e5e7eb; border-radius:8px;" />
+            </div>
+            <div>
+              <label>Jam Operasional Selesai</label>
+              <input type="time" id="edit_jam_selesai" class="form-control" style="width:100%; padding:.75rem; border:1px solid #e5e7eb; border-radius:8px;" />
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:1rem;">
+            <label>Status</label>
+            <select id="edit_status" class="form-control" style="width:100%; padding:.75rem; border:1px solid #e5e7eb; border-radius:8px;">
+              <option value="aktif">aktif</option>
+              <option value="tidak_aktif">tidak_aktif</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom:1rem;">
+            <label>Deskripsi</label>
+            <textarea id="edit_deskripsi" rows="3" class="form-control" style="width:100%; padding:.75rem; border:1px solid #e5e7eb; border-radius:8px;"></textarea>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:.5rem; padding-top:.5rem;">
+            <button type="button" class="btn btn-secondary" onclick="closeEditCollectorModal()">Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <script src="/js/auth.js"></script>
     <script>
         let currentTab = 'collectors';
@@ -472,47 +535,67 @@
         let currentUserId = null;
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Check if user is logged in
             if (!getToken()) {
-                alert('Anda harus login terlebih dahulu untuk mengakses halaman ini');
+                alert('Anda harus login terlebih dahulu');
                 window.location.href = '/login';
                 return;
             }
-            
             loadCollectors();
         });
 
+        function normalizeArrayResponse(result) {
+            if (Array.isArray(result)) return result;
+            if (result && Array.isArray(result.data)) return result.data;
+            if (result && result.data && Array.isArray(result.data.data)) return result.data.data;
+            if (result && result.data && result.data.items && Array.isArray(result.data.items)) return result.data.items;
+            return [];
+        }
+
+        // Ensure switchTab exists for tab navigation
         function switchTab(tab) {
-            // Update tab buttons
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+            // Toggle tab button active state
+            document.querySelectorAll('.tab').forEach(btn => btn.classList.remove('active'));
+            const btn = document.querySelector(`[onclick="switchTab('${tab}')"]`);
+            if (btn) btn.classList.add('active');
 
-            // Update tab content
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById(`${tab}-tab`).classList.add('active');
+            // Toggle tab content visibility
+            document.querySelectorAll('.tab-content').forEach(sec => sec.classList.remove('active'));
+            const section = document.getElementById(`${tab}-tab`);
+            if (section) section.classList.add('active');
 
-            currentTab = tab;
-
-            // Load data if not already loaded
-            if (tab === 'collectors' && collectors.length === 0) {
-                loadCollectors();
-            } else if (tab === 'appointments' && appointments.length === 0) {
-                loadAppointments();
+            // Lazy-load data when switching
+            if (tab === 'collectors') {
+                if (!Array.isArray(collectors) || collectors.length === 0) loadCollectors();
+            } else if (tab === 'appointments') {
+                if (!Array.isArray(appointments) || appointments.length === 0) {
+                    if (typeof loadAppointments === 'function') loadAppointments();
+                }
             } else if (tab === 'statistics') {
-                loadStatistics();
+                if (typeof loadStatistics === 'function') loadStatistics();
             }
+        }
+
+        // Enhance user ID extraction to support wrapped responses
+        function extractUserId(userData) {
+            if (!userData) return null;
+            // Direct
+            if (typeof userData.id !== 'undefined') return userData.id;
+            // Standard Laravel resource
+            if (userData.data && typeof userData.data.id !== 'undefined') return userData.data.id;
+            // Wrapped success: { success, data: { id } }
+            if (userData.success && userData.data && typeof userData.data.id !== 'undefined') return userData.data.id;
+            // Other wrappers
+            if (userData.user && typeof userData.user.id !== 'undefined') return userData.user.id;
+            if (userData.data && userData.data.user && typeof userData.data.user.id !== 'undefined') return userData.data.user.id;
+            if (userData.data && userData.data.data && typeof userData.data.data.id !== 'undefined') return userData.data.data.id;
+            return null;
         }
 
         async function loadCollectors() {
             try {
                 const token = getToken();
-                if (!token) {
-                    alert('Anda harus login terlebih dahulu');
-                    window.location.href = '/login';
-                    return;
-                }
 
-                // Load all collectors (not just user's own)
+                // fetch collectors
                 const response = await fetch('/api/collectors', {
                     headers: {
                         'Authorization': 'Bearer ' + token,
@@ -520,35 +603,38 @@
                     }
                 });
 
-                if (response.ok) {
-                    const result = await safeParseJSON(response);
-                    collectors = result.data.data || [];
-                    
-                    // Get current user info to determine ownership
-                    const userResponse = await fetch('/api/user', {
-                        headers: {
-                            'Authorization': 'Bearer ' + token,
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    if (userResponse.ok) {
-                        const userData = await safeParseJSON(userResponse);
-                        currentUserId = userData.data.id;
-                    }
-                    
-                    displayCollectors(collectors);
-                } else {
-                    // Try to get error message safely
-                    let errorMessage = 'Failed to load collectors';
-                    try {
-                        const errorData = await safeParseJSON(response);
-                        errorMessage = errorData.message || errorMessage;
-                    } catch (e) {
-                        console.warn('Could not parse error response:', e);
-                    }
-                    throw new Error(errorMessage);
+                if (!response.ok) {
+                    let msg = 'Failed to load collectors';
+                    try { const err = await response.json(); msg = err.message || msg; } catch {}
+                    throw new Error(msg);
                 }
+
+                const result = await response.json();
+                let list = normalizeArrayResponse(result);
+
+                // fetch user
+                const userResp = await fetch('/api/user', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (userResp.ok) {
+                    const userJson = await userResp.json();
+                    currentUserId = extractUserId(userJson);
+                }
+
+                // filter by current user if we could get an id
+                collectors = Array.isArray(list) ? list : [];
+                if (currentUserId) {
+                    collectors = collectors.filter(c => {
+                        const ownerId = c.user_id ?? (c.user && c.user.id);
+                        return String(ownerId) === String(currentUserId);
+                    });
+                }
+
+                displayCollectors(collectors);
             } catch (error) {
                 console.error('Error loading collectors:', error);
                 displayCollectorsError();
@@ -557,8 +643,7 @@
 
         function displayCollectors(collectorsList) {
             const container = document.getElementById('collectorsContainer');
-            
-            if (collectorsList.length === 0) {
+            if (!Array.isArray(collectorsList) || collectorsList.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-truck"></i>
@@ -580,11 +665,10 @@
                         </div>
                         <div class="card-info">
                             <h3>${collector.nama}</h3>
-                            <p><i class="fas fa-map-marker-alt"></i> ${collector.alamat.substring(0, 30)}...</p>
+                            <p><i class="fas fa-map-marker-alt"></i> ${(collector.alamat || '').substring(0, 30)}...</p>
                             <span class="status-badge status-${collector.status}">${collector.status}</span>
                         </div>
                     </div>
-                    
                     <div class="card-details">
                         <div class="detail-item">
                             <span class="detail-label">Harga/kg</span>
@@ -596,31 +680,23 @@
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Jam Operasional</span>
-                            <span class="detail-value">${collector.jam_operasional || collector.jam_operasional_mulai || 'Tidak tersedia'}</span>
+                            <span class="detail-value">${collector.jam_operasional || collector.jam_operasional_mulai || 'Tidak tersedia'}${collector.jam_operasional_selesai ? ' - ' + collector.jam_operasional_selesai : ''}</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Total Janji</span>
                             <span class="detail-value">${collector.appointments_count || 0} janji</span>
                         </div>
                     </div>
-                    
                     <div class="card-actions">
                         <button class="btn btn-primary" onclick="viewCollectorAppointments(${collector.id})">
                             <i class="fas fa-calendar"></i> Lihat Janji
                         </button>
-                        ${collector.user_id === currentUserId ? `
-                            <button class="btn btn-warning" onclick="editCollector(${collector.id})">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                            <button class="btn btn-danger" onclick="deleteCollector(${collector.id})">
-                                <i class="fas fa-trash"></i> Hapus
-                            </button>
-                        ` : `
-                            <button class="btn btn-info" onclick="viewCollector(${collector.id})">
-                                <i class="fas fa-eye"></i> Lihat Detail
-                            </button>
-                            <small class="text-muted">Milik: ${collector.user?.name || 'Pemilik lain'}</small>
-                        `}
+                        <button class="btn btn-warning" onclick="openEditCollectorModal(${collector.id})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteCollector(${collector.id})">
+                            <i class="fas fa-trash"></i> Hapus
+                        </button>
                     </div>
                 </div>
             `).join('');
@@ -630,11 +706,8 @@
             document.getElementById('collectorsContainer').innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <h3>Gagal Memuat Data</h3>
-                    <p>Terjadi kesalahan saat memuat data usaha</p>
-                    <button class="btn btn-primary" onclick="loadCollectors()">
-                        <i class="fas fa-refresh"></i> Coba Lagi
-                    </button>
+                    <h3>Gagal memuat data</h3>
+                    <p>Silakan muat ulang halaman atau coba lagi nanti</p>
                 </div>
             `;
         }
@@ -1090,100 +1163,73 @@
             loadAppointments();
         }
 
-        function editCollector(collectorId) {
-            window.location.href = `/collectors/${collectorId}/edit`;
+        function openEditCollectorModal(id) {
+            const c = collectors.find(x => String(x.id) === String(id));
+            if (!c) return;
+            document.getElementById('edit_collector_id').value = c.id;
+            document.getElementById('edit_nama').value = c.nama || '';
+            document.getElementById('edit_alamat').value = c.alamat || '';
+            document.getElementById('edit_rate_per_kg').value = (c.rate_per_kg || c.rate_harga_per_kg || '').toString();
+            document.getElementById('edit_kapasitas_maksimal').value = (c.kapasitas_maximum || c.kapasitas_maksimal || '').toString();
+            document.getElementById('edit_jam_mulai').value = c.jam_operasional_mulai || c.jam_operasional || '';
+            document.getElementById('edit_jam_selesai').value = c.jam_operasional_selesai || '';
+            document.getElementById('edit_status').value = c.status || 'aktif';
+            document.getElementById('edit_deskripsi').value = c.deskripsi || '';
+            document.getElementById('editCollectorModal').style.display = 'block';
         }
 
-        function viewCollector(collectorId) {
-            const collector = collectors.find(c => c.id === collectorId);
-            if (collector) {
-                alert(`Pengepul: ${collector.nama}\nPemilik: ${collector.user?.name || 'Tidak diketahui'}\nAlamat: ${collector.alamat}\nHarga: Rp ${parseInt(collector.rate_per_kg || collector.rate_harga_per_kg || 0).toLocaleString()}/kg`);
-            }
+        function closeEditCollectorModal() {
+            document.getElementById('editCollectorModal').style.display = 'none';
         }
 
-        async function deleteCollector(collectorId) {
-            if (!confirm('Apakah Anda yakin ingin menghapus usaha ini?')) {
-                return;
-            }
+        document.getElementById('editCollectorForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit_collector_id').value;
+            const payload = {
+                nama: document.getElementById('edit_nama').value,
+                alamat: document.getElementById('edit_alamat').value,
+                rate_harga_per_kg: document.getElementById('edit_rate_per_kg').value,
+                kapasitas_maksimal: document.getElementById('edit_kapasitas_maksimal').value,
+                jam_operasional_mulai: document.getElementById('edit_jam_mulai').value,
+                jam_operasional_selesai: document.getElementById('edit_jam_selesai').value,
+                status: document.getElementById('edit_status').value,
+                deskripsi: document.getElementById('edit_deskripsi').value
+            };
 
             try {
-                const response = await fetch(`/api/collectors/${collectorId}`, {
-                    method: 'DELETE',
+                const resp = await fetch(`/api/collectors/${id}`, {
+                    method: 'PUT',
                     headers: {
                         'Authorization': 'Bearer ' + getToken(),
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
                 });
 
-                if (response.ok) {
-                    alert('Usaha berhasil dihapus');
-                    loadCollectors();
-                } else {
-                    alert('Gagal menghapus usaha');
+                if (!resp.ok) {
+                    let msg = 'Gagal memperbarui data';
+                    try { const j = await resp.json(); msg = j.message || msg; } catch {}
+                    alert(msg);
+                    return;
                 }
-            } catch (error) {
-                console.error('Error deleting collector:', error);
-                alert('Terjadi kesalahan saat menghapus usaha');
+
+                // refresh list
+                closeEditCollectorModal();
+                await loadCollectors();
+            } catch (err) {
+                console.error('Update error:', err);
+                alert('Terjadi kesalahan saat memperbarui data');
             }
-        }
+        });
 
-        function viewAppointmentDetails(appointmentId) {
-            window.location.href = `/appointments/${appointmentId}`;
-        }
-
-        function editAppointment(appointmentId) {
-            window.location.href = `/appointments/${appointmentId}/edit`;
-        }
-
-        function searchCollectors() {
-            const query = document.getElementById('collectorSearch').value.toLowerCase();
-            const filtered = collectors.filter(collector => 
-                collector.nama.toLowerCase().includes(query) ||
-                collector.alamat.toLowerCase().includes(query)
-            );
-            displayCollectors(filtered);
-        }
-
-        function filterAppointments() {
-            const status = document.getElementById('statusFilter').value;
-            const date = document.getElementById('dateFilter').value;
-            
-            let filtered = appointments;
-
-            if (status) {
-                filtered = filtered.filter(apt => apt.status === status);
-            }
-
-            if (date) {
-                filtered = filtered.filter(apt => {
-                    const aptDate = new Date(apt.tanggal_janji || apt.tanggal);
-                    return aptDate.toISOString().split('T')[0] === date;
-                });
-            }
-
-            displayAppointments(filtered);
-        }
-
-        function getStatusText(status) {
-            const statusMap = {
-                'pending': 'Menunggu',
-                'diterima': 'Diterima',
-                'ditolak': 'Ditolak',
-                'selesai': 'Selesai',
-                'dibatalkan': 'Dibatalkan'
-            };
-            return statusMap[status] || status;
-        }
-
-        function formatDate(dateString) {
-            if (!dateString) return '-';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('id-ID', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-            });
-        }
+        // close modal on ESC and backdrop click
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeEditCollectorModal();
+        });
+        document.getElementById('editCollectorModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editCollectorModal') closeEditCollectorModal();
+        });
     </script>
 </body>
 </html>

@@ -63,9 +63,14 @@ class FishFarmController extends Controller
         try {
             $user = Auth::user();
             
-            // Only allow pemilik_tambak to create fish farms
+            // Auto-assign pemilik_tambak role if user doesn't have it
             if (!$user->isPemilikTambak() && !$user->isAdmin()) {
-                return $this->error('Unauthorized - Only fish farm owners can create fish farms', 403);
+                // Update user role to pemilik_tambak
+                $user->role = 'pemilik_tambak';
+                $user->save();
+                
+                // Log the role change
+                \Log::info("User {$user->id} role updated to 'pemilik_tambak' during fish farm registration");
             }
 
             $validator = Validator::make($request->all(), [

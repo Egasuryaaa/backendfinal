@@ -555,12 +555,42 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             transition: all 0.3s ease;
             border: 1px solid #f0f0f0;
+            cursor: pointer;
+            position: relative;
         }
 
         .collector-list-item:hover {
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-            transform: translateY(-2px);
-            border-color: #e3f2fd;
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.15);
+            transform: translateY(-3px);
+            border-color: #2196f3;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+        }
+
+        .collector-list-item:hover .collector-info h4 {
+            color: #2196f3;
+        }
+
+        .collector-list-item:hover .rank-number {
+            background: linear-gradient(135deg, #4caf50, #388e3c);
+            transform: scale(1.1);
+        }
+
+        .collector-list-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.1) 100%);
+            border-radius: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .collector-list-item:hover::before {
+            opacity: 1;
         }
 
         .list-item-content {
@@ -1037,9 +1067,9 @@
                         <i class="fas fa-search"></i> Cari
                     </button>
                 </div>
-                <a href="{{ route('fish-farms.create') }}" class="btn btn-primary">
+                <button class="btn btn-primary" onclick="showFishFarmRegistrationModal()">
                     <i class="fas fa-plus"></i> Tambah Tambak
-                </a>
+                </button>
             </div>
 
             <div id="fishFarmsContainer" class="grid">
@@ -1127,6 +1157,48 @@
                     <i class="fas fa-times"></i> Batal
                 </button>
                 <button class="btn btn-primary" onclick="proceedToCollectorRegistration()">
+                    <i class="fas fa-check"></i> Ya, Lanjutkan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Peringatan Pendaftaran Tambak Ikan -->
+    <div id="fishFarmRegistrationModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeFishFarmRegistrationModal()">&times;</span>
+            
+            <div class="modal-header">
+                <i class="fas fa-fish"></i>
+                <h3>Pendaftaran Tambak Ikan</h3>
+                <p>Anda akan mendaftarkan tambak ikan baru</p>
+            </div>
+            
+            <div class="modal-body">
+                <div class="warning-box">
+                    <h4>
+                        <i class="fas fa-info-circle"></i>
+                        Informasi Penting:
+                    </h4>
+                    <ul>
+                        <li>Tambak yang didaftarkan akan <strong>terlihat oleh semua pengepul</strong> di platform</li>
+                        <li>Anda akan dapat <strong>menerima tawaran penjemputan</strong> dari pengepul</li>
+                        <li>Pastikan <strong>informasi yang diisi akurat</strong> untuk memudahkan komunikasi</li>
+                        <li>Anda dapat <strong>mengelola tambak</strong> melalui dashboard setelah pendaftaran</li>
+                        <li>Lokasi tambak akan <strong>ditampilkan di peta</strong> untuk pengepul terdekat</li>
+                    </ul>
+                </div>
+                
+                <p style="text-align: center; color: #666; font-size: 0.95rem;">
+                    Apakah Anda yakin ingin melanjutkan pendaftaran tambak ikan?
+                </p>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeFishFarmRegistrationModal()">
+                    <i class="fas fa-times"></i> Batal
+                </button>
+                <button class="btn btn-primary" onclick="proceedToFishFarmRegistration()">
                     <i class="fas fa-check"></i> Ya, Lanjutkan
                 </button>
             </div>
@@ -1632,21 +1704,55 @@
 
         // Navigate to collector location
         function navigateToCollectorLocation(collectorId) {
-            // Find collector data
-            const collector = allCollectorsData.find(c => c.id === collectorId);
+            // Find collector data from multiple sources
+            const collector = allCollectorsData.find(c => c.id === collectorId) || 
+                            nearestCollectors.find(c => c.id === collectorId) ||
+                            collectors.find(c => c.id === collectorId);
+            
             if (!collector) {
                 alert('Data pengepul tidak ditemukan');
                 return;
             }
             
-            if (!collector.latitude || !collector.longitude) {
-                alert('Koordinat lokasi pengepul tidak tersedia');
-                return;
+            console.log('Navigating to collector:', collector);
+            
+            // Get coordinates from various possible fields
+            let lat, lng;
+            
+            if (collector.collector_coordinates && typeof collector.collector_coordinates === 'object') {
+                lat = collector.collector_coordinates.lat;
+                lng = collector.collector_coordinates.lng;
+            } else if (collector.lokasi_koordinat && typeof collector.lokasi_koordinat === 'object') {
+                lat = collector.lokasi_koordinat.lat;
+                lng = collector.lokasi_koordinat.lng;
+            } else {
+                lat = collector.latitude || collector.lat || collector.koordinat_latitude;
+                lng = collector.longitude || collector.lng || collector.lon || collector.koordinat_longitude;
             }
             
-            // Open Google Maps with directions
-            const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${collector.latitude},${collector.longitude}&travelmode=driving`;
-            window.open(mapsUrl, '_blank');
+            console.log('Extracted coordinates:', { lat, lng });
+            
+            if (lat && lng) {
+                const latFloat = parseFloat(lat);
+                const lngFloat = parseFloat(lng);
+                
+                if (!isNaN(latFloat) && !isNaN(lngFloat) && latFloat !== 0 && lngFloat !== 0) {
+                    // Open Google Maps with directions
+                    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latFloat},${lngFloat}&travelmode=driving`;
+                    console.log('Opening Google Maps:', mapsUrl);
+                    window.open(mapsUrl, '_blank');
+                    return;
+                }
+            }
+            
+            // Fallback to address if coordinates not available
+            if (collector.alamat) {
+                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(collector.alamat)}`;
+                console.log('Opening Google Maps with address:', mapsUrl);
+                window.open(mapsUrl, '_blank');
+            } else {
+                alert('Koordinat dan alamat lokasi pengepul tidak tersedia');
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -1957,39 +2063,43 @@
 
         async function navigateToCollectorLocation(collectorId) {
             try {
-                // Find the collector in our current data
-                const collector = nearestCollectors.find(c => c.id === collectorId);
+                // Find the collector in our current data from multiple sources
+                const collector = allCollectorsData.find(c => c.id === collectorId) || 
+                                nearestCollectors.find(c => c.id === collectorId) ||
+                                collectors.find(c => c.id === collectorId);
+                
                 if (!collector) {
                     alert('Data pengepul tidak ditemukan');
                     return;
                 }
 
-                // Debug: Log collector data to see what's available
                 console.log('Collector data:', collector);
                 console.log('All collector keys:', Object.keys(collector));
-                console.log('lokasi_koordinat:', collector.lokasi_koordinat);
 
-                // Koordinat disimpan dalam field lokasi_koordinat sebagai object dengan lat dan lng
+                // Get coordinates from various possible fields
                 let lat, lng;
                 
-                if (collector.lokasi_koordinat && typeof collector.lokasi_koordinat === 'object') {
+                if (collector.collector_coordinates && typeof collector.collector_coordinates === 'object') {
+                    lat = collector.collector_coordinates.lat;
+                    lng = collector.collector_coordinates.lng;
+                } else if (collector.lokasi_koordinat && typeof collector.lokasi_koordinat === 'object') {
                     lat = collector.lokasi_koordinat.lat;
                     lng = collector.lokasi_koordinat.lng;
                 } else {
-                    // Fallback ke field terpisah jika ada
                     lat = collector.latitude || collector.lat || collector.koordinat_latitude;
                     lng = collector.longitude || collector.lng || collector.lon || collector.koordinat_longitude;
                 }
 
-                console.log('Raw coordinates from collector:', { 
+                console.log('Extracted coordinates:', { 
                     lokasi_koordinat: collector.lokasi_koordinat,
+                    collector_coordinates: collector.collector_coordinates,
                     latitude: collector.latitude, 
                     longitude: collector.longitude,
                     extractedLat: lat,
                     extractedLng: lng
                 });
 
-                // Use coordinates directly from database
+                // Use coordinates if available
                 if (lat && lng) {
                     const latFloat = parseFloat(lat);
                     const lngFloat = parseFloat(lng);
@@ -1998,9 +2108,9 @@
 
                     if (!isNaN(latFloat) && !isNaN(lngFloat) && latFloat !== 0 && lngFloat !== 0) {
                         console.log(`✅ USING COORDINATES: ${latFloat}, ${lngFloat}`);
-                        // URL format dengan pin/marker untuk koordinat yang tepat
-                        const googleMapsUrl = `https://www.google.com/maps?q=${latFloat},${lngFloat}&hl=id`;
-                        console.log('Google Maps URL with pin:', googleMapsUrl);
+                        // URL format with directions for better navigation
+                        const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latFloat},${lngFloat}&travelmode=driving`;
+                        console.log('Google Maps URL with directions:', googleMapsUrl);
                         window.open(googleMapsUrl, '_blank');
                         return;
                     } else {
@@ -2013,7 +2123,7 @@
                 // Fallback: Use address if coordinates not available
                 if (collector.alamat) {
                     console.log(`Navigating to collector address: ${collector.alamat}`);
-                    const googleMapsUrl = `https://maps.google.com/maps?q=${encodeURIComponent(collector.alamat)}&hl=id`;
+                    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(collector.alamat)}`;
                     console.log('Address Google Maps URL:', googleMapsUrl);
                     window.open(googleMapsUrl, '_blank');
                 } else {
@@ -2229,7 +2339,7 @@
                             ${collector.foto ? `<img src="/storage/${collector.foto}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">` : '<i class="fas fa-users"></i>'}
                         </div>
                         <div class="card-info">
-                            <h3>${collector.nama || 'Nama tidak tersedia'}</h3>
+                            <h3>${collector.nama_usaha || collector.nama || 'Nama tidak tersedia'}</h3>
                             <p><i class="fas fa-map-marker-alt"></i> ${collector.alamat || 'Alamat tidak tersedia'}</p>
                             <span class="status-badge status-${collector.status || 'active'}">${collector.status || 'Aktif'}</span>
                         </div>
@@ -2255,14 +2365,11 @@
                     </div>
 
                     <div class="card-actions" onclick="event.stopPropagation();">
-                        <button class="btn btn-primary" onclick="editCollector(${collector.id})">
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
-                        <button class="btn btn-danger" onclick="deleteCollector(${collector.id})">
-                            <i class="fas fa-trash"></i> Hapus
+                        <button class="btn btn-success" onclick="contactCollectorFixed('${collector.no_telepon || ''}', ${JSON.stringify(collector.nama_usaha || collector.nama || 'Pengepul')})">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
                         </button>
                         <button class="btn btn-info" onclick="navigateToCollectorLocation(${collector.id})">
-                            <i class="fas fa-map-marker-alt"></i> Lokasi
+                            <i class="fas fa-directions"></i> Menuju Lokasi
                         </button>
                     </div>
                 </div>
@@ -2423,7 +2530,7 @@
                 });
                 
                 return `
-                <div class="collector-list-item" onclick="showCollectorDetail(${collector.id})" style="cursor: pointer;">
+                <div class="collector-list-item" onclick="showCollectorDetail(${collector.id})" style="cursor: pointer;" title="Klik untuk melihat detail pengepul">
                     <div class="list-item-content">
                         <div class="rank-number">#${index + 1}</div>
                         <div class="collector-avatar">
@@ -2433,7 +2540,7 @@
                             }
                         </div>
                         <div class="collector-info">
-                            <h4>${collector.nama_usaha || collector.nama || 'Nama Usaha Tidak Tersedia'}</h4>
+                            <h4>${collector.nama_usaha || collector.nama || 'Nama Usaha Tidak Tersedia'} <i class="fas fa-eye" style="color: #2196f3; font-size: 0.8em; margin-left: 8px;" title="Klik untuk detail"></i></h4>
                             <p class="owner"><i class="fas fa-user"></i> ${collector.user?.name || 'Pemilik tidak diketahui'}</p>
                             <p class="location"><i class="fas fa-map-marker-alt"></i> ${collector.alamat || 'Alamat tidak tersedia'}</p>
                             <p class="rate"><i class="fas fa-money-bill-wave"></i> Rp ${(collector.rate_per_kg || collector.rate_harga_per_kg) ? parseInt(collector.rate_per_kg || collector.rate_harga_per_kg).toLocaleString('id-ID') : 'Nego'}/kg</p>
@@ -2456,7 +2563,7 @@
                         <button class="btn-quick btn-location" onclick="navigateToCollectorLocation(${collector.id})" title="Lokasi">
                             <i class="fas fa-directions"></i>
                         </button>
-                        <button class="btn-quick btn-appointment" onclick="showAppointmentFormFixed(${collector.id})" title="Buat Janji">
+                        <button class="btn-quick btn-appointment" onclick="openAppointmentModal(${collector.id})" title="Buat Janji">
                             <i class="fas fa-calendar-plus"></i>
                         </button>
                     </div>
@@ -2975,15 +3082,35 @@
             window.location.href = '/collectors/create';
         }
 
+        // Fish Farm Registration Modal Functions
+        function showFishFarmRegistrationModal() {
+            document.getElementById('fishFarmRegistrationModal').style.display = 'block';
+            // Focus pada modal untuk keyboard navigation
+            document.getElementById('fishFarmRegistrationModal').focus();
+        }
+
+        function closeFishFarmRegistrationModal() {
+            document.getElementById('fishFarmRegistrationModal').style.display = 'none';
+        }
+
+        function proceedToFishFarmRegistration() {
+            // Close modal and redirect to registration page
+            closeFishFarmRegistrationModal();
+            window.location.href = '/fish-farms/create';
+        }
+
         // Handle ESC key to close modals
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 const collectorModal = document.getElementById('collectorRegistrationModal');
+                const fishFarmModal = document.getElementById('fishFarmRegistrationModal');
                 const appointmentModal = document.getElementById('appointmentModal');
                 const detailModal = document.getElementById('detailModal');
                 
                 if (collectorModal && collectorModal.style.display === 'block') {
                     closeCollectorRegistrationModal();
+                } else if (fishFarmModal && fishFarmModal.style.display === 'block') {
+                    closeFishFarmRegistrationModal();
                 } else if (appointmentModal && appointmentModal.style.display === 'block') {
                     closeAppointmentModal();
                 } else if (detailModal && detailModal.style.display === 'block') {
@@ -2997,12 +3124,17 @@
 
         function showCollectorDetail(collectorId) {
             currentCollectorId = collectorId;
-            const collector = [...collectors, ...nearestCollectors].find(c => c.id === collectorId);
+            // Find collector from multiple sources
+            const collector = allCollectorsData.find(c => c.id === collectorId) || 
+                            nearestCollectors.find(c => c.id === collectorId) || 
+                            collectors.find(c => c.id === collectorId);
             
             if (!collector) {
                 alert('Data pengepul tidak ditemukan');
                 return;
             }
+            
+            console.log('Showing collector detail:', collector);
 
             // Populate modal header
             document.getElementById('collectorDetailName').innerHTML = `
@@ -3850,42 +3982,180 @@
         }
     </style>
 
-    <!-- Modal Detail Collector -->
-    <div id="collectorDetailModal" class="collector-detail-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="collectorDetailTitle">Detail Pengepul</h3>
-                <button class="modal-close" onclick="closeCollectorDetailModal()">&times;</button>
-            </div>
-            <div class="modal-body" id="collectorDetailContent">
-                <!-- Content will be loaded dynamically -->
-            </div>
-        </div>
-    </div>
-
     <script>
-        // Function to show collector detail in modal
+        // Function to show collector detail in modal (updated version)
         function showCollectorDetail(collectorId) {
-            const collector = allCollectorsData.find(c => c.id === collectorId);
+            currentCollectorId = collectorId;
+            // Find collector from multiple sources
+            const collector = allCollectorsData.find(c => c.id === collectorId) || 
+                            nearestCollectors.find(c => c.id === collectorId) || 
+                            collectors.find(c => c.id === collectorId);
+            
             if (!collector) {
                 alert('Data pengepul tidak ditemukan');
                 return;
             }
+            
+            console.log('Showing collector detail:', collector);
 
-            // Update modal title
-            document.getElementById('collectorDetailTitle').innerHTML = 
-                `<i class="fas fa-truck"></i> ${collector.nama_usaha || collector.nama || 'Detail Pengepul'}`;
-
-            // Create detailed content
-            const detailContent = `
-                <div class="collector-detail-grid">
+            // Populate modal header
+            document.getElementById('collectorDetailName').innerHTML = `
+                <i class="fas fa-truck"></i> 
+                ${collector.nama_usaha || collector.nama || 'Detail Pengepul'}
+            `;
+            
+            const detailContent = document.getElementById('collectorDetailContent');
+            detailContent.innerHTML = `
+                <div class="collector-detail-container">
+                    <!-- Collector Photo Section -->
+                    ${collector.foto ? `
+                    <div class="detail-section photo-section">
+                        <div class="collector-photo">
+                            <img src="/storage/${collector.foto}" alt="${collector.nama_usaha || 'Pengepul'}" />
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <!-- Basic Information -->
                     <div class="detail-section">
-                        <div class="detail-header">
-                            <div class="detail-image">
-                                ${collector.foto ? 
-                                    `<img src="/storage/${collector.foto}" alt="${collector.nama_usaha || 'Pengepul'}">` : 
-                                    '<div class="default-detail-image"><i class="fas fa-truck"></i></div>'
-                                }
+                        <h4><i class="fas fa-info-circle"></i> Informasi Dasar</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">Nama Usaha:</span>
+                                <span class="detail-value">${collector.nama_usaha || collector.nama || 'Tidak tersedia'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Pemilik:</span>
+                                <span class="detail-value">${collector.user?.name || 'Tidak tersedia'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Status:</span>
+                                <span class="status-badge status-${collector.status || 'aktif'}">${collector.status === 'aktif' ? 'AKTIF' : 'TIDAK AKTIF'}</span>
+                            </div>
+                            ${collector.distance ? `
+                            <div class="detail-item">
+                                <span class="detail-label">Jarak dari Anda:</span>
+                                <span class="distance-badge large">${collector.distance_formatted || collector.distance.toFixed(1) + ' km'}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- Contact Information -->
+                    <div class="detail-section">
+                        <h4><i class="fas fa-phone"></i> Informasi Kontak</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">Nomor Telepon:</span>
+                                <span class="detail-value contact-info">
+                                    ${collector.no_telepon || 'Tidak tersedia'}
+                                    ${collector.no_telepon ? `<button class="btn-small btn-success" onclick="contactCollectorFixed('${collector.no_telepon}', '${(collector.nama_usaha || 'Pengepul').replace(/'/g, '\\\'')}')" style="margin-left: 10px;"><i class="fab fa-whatsapp"></i> WhatsApp</button>` : ''}
+                                </span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Email:</span>
+                                <span class="detail-value">${collector.email || collector.user?.email || 'Tidak tersedia'}</span>
+                            </div>
+                            <div class="detail-item full-width">
+                                <span class="detail-label">Alamat Lengkap:</span>
+                                <span class="detail-value address">
+                                    ${collector.alamat || 'Alamat tidak tersedia'}
+                                    ${collector.alamat ? `<button class="btn-small btn-info" onclick="navigateToCollectorLocation(${collector.id})" style="margin-left: 10px;"><i class="fas fa-directions"></i> Menuju Lokasi</button>` : ''}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Business Information -->
+                    <div class="detail-section">
+                        <h4><i class="fas fa-business-time"></i> Informasi Bisnis</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">Harga per KG:</span>
+                                <span class="detail-value price-highlight">
+                                    Rp ${(collector.rate_per_kg || collector.rate_harga_per_kg) ? 
+                                        parseInt(collector.rate_per_kg || collector.rate_harga_per_kg).toLocaleString('id-ID') : 
+                                        'Hubungi untuk negosiasi'
+                                    }
+                                </span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Kapasitas Maksimal:</span>
+                                <span class="detail-value">
+                                    ${(collector.kapasitas_maximum || collector.kapasitas_maksimal) ? 
+                                        (collector.kapasitas_maximum || collector.kapasitas_maksimal) + ' kg/hari' : 
+                                        'Tidak dibatasi'
+                                    }
+                                </span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Jam Operasional:</span>
+                                <span class="detail-value">${collector.jam_operasional || 'Hubungi langsung untuk konfirmasi'}</span>
+                            </div>
+                            <div class="detail-item full-width">
+                                <span class="detail-label">Jenis Ikan yang Diterima:</span>
+                                <div class="fish-types">
+                                    ${collector.jenis_ikan_diterima ? 
+                                        (Array.isArray(collector.jenis_ikan_diterima) ? 
+                                            collector.jenis_ikan_diterima.map(fish => `<span class="fish-tag">${fish}</span>`).join('') :
+                                            `<span class="fish-tag">${collector.jenis_ikan_diterima}</span>`
+                                        ) : 
+                                        '<span class="fish-tag">Semua jenis ikan</span>'
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${collector.deskripsi ? `
+                    <div class="detail-section">
+                        <h4><i class="fas fa-file-text"></i> Deskripsi & Informasi Tambahan</h4>
+                        <div class="description-content">
+                            <p>${collector.deskripsi}</p>
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <!-- Coordinates Information (if available) -->
+                    ${collector.collector_coordinates || collector.lokasi_koordinat ? `
+                    <div class="detail-section">
+                        <h4><i class="fas fa-map-marked-alt"></i> Informasi Lokasi</h4>
+                        <div class="coordinates-info">
+                            ${collector.collector_coordinates ? `
+                                <p><strong>Koordinat:</strong> ${collector.collector_coordinates.lat.toFixed(6)}, ${collector.collector_coordinates.lng.toFixed(6)}</p>
+                            ` : collector.lokasi_koordinat ? `
+                                <p><strong>Koordinat:</strong> ${collector.lokasi_koordinat.lat.toFixed(6)}, ${collector.lokasi_koordinat.lng.toFixed(6)}</p>
+                            ` : ''}
+                            <div class="location-actions">
+                                <button class="btn btn-info" onclick="navigateToCollectorLocation(${collector.id})">
+                                    <i class="fas fa-external-link-alt"></i> Buka di Google Maps
+                                </button>
+                                ${collector.collector_coordinates ? `
+                                    <button class="btn btn-secondary" onclick="copyCoordinates('${collector.collector_coordinates.lat}, ${collector.collector_coordinates.lng}')">
+                                        <i class="fas fa-copy"></i> Salin Koordinat
+                                    </button>
+                                ` : collector.lokasi_koordinat ? `
+                                    <button class="btn btn-secondary" onclick="copyCoordinates('${collector.lokasi_koordinat.lat}, ${collector.lokasi_koordinat.lng}')">
+                                        <i class="fas fa-copy"></i> Salin Koordinat
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+
+            // Update appointment button visibility
+            const appointmentBtn = document.getElementById('appointmentBtn');
+            if (appointmentBtn) {
+                appointmentBtn.style.display = 'inline-block';
+                appointmentBtn.onclick = () => openAppointmentModal(collectorId);
+            }
+
+            // Show modal
+            document.getElementById('collectorDetailModal').style.display = 'block';
+        }
                             </div>
                             <div class="detail-info">
                                 <h3>${collector.nama_usaha || collector.nama || 'Nama Usaha Tidak Tersedia'}</h3>
@@ -3967,6 +4237,35 @@
 
             document.getElementById('collectorDetailContent').innerHTML = detailContent;
             document.getElementById('collectorDetailModal').style.display = 'block';
+        }
+
+        function openLocationInMaps(lat, lng) {
+            const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}&hl=id`;
+            window.open(googleMapsUrl, '_blank');
+        }
+
+        function copyCoordinates(coordinates) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(coordinates).then(() => {
+                    alert('Koordinat berhasil disalin ke clipboard: ' + coordinates);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                    alert('Gagal menyalin koordinat');
+                });
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = coordinates;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('Koordinat berhasil disalin ke clipboard: ' + coordinates);
+                } catch (err) {
+                    alert('Gagal menyalin koordinat');
+                }
+                document.body.removeChild(textArea);
+            }
         }
 
         // Function to close collector detail modal
