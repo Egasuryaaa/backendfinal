@@ -466,7 +466,7 @@
 
     <!-- Edit Collector Modal -->
     <div id="editCollectorModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:2000;">
-      <div class="modal-content" style="max-width:720px; width:95%; margin:5% auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.2);">
+      <div class="modal-content" style="max-width:900px; width:95%; margin:3% auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.2); max-height:90vh; overflow-y:auto;">
         <div class="modal-header" style="display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; border-bottom:1px solid #eee;">
           <h3 style="margin:0; font-size:1.25rem;">Edit Usaha Pengepul</h3>
           <button onclick="closeEditCollectorModal()" class="modal-close" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
@@ -519,9 +519,61 @@
             <textarea id="edit_deskripsi" rows="3" class="form-control" style="width:100%; padding:.75rem; border:1px solid #e5e7eb; border-radius:8px;"></textarea>
           </div>
 
+          <!-- Coordinate fields -->
+          <div class="form-group" style="margin-bottom:1rem;">
+            <label>Lokasi Koordinat</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+              <div>
+                <label>Latitude</label>
+                <input type="number" id="edit_latitude" class="form-control" step="any" style="width:100%; padding:.75rem; border:1px solid #e5e7eb; border-radius:8px;" placeholder="Contoh: -6.2088" />
+              </div>
+              <div>
+                <label>Longitude</label>
+                <input type="number" id="edit_longitude" class="form-control" step="any" style="width:100%; padding:.75rem; border:1px solid #e5e7eb; border-radius:8px;" placeholder="Contoh: 106.8456" />
+              </div>
+            </div>
+            <button type="button" class="btn btn-success" onclick="getEditCurrentLocation()" style="margin-bottom:1rem;">
+              <i class="fas fa-map-marker-alt"></i> Gunakan Lokasi Saat Ini
+            </button>
+            <div id="editMapContainer" style="height:250px; border-radius:8px; overflow:hidden; border:1px solid #e5e7eb; background:#f8f9fa; display:flex; align-items:center; justify-content:center; color:#666;">
+              <div>
+                <i class="fas fa-map fa-2x" style="margin-bottom:1rem;"></i>
+                <p>Peta akan dimuat setelah koordinat diisi</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Jenis Ikan yang Diterima -->
+          <div class="form-group" style="margin-bottom:1rem;">
+            <label>Jenis Ikan yang Diterima</label>
+            <div id="edit_jenis_ikan_container" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:0.5rem; margin-top:0.5rem;">
+              <label style="display:flex; align-items:center; padding:0.5rem; border:1px solid #e5e7eb; border-radius:4px; cursor:pointer;">
+                <input type="checkbox" value="Lele" style="margin-right:0.5rem;"> Lele
+              </label>
+              <label style="display:flex; align-items:center; padding:0.5rem; border:1px solid #e5e7eb; border-radius:4px; cursor:pointer;">
+                <input type="checkbox" value="Nila" style="margin-right:0.5rem;"> Nila
+              </label>
+              <label style="display:flex; align-items:center; padding:0.5rem; border:1px solid #e5e7eb; border-radius:4px; cursor:pointer;">
+                <input type="checkbox" value="Mujair" style="margin-right:0.5rem;"> Mujair
+              </label>
+              <label style="display:flex; align-items:center; padding:0.5rem; border:1px solid #e5e7eb; border-radius:4px; cursor:pointer;">
+                <input type="checkbox" value="Gurame" style="margin-right:0.5rem;"> Gurame
+              </label>
+              <label style="display:flex; align-items:center; padding:0.5rem; border:1px solid #e5e7eb; border-radius:4px; cursor:pointer;">
+                <input type="checkbox" value="Patin" style="margin-right:0.5rem;"> Patin
+              </label>
+              <label style="display:flex; align-items:center; padding:0.5rem; border:1px solid #e5e7eb; border-radius:4px; cursor:pointer;">
+                <input type="checkbox" value="Bawal" style="margin-right:0.5rem;"> Bawal
+              </label>
+            </div>
+          </div>
+
           <div style="display:flex; justify-content:flex-end; gap:.5rem; padding-top:.5rem;">
             <button type="button" class="btn btn-secondary" onclick="closeEditCollectorModal()">Batal</button>
-            <button type="submit" class="btn btn-primary">Simpan</button>
+            <button type="submit" class="btn btn-primary" id="editSubmitBtn">
+              <span class="edit-loading" style="display: none;"><i class="fas fa-spinner fa-spin"></i></span>
+              <span class="edit-btn-text"><i class="fas fa-save"></i> Simpan</span>
+            </button>
           </div>
         </form>
       </div>
@@ -957,7 +1009,8 @@
                     headers: {
                         'Authorization': 'Bearer ' + getToken(),
                         'Accept': 'application/json',
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({ 
                         action: 'accept',
@@ -1016,7 +1069,8 @@
                     headers: {
                         'Authorization': 'Bearer ' + getToken(),
                         'Accept': 'application/json',
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({ 
                         action: 'reject',
@@ -1085,7 +1139,8 @@
                     headers: {
                         'Authorization': 'Bearer ' + getToken(),
                         'Accept': 'application/json',
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({ 
                         berat_aktual: parseFloat(actualWeight),
@@ -1121,7 +1176,8 @@
                     method: 'POST',
                     headers: {
                         'Authorization': 'Bearer ' + getToken(),
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     }
                 });
 
@@ -1163,9 +1219,13 @@
             loadAppointments();
         }
 
+        let editMap, editMarker;
+
         function openEditCollectorModal(id) {
             const c = collectors.find(x => String(x.id) === String(id));
             if (!c) return;
+            
+            // Fill basic fields
             document.getElementById('edit_collector_id').value = c.id;
             document.getElementById('edit_nama').value = c.nama || '';
             document.getElementById('edit_alamat').value = c.alamat || '';
@@ -1175,51 +1235,350 @@
             document.getElementById('edit_jam_selesai').value = c.jam_operasional_selesai || '';
             document.getElementById('edit_status').value = c.status || 'aktif';
             document.getElementById('edit_deskripsi').value = c.deskripsi || '';
+            
+            // Fill coordinates
+            let lat = null, lng = null;
+            if (c.lokasi_koordinat) {
+                if (typeof c.lokasi_koordinat === 'string') {
+                    const coords = c.lokasi_koordinat.split(',');
+                    if (coords.length === 2) {
+                        lat = parseFloat(coords[0]);
+                        lng = parseFloat(coords[1]);
+                    }
+                } else if (c.lokasi_koordinat.lat && c.lokasi_koordinat.lng) {
+                    lat = parseFloat(c.lokasi_koordinat.lat);
+                    lng = parseFloat(c.lokasi_koordinat.lng);
+                }
+            }
+            
+            document.getElementById('edit_latitude').value = lat || '';
+            document.getElementById('edit_longitude').value = lng || '';
+            
+            // Fill fish types
+            const fishCheckboxes = document.querySelectorAll('#edit_jenis_ikan_container input[type="checkbox"]');
+            fishCheckboxes.forEach(cb => cb.checked = false);
+            
+            if (c.jenis_ikan_diterima) {
+                let fishTypes = [];
+                try {
+                    fishTypes = typeof c.jenis_ikan_diterima === 'string' ? 
+                        JSON.parse(c.jenis_ikan_diterima) : c.jenis_ikan_diterima;
+                } catch (e) {
+                    fishTypes = c.jenis_ikan_diterima.toString().split(',');
+                }
+                
+                if (Array.isArray(fishTypes)) {
+                    fishTypes.forEach(fishType => {
+                        const checkbox = document.querySelector(`#edit_jenis_ikan_container input[value="${fishType.trim()}"]`);
+                        if (checkbox) checkbox.checked = true;
+                    });
+                }
+            }
+            
+            // Show modal
             document.getElementById('editCollectorModal').style.display = 'block';
+            
+            // Initialize map after modal is shown
+            setTimeout(() => {
+                initEditMap(lat, lng);
+            }, 100);
+        }
+
+        function initEditMap(lat = -6.2088, lng = 106.8456) {
+            try {
+                if (typeof google === 'undefined' || !google.maps) {
+                    loadGoogleMapsForEdit();
+                    return;
+                }
+                
+                const mapContainer = document.getElementById('editMapContainer');
+                if (!mapContainer) return;
+                
+                const location = { lat: lat || -6.2088, lng: lng || 106.8456 };
+                
+                editMap = new google.maps.Map(mapContainer, {
+                    zoom: 13,
+                    center: location,
+                    mapTypeId: 'roadmap'
+                });
+
+                editMarker = new google.maps.Marker({
+                    position: location,
+                    map: editMap,
+                    draggable: true,
+                    title: 'Lokasi Usaha Pengepul'
+                });
+
+                // Update coordinates when marker is dragged
+                editMarker.addListener('dragend', function() {
+                    const position = editMarker.getPosition();
+                    document.getElementById('edit_latitude').value = position.lat();
+                    document.getElementById('edit_longitude').value = position.lng();
+                });
+
+                // Update marker when coordinates are manually entered
+                document.getElementById('edit_latitude').addEventListener('input', updateEditMarkerFromCoordinates);
+                document.getElementById('edit_longitude').addEventListener('input', updateEditMarkerFromCoordinates);
+                
+            } catch (error) {
+                console.log('Error initializing edit map:', error);
+                document.getElementById('editMapContainer').innerHTML = `
+                    <div style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-map fa-2x" style="color: #666; margin-bottom: 1rem;"></i>
+                        <p>Masukkan koordinat secara manual atau gunakan tombol lokasi</p>
+                    </div>
+                `;
+            }
+        }
+
+        function loadGoogleMapsForEdit() {
+            if (window.editMapLoaded) return;
+            window.editMapLoaded = true;
+            
+            // Fallback if Google Maps is not available
+            if (typeof google === 'undefined') {
+                console.log('Google Maps not available, using fallback');
+                document.getElementById('editMapContainer').innerHTML = `
+                    <div style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-map fa-2x" style="color: #666; margin-bottom: 1rem;"></i>
+                        <p>Peta tidak tersedia. Masukkan koordinat secara manual atau gunakan tombol lokasi.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const script = document.createElement('script');
+            script.src = 'https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initEditMapCallback';
+            script.async = true;
+            script.defer = true;
+            script.onerror = function() {
+                console.log('Google Maps failed to load, using fallback');
+                document.getElementById('editMapContainer').innerHTML = `
+                    <div style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-map fa-2x" style="color: #666; margin-bottom: 1rem;"></i>
+                        <p>Peta tidak tersedia. Masukkan koordinat secara manual atau gunakan tombol lokasi.</p>
+                    </div>
+                `;
+            };
+            document.head.appendChild(script);
+        }
+
+        window.initEditMapCallback = function() {
+            const lat = parseFloat(document.getElementById('edit_latitude').value) || -6.2088;
+            const lng = parseFloat(document.getElementById('edit_longitude').value) || 106.8456;
+            initEditMap(lat, lng);
+        };
+
+        function updateEditMarkerFromCoordinates() {
+            if (!editMap || !editMarker) return;
+            
+            const lat = parseFloat(document.getElementById('edit_latitude').value);
+            const lng = parseFloat(document.getElementById('edit_longitude').value);
+
+            if (!isNaN(lat) && !isNaN(lng)) {
+                const position = { lat: lat, lng: lng };
+                editMarker.setPosition(position);
+                editMap.setCenter(position);
+            }
+        }
+
+        function getEditCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    document.getElementById('edit_latitude').value = lat;
+                    document.getElementById('edit_longitude').value = lng;
+                    
+                    if (editMarker && editMap) {
+                        const newPosition = { lat: lat, lng: lng };
+                        editMarker.setPosition(newPosition);
+                        editMap.setCenter(newPosition);
+                        editMap.setZoom(15);
+                    }
+                    
+                    alert('Lokasi berhasil diperoleh!');
+                }, function(error) {
+                    alert('Gagal mendapatkan lokasi: ' + error.message);
+                });
+            } else {
+                alert('Geolocation tidak didukung oleh browser ini.');
+            }
+        }
+
+        async function deleteCollector(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus usaha pengepul ini? Tindakan ini tidak dapat dibatalkan.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/collectors/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken(),
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                });
+
+                if (response.ok) {
+                    alert('Usaha pengepul berhasil dihapus!');
+                    await loadCollectors(); // Reload the collectors list
+                } else {
+                    let errorMessage = 'Gagal menghapus usaha pengepul';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.message || errorMessage;
+                    } catch (e) {
+                        console.warn('Could not parse error response:', e);
+                    }
+                    alert(errorMessage);
+                }
+            } catch (error) {
+                console.error('Error deleting collector:', error);
+                alert('Terjadi kesalahan saat menghapus usaha pengepul: ' + error.message);
+            }
         }
 
         function closeEditCollectorModal() {
             document.getElementById('editCollectorModal').style.display = 'none';
+            // Clean up map listeners
+            if (editMap) {
+                google.maps.event.clearInstanceListeners(editMap);
+            }
+            if (editMarker) {
+                google.maps.event.clearInstanceListeners(editMarker);
+            }
         }
 
         document.getElementById('editCollectorForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const id = document.getElementById('edit_collector_id').value;
-            const payload = {
-                nama: document.getElementById('edit_nama').value,
-                alamat: document.getElementById('edit_alamat').value,
-                rate_harga_per_kg: document.getElementById('edit_rate_per_kg').value,
-                kapasitas_maksimal: document.getElementById('edit_kapasitas_maksimal').value,
-                jam_operasional_mulai: document.getElementById('edit_jam_mulai').value,
-                jam_operasional_selesai: document.getElementById('edit_jam_selesai').value,
-                status: document.getElementById('edit_status').value,
-                deskripsi: document.getElementById('edit_deskripsi').value
-            };
-
+            
+            const editLoading = document.querySelector('.edit-loading');
+            const editBtnText = document.querySelector('.edit-btn-text');
+            const editSubmitBtn = document.getElementById('editSubmitBtn');
+            
+            // Show loading state
+            editLoading.style.display = 'inline-block';
+            editBtnText.style.display = 'none';
+            editSubmitBtn.disabled = true;
+            
             try {
+                const id = document.getElementById('edit_collector_id').value;
+                
+                // Validate required fields
+                const requiredFields = [
+                    { id: 'edit_nama', name: 'Nama Usaha' },
+                    { id: 'edit_alamat', name: 'Alamat' },
+                    { id: 'edit_rate_per_kg', name: 'Harga per KG' },
+                    { id: 'edit_kapasitas_maksimal', name: 'Kapasitas Maksimal' },
+                    { id: 'edit_jam_mulai', name: 'Jam Mulai' },
+                    { id: 'edit_jam_selesai', name: 'Jam Selesai' },
+                    { id: 'edit_deskripsi', name: 'Deskripsi' }
+                ];
+
+                for (let field of requiredFields) {
+                    const element = document.getElementById(field.id);
+                    if (!element || !element.value.trim()) {
+                        throw new Error(`${field.name} harus diisi`);
+                    }
+                }
+
+                // Validate numeric fields
+                const rate = parseFloat(document.getElementById('edit_rate_per_kg').value);
+                const capacity = parseFloat(document.getElementById('edit_kapasitas_maksimal').value);
+                if (isNaN(rate) || rate < 0) {
+                    throw new Error('Harga per KG harus berupa angka positif');
+                }
+                if (isNaN(capacity) || capacity < 1) {
+                    throw new Error('Kapasitas maksimal harus minimal 1');
+                }
+                
+                // Get selected fish types
+                const selectedFishTypes = Array.from(
+                    document.querySelectorAll('#edit_jenis_ikan_container input[type="checkbox"]:checked')
+                ).map(cb => cb.value);
+                
+                if (selectedFishTypes.length === 0) {
+                    throw new Error('Pilih minimal satu jenis ikan yang diterima');
+                }
+                
+                // Get coordinates
+                const latitude = document.getElementById('edit_latitude').value;
+                const longitude = document.getElementById('edit_longitude').value;
+                let lokasi_koordinat = null;
+                
+                // Validate coordinates if provided
+                if (latitude && longitude) {
+                    const lat = parseFloat(latitude);
+                    const lng = parseFloat(longitude);
+                    
+                    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                        throw new Error('Koordinat tidak valid. Latitude harus antara -90 dan 90, Longitude harus antara -180 dan 180.');
+                    }
+                    
+                    lokasi_koordinat = {
+                        lat: lat,
+                        lng: lng
+                    };
+                }
+                
+                const payload = {
+                    nama: document.getElementById('edit_nama').value,
+                    alamat: document.getElementById('edit_alamat').value,
+                    rate_harga_per_kg: document.getElementById('edit_rate_per_kg').value,
+                    kapasitas_maksimal: document.getElementById('edit_kapasitas_maksimal').value,
+                    jam_operasional_mulai: document.getElementById('edit_jam_mulai').value,
+                    jam_operasional_selesai: document.getElementById('edit_jam_selesai').value,
+                    status: document.getElementById('edit_status').value,
+                    deskripsi: document.getElementById('edit_deskripsi').value,
+                    jenis_ikan_diterima: selectedFishTypes
+                };
+
+                // Only add lokasi_koordinat if we have valid coordinates
+                if (lokasi_koordinat) {
+                    payload.lokasi_koordinat = lokasi_koordinat;
+                }
+
                 const resp = await fetch(`/api/collectors/${id}`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': 'Bearer ' + getToken(),
                         'Accept': 'application/json',
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify(payload)
                 });
 
                 if (!resp.ok) {
                     let msg = 'Gagal memperbarui data';
-                    try { const j = await resp.json(); msg = j.message || msg; } catch {}
+                    try { 
+                        const j = await resp.json(); 
+                        if (j.errors) {
+                            const errorMessages = Object.values(j.errors).flat().join(', ');
+                            msg = `Validation failed: ${errorMessages}`;
+                        } else {
+                            msg = j.message || msg; 
+                        }
+                    } catch {}
                     alert(msg);
                     return;
                 }
 
-                // refresh list
+                alert('Data usaha pengepul berhasil diperbarui!');
                 closeEditCollectorModal();
                 await loadCollectors();
             } catch (err) {
                 console.error('Update error:', err);
-                alert('Terjadi kesalahan saat memperbarui data');
+                alert('Terjadi kesalahan saat memperbarui data: ' + err.message);
+            } finally {
+                // Hide loading state
+                editLoading.style.display = 'none';
+                editBtnText.style.display = 'inline-flex';
+                editSubmitBtn.disabled = false;
             }
         });
 
