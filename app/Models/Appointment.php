@@ -57,24 +57,17 @@ class Appointment extends Model
         'fish_farm_id',
         'collector_id',
         'tanggal_janji',
-        'tanggal',
-        'jenis',
+        'waktu_janji',
         'status',
         'tujuan',
         'catatan',
-        'catatan_collector',
-        'catatan_selesai',
+        'pesan_pemilik',
         'meeting_location',
-        'perkiraan_berat',
-        'berat_aktual',
-        'harga_per_kg',
-        'harga_final',
-        'total_estimasi',
-        'total_final',
-        'total_aktual',
-        'kualitas_ikan',
-        'whatsapp_sent',
-        'tanggal_selesai'
+        'estimated_weight',
+        'price_per_kg',
+        'appointment_type',
+        'whatsapp_summary',
+        'whatsapp_sent_at'
     ];
 
     /**
@@ -84,17 +77,10 @@ class Appointment extends Model
      */
     protected $casts = [
         'tanggal_janji' => 'datetime',
-        'tanggal' => 'datetime',
-        'tanggal_selesai' => 'datetime',
+        'whatsapp_sent_at' => 'datetime',
         'meeting_location' => 'array',
-        'perkiraan_berat' => 'decimal:2',
-        'berat_aktual' => 'decimal:2',
-        'harga_per_kg' => 'decimal:2',
-        'harga_final' => 'decimal:2',
-        'total_estimasi' => 'decimal:2',
-        'total_final' => 'decimal:2',
-        'total_aktual' => 'decimal:2',
-        'whatsapp_sent' => 'boolean'
+        'estimated_weight' => 'decimal:2',
+        'price_per_kg' => 'decimal:2'
     ];
 
     /**
@@ -108,22 +94,6 @@ class Appointment extends Model
         'selesai' => 'Selesai',
         'dibatalkan' => 'Dibatalkan',
     ];
-
-    /**
-     * Mendapatkan user (penjual) dari janji temu ini.
-     */
-    public function seller(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'penjual_id');
-    }
-
-    /**
-     * Mendapatkan user (pembeli) dari janji temu ini.
-     */
-    public function buyer(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'pembeli_id');
-    }
 
     /**
      * Mendapatkan lokasi penjual untuk janji temu ini.
@@ -150,27 +120,64 @@ class Appointment extends Model
     }
 
     /**
-     * Mendapatkan user yang membuat appointment ini (penjual/pemilik tambak).
+     * Mendapatkan user yang membuat appointment ini (pemilik tambak).
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'penjual_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     /**
-     * Mendapatkan penjual/pemilik tambak.
+     * Mendapatkan pemilik tambak yang membuat appointment.
+     */
+    public function pemilikTambak(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Mendapatkan pengepul yang dituju untuk appointment.
+     */
+    public function pengepul(): BelongsTo
+    {
+        // Ambil user dari collector relationship
+        return $this->hasOneThrough(User::class, Collector::class, 'id', 'id', 'collector_id', 'user_id');
+    }
+
+    /**
+     * Legacy method - Mendapatkan penjual/pemilik tambak.
+     * @deprecated Use pemilikTambak() instead
      */
     public function penjual(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'penjual_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     /**
-     * Mendapatkan pembeli/pengepul.
+     * Legacy method - Mendapatkan pembeli/pengepul.
+     * @deprecated Use pengepul() instead
      */
     public function pembeli(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'pembeli_id');
+        return $this->hasOneThrough(User::class, Collector::class, 'id', 'id', 'collector_id', 'user_id');
+    }
+
+    /**
+     * Legacy method for backward compatibility
+     * @deprecated Use user() instead
+     */
+    public function seller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Legacy method for backward compatibility
+     * @deprecated Use pengepul() instead
+     */
+    public function buyer(): BelongsTo
+    {
+        return $this->hasOneThrough(User::class, Collector::class, 'id', 'id', 'collector_id', 'user_id');
     }
 
     /**

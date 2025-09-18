@@ -1047,7 +1047,8 @@
 
         async function loadAppointments() {
             try {
-                const response = await fetch('/api/appointments', {
+                // Use the new collector appointments endpoint
+                const response = await fetch('/api/appointments/collectors', {
                     headers: {
                         'Authorization': 'Bearer ' + getToken(),
                         'Accept': 'application/json'
@@ -1083,13 +1084,10 @@
                     appointmentsData = [];
                 }
                 
-                // Filter appointments for current user
-                appointments = appointmentsData.filter(appointment => 
-                    appointment.penjual_id == currentUserId || 
-                    appointment.fish_farm?.user_id == currentUserId
-                ) || [];
+                // Store all appointments for pemilik tambak
+                appointments = appointmentsData || [];
                 
-                console.log('Filtered appointments:', appointments);
+                console.log('Loaded appointments:', appointments);
                 displayAppointments(appointments);
             } catch (error) {
                 console.error('Error loading appointments:', error);
@@ -1112,8 +1110,44 @@
             }
 
             container.innerHTML = appointmentsList.map(appointment => {
-                const fishFarm = farms.find(farm => farm.id == appointment.fish_farm_id);
-                const fishFarmName = fishFarm ? fishFarm.nama : 'Tambak Tidak Diketahui';
+                // Get fish farm name from appointment or farms data
+                let fishFarmName = 'Tambak Tidak Diketahui';
+                if (appointment.fish_farm && appointment.fish_farm.nama) {
+                    fishFarmName = appointment.fish_farm.nama;
+                } else if (appointment.fish_farm_id) {
+                    const fishFarm = farms.find(farm => farm.id == appointment.fish_farm_id);
+                    fishFarmName = fishFarm ? fishFarm.nama : fishFarmName;
+                }
+                
+                // Get collector/pengepul name
+                let collectorName = 'Pengepul Tidak Diketahui';
+                if (appointment.collector && appointment.collector.user) {
+                    collectorName = appointment.collector.user.name;
+                } else if (appointment.collector && appointment.collector.nama_perusahaan) {
+                    collectorName = appointment.collector.nama_perusahaan;
+                }
+                
+                // Format date
+                let appointmentDate = 'Tanggal belum ditentukan';
+                if (appointment.tanggal_janji) {
+                    try {
+                        appointmentDate = new Date(appointment.tanggal_janji).toLocaleDateString('id-ID', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
+                        if (appointment.waktu_janji) {
+                            appointmentDate += ' pukul ' + appointment.waktu_janji;
+                        }
+                    } catch (e) {
+                        appointmentDate = appointment.tanggal_janji;
+                    }
+                }
+                
+                // Get status class and text
+                const statusClass = appointment.status ? `status-${appointment.status}` : 'status-menunggu';
+                const statusText = appointment.status_text || appointment.status || 'Menunggu';
                 
                 return `
                     <div class="card">
@@ -1123,8 +1157,9 @@
                             </div>
                             <div class="card-info">
                                 <h3>${fishFarmName}</h3>
-                                <p><i class="fas fa-clock"></i> ${appointment.tanggal_janji || 'Tanggal belum ditentukan'}</p>
-                                <span class="status-badge status-${appointment.status}">${appointment.status}</span>
+                                <p><i class="fas fa-user"></i> ${collectorName}</p>
+                                <p><i class="fas fa-clock"></i> ${appointmentDate}</p>
+                                <span class="status-badge ${statusClass}">${statusText}</span>
                             </div>
                         </div>
                         <div class="card-details">
@@ -1140,6 +1175,12 @@
                                 <span class="detail-label">Total Estimasi</span>
                                 <span class="detail-value">Rp ${parseInt((appointment.estimated_weight || 0) * (appointment.price_per_kg || 0)).toLocaleString()}</span>
                             </div>
+                            ${appointment.pesan_pemilik ? `
+                                <div class="detail-item">
+                                    <span class="detail-label">Pesan Anda</span>
+                                    <span class="detail-value">${appointment.pesan_pemilik}</span>
+                                </div>
+                            ` : ''}
                             ${appointment.catatan ? `
                                 <div class="detail-item">
                                     <span class="detail-label">Catatan</span>
@@ -1149,14 +1190,16 @@
                         </div>
                         ${appointment.whatsapp_summary ? `
                             <div class="whatsapp-summary" style="background: #e8f5e8; border: 1px solid #28a745; border-radius: 8px; padding: 1rem; margin: 1rem 0;">
-                                <h4 style="color: #28a745; margin-bottom: 0.5rem;">Transaksi Selesai</h4>
+                                <h4 style="color: #28a745; margin-bottom: 0.5rem;">
+                                    <i class="fas fa-check-circle"></i> Transaksi Selesai
+                                </h4>
                                 ${(() => {
                                     try {
                                         const summary = JSON.parse(appointment.whatsapp_summary);
                                         return `
-                                            <p style="margin: 0.25rem 0; font-size: 0.9rem;">Berat Aktual: ${summary.berat_aktual || 0} kg</p>
-                                            <p style="margin: 0.25rem 0; font-size: 0.9rem;">Total Harga: Rp ${parseInt(summary.total_harga || 0).toLocaleString()}</p>
-                                            <p style="margin: 0.25rem 0; font-size: 0.9rem;">Tanggal: ${summary.tanggal || '-'}</p>
+                                            <p style="margin: 0.25rem 0; font-size: 0.9rem;"><strong>Berat Aktual:</strong> ${summary.berat_aktual || 0} kg</p>
+                                            <p style="margin: 0.25rem 0; font-size: 0.9rem;"><strong>Total Harga:</strong> Rp ${parseInt(summary.total_harga || 0).toLocaleString()}</p>
+                                            <p style="margin: 0.25rem 0; font-size: 0.9rem;"><strong>Tanggal:</strong> ${summary.tanggal || '-'}</p>
                                         `;
                                     } catch (e) {
                                         return '<p style="margin: 0; font-size: 0.9rem;">Detail transaksi tersedia</p>';
@@ -1164,6 +1207,18 @@
                                 })()}
                             </div>
                         ` : ''}
+                        <div class="card-actions">
+                            ${appointment.status === 'menunggu' ? `
+                                <button class="btn btn-danger" onclick="cancelAppointment(${appointment.id})">
+                                    <i class="fas fa-times"></i> Batalkan
+                                </button>
+                            ` : ''}
+                            ${appointment.collector && appointment.collector.user && appointment.collector.user.no_telepon ? `
+                                <button class="btn btn-success" onclick="contactCollector('${appointment.collector.user.no_telepon}', '${collectorName}')">
+                                    <i class="fab fa-whatsapp"></i> Hubungi
+                                </button>
+                            ` : ''}
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1187,6 +1242,65 @@
             // Filter appointments for this farm
             const farmAppointments = appointments.filter(app => app.fish_farm_id == farmId);
             displayAppointments(farmAppointments);
+        }
+
+        // Cancel appointment function
+        async function cancelAppointment(appointmentId) {
+            if (!confirm('Apakah Anda yakin ingin membatalkan janji penjemputan ini?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/appointments/${appointmentId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken(),
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        status: 'dibatalkan'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to cancel appointment');
+                }
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Janji penjemputan berhasil dibatalkan');
+                    loadAppointments(); // Reload appointments
+                } else {
+                    alert('Gagal membatalkan janji penjemputan: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error cancelling appointment:', error);
+                alert('Terjadi kesalahan saat membatalkan janji penjemputan');
+            }
+        }
+
+        // Contact collector function
+        function contactCollector(phoneNumber, collectorName) {
+            if (!phoneNumber) {
+                alert('Nomor telepon pengepul tidak tersedia');
+                return;
+            }
+
+            // Format phone number for WhatsApp
+            let formattedPhone = phoneNumber.replace(/[^0-9]/g, '');
+            if (formattedPhone.startsWith('0')) {
+                formattedPhone = '62' + formattedPhone.substring(1);
+            } else if (!formattedPhone.startsWith('62')) {
+                formattedPhone = '62' + formattedPhone;
+            }
+
+            const message = encodeURIComponent(`Halo ${collectorName}, saya ingin menanyakan tentang janji penjemputan ikan. Terima kasih.`);
+            const whatsappUrl = `https://wa.me/${formattedPhone}?text=${message}`;
+            
+            window.open(whatsappUrl, '_blank');
         }
 
         function openEditFarmModal(id) {

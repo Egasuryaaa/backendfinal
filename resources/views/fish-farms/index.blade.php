@@ -1244,6 +1244,7 @@
             
             <div class="modal-body">
                 <form id="appointmentForm" onsubmit="submitAppointment(event)">
+                    @csrf
                     <input type="hidden" id="appointment_collector_id" name="collector_id">
                     
                     <div class="form-group">
@@ -1300,10 +1301,10 @@
             </div>
             
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeAppointmentModal()">
+                <button type="button" class="btn btn-secondary" onclick="closeAppointmentModal()">
                     <i class="fas fa-times"></i> Batal
                 </button>
-                <button class="btn btn-primary" onclick="submitAppointment(event)">
+                <button type="submit" class="btn btn-primary" form="appointmentForm">
                     <i class="fas fa-check"></i> Buat Janji Temu
                 </button>
             </div>
@@ -1622,6 +1623,13 @@
         function openAppointmentModal(collectorId) {
             console.log('Opening appointment modal for collector:', collectorId);
             
+            // Validate collector ID
+            if (!collectorId || collectorId === 'undefined' || collectorId === 'null' || collectorId === null) {
+                alert('Collector ID tidak valid. Silakan refresh halaman dan coba lagi.');
+                console.error('Invalid collector ID:', collectorId);
+                return;
+            }
+            
             // Set collector ID in hidden field
             const collectorIdField = document.getElementById('appointment_collector_id');
             if (collectorIdField) {
@@ -1629,6 +1637,8 @@
                 console.log('Set collector ID:', collectorId);
             } else {
                 console.error('Collector ID field not found');
+                alert('Form error: Collector ID field tidak ditemukan. Silakan refresh halaman.');
+                return;
             }
             
             // Check if user is authenticated
@@ -1638,12 +1648,14 @@
             console.log('Loading fish farms...');
             loadFishFarmsForAppointment();
             
-            // Set minimum date to today
-            const today = new Date().toISOString().split('T')[0];
+            // Set minimum date to tomorrow (backend requires after:today)
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowString = tomorrow.toISOString().split('T')[0];
             const dateField = document.getElementById('appointment_date');
             if (dateField) {
-                dateField.min = today;
-                console.log('Set minimum date:', today);
+                dateField.min = tomorrowString;
+                console.log('Set minimum date to tomorrow:', tomorrowString);
             }
             
             // Show modal
@@ -1657,24 +1669,77 @@
         }
 
         // Submit appointment with fish farm selection
-        function submitAppointment(event) {
+        async function submitAppointment(event) {
             event.preventDefault();
             
-            const formData = new FormData(event.target);
+            // Get the form element from the event target (which should be the form)
+            const form = event.target;
+            if (!form || form.tagName !== 'FORM') {
+                alert('Error: Form tidak ditemukan');
+                return;
+            }
+            
+            const formData = new FormData(form);
+            
+            // Debug: Log all form data
+            console.log('Form data entries:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+            }
+            
+            // Map frontend field names to backend expected field names
             const appointmentData = {
                 collector_id: formData.get('collector_id'),
                 fish_farm_id: formData.get('fish_farm_id'),
-                appointment_date: formData.get('appointment_date'),
-                appointment_time: formData.get('appointment_time'),
-                fish_type: formData.get('fish_type'),
-                estimated_weight: formData.get('estimated_weight'),
-                pickup_address: formData.get('pickup_address'),
-                notes: formData.get('notes') || ''
+                tanggal_janji: formData.get('appointment_date'),  // Backend expects tanggal_janji
+                waktu_janji: formData.get('appointment_time'),    // Backend expects waktu_janji
+                perkiraan_berat: parseFloat(formData.get('estimated_weight')), // Backend expects perkiraan_berat
+                pesan_pemilik: formData.get('notes') || ''        // Backend expects pesan_pemilik
             };
             
-            // Validate fish farm selection
+            // Debug: Log appointment data object
+            console.log('Appointment data object:', appointmentData);
+            
+            // Validate required fields (based on backend validation rules)
+            console.log('Validating appointment data:', appointmentData);
+            
+            // Debug: Show collector ID specifically
+            console.log('Collector ID from form:', appointmentData.collector_id);
+            console.log('Collector ID from hidden field:', document.getElementById('appointment_collector_id')?.value);
+            
+            if (!appointmentData.collector_id) {
+                alert(`Collector ID tidak ditemukan. Debug info:
+- Collector ID from form: ${appointmentData.collector_id}
+- Collector ID from hidden field: ${document.getElementById('appointment_collector_id')?.value}
+- Hidden field exists: ${!!document.getElementById('appointment_collector_id')}
+
+Silakan coba lagi.`);
+                return;
+            }
+            
             if (!appointmentData.fish_farm_id) {
-                alert('Silakan pilih tambak terlebih dahulu');
+                alert('Silakan pilih tambak terlebih dahulu.');
+                return;
+            }
+            
+            if (!appointmentData.tanggal_janji) {
+                alert('Silakan isi tanggal penjemputan.');
+                return;
+            }
+            
+            // Check if the date is in the future (backend requires after:today)
+            const appointmentDate = new Date(appointmentData.tanggal_janji);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Set to start of today
+            appointmentDate.setHours(0, 0, 0, 0); // Set to start of appointment date
+            
+            if (appointmentDate <= today) {
+                alert('Tanggal penjemputan harus lebih dari hari ini. Silakan pilih tanggal besok atau sesudahnya.');
+                return;
+            }
+            
+            if (!appointmentData.perkiraan_berat || appointmentData.perkiraan_berat <= 0) {
+                alert('Silakan isi perkiraan berat yang valid (lebih dari 0 kg).');
                 return;
             }
             
@@ -1683,23 +1748,120 @@
             const selectedOption = fishFarmSelect.options[fishFarmSelect.selectedIndex];
             const fishFarmName = selectedOption.textContent;
             
-            // Show loading state
-            const submitBtn = event.target.querySelector('.btn-submit');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
-            submitBtn.disabled = true;
+            // Show loading state - find the submit button correctly
+            const submitBtn = document.querySelector('button[form="appointmentForm"][type="submit"]') || 
+                             document.querySelector('#appointmentModal .btn-primary[type="submit"]');
             
-            // Here you would normally send to your API
-            // For now, we'll simulate success
-            setTimeout(() => {
-                alert(`Janji penjemputan berhasil dibuat!\n\nDetail:\n- Tambak: ${fishFarmName}\n- Tanggal: ${appointmentData.appointment_date}\n- Waktu: ${appointmentData.appointment_time}\n- Jenis Ikan: ${appointmentData.fish_type}\n- Berat: ${appointmentData.estimated_weight} kg\n- Alamat: ${appointmentData.pickup_address}\n\nPengepul akan menghubungi Anda untuk konfirmasi.`);
+            let originalText = '';
+            if (submitBtn) {
+                originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+                submitBtn.disabled = true;
+            }
+            
+            try {
+                const token = getToken();
+                const csrfToken = getCSRFToken();
                 
-                closeAppointmentModal();
+                if (!token) {
+                    alert('Anda harus login terlebih dahulu');
+                    return;
+                }
                 
+                if (!csrfToken) {
+                    alert('Token keamanan tidak ditemukan. Silakan refresh halaman.');
+                    return;
+                }
+
+                // Try FormData approach first (often works better with Laravel CSRF)
+                const formData = new FormData();
+                Object.keys(appointmentData).forEach(key => {
+                    formData.append(key, appointmentData[key]);
+                });
+                
+                console.log('Sending FormData request to /api/appointments/collector');
+                console.log('Headers:', {
+                    'Authorization': 'Bearer ' + token,
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                });
+                
+                let response = await fetch('/api/appointments/collector', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: formData
+                });
+
+                // If FormData fails with CSRF error, try JSON approach
+                if (!response.ok && response.status === 419) {
+                    console.log('FormData failed, trying JSON...');
+                    response = await fetch('/api/appointments/collector', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        body: JSON.stringify(appointmentData)
+                    });
+                }
+
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+                
+                if (!response.ok) {
+                    const errorResponse = await response.text();
+                    console.log('Error response body:', errorResponse);
+                }
+
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(`Janji penjemputan berhasil dibuat!\n\nDetail:\n- Tambak: ${fishFarmName}\n- Tanggal: ${appointmentData.tanggal_janji}\n- Waktu: ${appointmentData.waktu_janji}\n- Berat: ${appointmentData.perkiraan_berat} kg\n\nPengepul akan menghubungi Anda untuk konfirmasi.`);
+                    closeAppointmentModal();
+                } else {
+                    let errorMessage = 'Terjadi kesalahan saat membuat janji temu';
+                    
+                    if (response.status === 419) {
+                        errorMessage = 'Token keamanan telah kedaluwarsa. Silakan refresh halaman dan coba lagi.';
+                    } else if (response.status === 401) {
+                        errorMessage = 'Anda tidak memiliki akses. Silakan login kembali.';
+                    } else if (response.status === 422) {
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.message || 'Data yang dikirim tidak valid.';
+                            if (errorData.errors) {
+                                const firstError = Object.values(errorData.errors)[0];
+                                errorMessage += '\n' + firstError[0];
+                            }
+                        } catch (e) {
+                            errorMessage = 'Data yang dikirim tidak valid.';
+                        }
+                    } else {
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.message || errorMessage;
+                        } catch (e) {
+                            errorMessage = `Error ${response.status}: ${response.statusText}`;
+                        }
+                    }
+                    
+                    alert(errorMessage);
+                }
+            } catch (error) {
+                console.error('Error creating appointment:', error);
+                alert('Terjadi kesalahan saat membuat janji temu');
+            } finally {
                 // Reset button
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }, 1500);
+                if (submitBtn) {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            }
         }
 
         // Navigate to collector location
@@ -2522,12 +2684,19 @@
 
             container.innerHTML = collectorsData.map((collector, index) => {
                 
-                // Debug distance calculation
-                console.log(`Collector ${collector.id}:`, {
+                // Debug collector data structure
+                console.log(`Collector ${index}:`, {
+                    full_object: collector,
+                    id: collector.id,
                     distance: collector.distance,
                     distance_formatted: collector.distance_formatted,
                     coordinates: collector.collector_coordinates
                 });
+                
+                // Validate collector ID
+                if (!collector.id) {
+                    console.warn(`Collector at index ${index} has no ID:`, collector);
+                }
                 
                 return `
                 <div class="collector-list-item" onclick="showCollectorDetail(${collector.id})" style="cursor: pointer;" title="Klik untuk melihat detail pengepul">
@@ -2563,7 +2732,7 @@
                         <button class="btn-quick btn-location" onclick="navigateToCollectorLocation(${collector.id})" title="Lokasi">
                             <i class="fas fa-directions"></i>
                         </button>
-                        <button class="btn-quick btn-appointment" onclick="openAppointmentModal(${collector.id})" title="Buat Janji">
+                        <button class="btn-quick btn-appointment" onclick="openAppointmentModal(${collector.id})" title="Buat Janji" ${!collector.id ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
                             <i class="fas fa-calendar-plus"></i>
                         </button>
                     </div>
@@ -2681,17 +2850,6 @@
             }
         }
 
-        function makeAppointment(collectorId) {
-            const collector = nearestCollectors.find(c => c.id === collectorId);
-            if (!collector) {
-                alert('Data pengepul tidak ditemukan');
-                return;
-            }
-
-            // For now, redirect to appointment creation page
-            window.location.href = `/appointments/create?collector_id=${collectorId}`;
-        }
-
         // Appointment Modal Functions
         function showAppointmentModal(collector) {
             const modal = document.getElementById('appointmentModal');
@@ -2712,7 +2870,7 @@
             document.getElementById('appointmentForm').reset();
         }
 
-        async function submitAppointment() {
+        async function submitFishFarmAppointment() {
             const form = document.getElementById('appointmentForm');
             const formData = new FormData(form);
             
@@ -2744,7 +2902,8 @@
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + token,
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': getCSRFToken()
                     },
                     body: JSON.stringify(data)
                 });
@@ -2758,14 +2917,32 @@
                         throw new Error(result.message || 'Gagal membuat janji');
                     }
                 } else {
-                    // Try to get error message safely
+                    // Handle specific error codes
                     let errorMessage = 'Gagal membuat janji';
-                    try {
-                        const errorData = await safeParseJSON(response);
-                        errorMessage = errorData.message || errorMessage;
-                    } catch (e) {
-                        console.warn('Could not parse error response:', e);
-                        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    
+                    if (response.status === 419) {
+                        errorMessage = 'Token keamanan telah kedaluwarsa. Silakan refresh halaman dan coba lagi.';
+                    } else if (response.status === 401) {
+                        errorMessage = 'Anda tidak memiliki akses. Silakan login kembali.';
+                    } else if (response.status === 422) {
+                        try {
+                            const errorData = await safeParseJSON(response);
+                            errorMessage = errorData.message || 'Data yang dikirim tidak valid.';
+                            if (errorData.errors) {
+                                const firstError = Object.values(errorData.errors)[0];
+                                errorMessage += '\n' + firstError[0];
+                            }
+                        } catch (e) {
+                            errorMessage = 'Data yang dikirim tidak valid.';
+                        }
+                    } else {
+                        try {
+                            const errorData = await safeParseJSON(response);
+                            errorMessage = errorData.message || errorMessage;
+                        } catch (e) {
+                            console.warn('Could not parse error response:', e);
+                            errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                        }
                     }
                     throw new Error(errorMessage);
                 }
@@ -3323,7 +3500,7 @@
             closeCollectorDetailModal();
             
             // Populate fish farm select
-            const fishFarmSelect = document.getElementById('fishFarmSelect');
+            const fishFarmSelect = document.getElementById('fish_farm_select');
             fishFarmSelect.innerHTML = '<option value="">-- Pilih Tambak --</option>';
             
             fishFarms.forEach(farm => {
@@ -3333,10 +3510,13 @@
                 fishFarmSelect.appendChild(option);
             });
 
+            // Set collector ID in hidden field
+            document.getElementById('appointment_collector_id').value = currentCollectorId;
+
             // Set minimum date to tomorrow
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
-            document.getElementById('appointmentDate').min = tomorrow.toISOString().split('T')[0];
+            document.getElementById('appointment_date').min = tomorrow.toISOString().split('T')[0];
 
             // Show appointment modal
             document.getElementById('appointmentModal').style.display = 'block';
@@ -3345,51 +3525,6 @@
         function closeAppointmentModal() {
             document.getElementById('appointmentModal').style.display = 'none';
             document.getElementById('appointmentForm').reset();
-        }
-
-        async function submitAppointment() {
-            const fishFarmId = document.getElementById('fishFarmSelect').value;
-            const date = document.getElementById('appointmentDate').value;
-            const time = document.getElementById('appointmentTime').value;
-            const weight = document.getElementById('estimatedWeight').value;
-            const message = document.getElementById('appointmentMessage').value;
-
-            if (!fishFarmId || !date || !weight) {
-                alert('Mohon lengkapi semua field yang wajib diisi');
-                return;
-            }
-
-            try {
-                const token = getToken();
-                const response = await fetch('/api/appointments/collector', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + token,
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({
-                        fish_farm_id: fishFarmId,
-                        collector_id: currentCollectorId,
-                        tanggal_janji: date + (time ? ' ' + time : ''),
-                        waktu_janji: time,
-                        perkiraan_berat: parseFloat(weight),
-                        pesan_pemilik: message
-                    })
-                });
-
-                if (response.ok) {
-                    alert('Janji temu berhasil dibuat! Pengepul akan segera meninjau permintaan Anda.');
-                    closeAppointmentModal();
-                } else {
-                    const errorData = await response.json();
-                    alert('Gagal membuat janji temu: ' + (errorData.message || 'Terjadi kesalahan'));
-                }
-            } catch (error) {
-                console.error('Error creating appointment:', error);
-                alert('Terjadi kesalahan saat membuat janji temu');
-            }
         }
 
         // Distance calculation function

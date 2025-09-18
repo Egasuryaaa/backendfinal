@@ -23,11 +23,24 @@ class AppointmentController extends Controller
     {
         $user = $request->user();
         
-        $query = Appointment::with(['seller', 'buyer', 'sellerLocation'])
-                           ->where(function($q) use ($user) {
-                               $q->where('pembeli_id', $user->id)
-                                 ->orWhere('penjual_id', $user->id);
-                           });
+        // Use new field names based on user role
+        $query = Appointment::with(['pemilikTambak', 'pengepul', 'fishFarm', 'collector.user']);
+        
+        if ($user->isPemilikTambak()) {
+            // Pemilik tambak sees appointments they created
+            $query->where('user_id', $user->id);
+        } elseif ($user->isPengepul()) {
+            // Pengepul sees appointments directed to their collectors
+            $collectorIds = \App\Models\Collector::where('user_id', $user->id)->pluck('id');
+            $query->whereIn('collector_id', $collectorIds);
+        } else {
+            // For backward compatibility with old field names
+            $query->where(function($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhere('pembeli_id', $user->id)
+                  ->orWhere('penjual_id', $user->id);
+            });
+        }
         
         // Filter berdasarkan status
         if ($request->has('status')) {
@@ -47,7 +60,7 @@ class AppointmentController extends Controller
         
         // Pengurutan
         $sortBy = $request->sort_by ?? 'tanggal_janji';
-        $sortDir = $request->sort_dir ?? 'asc';
+        $sortDir = $request->sort_dir ?? 'desc'; // Changed to desc for newer first
         
         if ($sortBy === 'tanggal_janji') {
             $query->orderBy($sortBy, $sortDir);
@@ -59,15 +72,18 @@ class AppointmentController extends Controller
         
         // Format untuk tampilan
         $appointments->getCollection()->transform(function ($item) {
-            $item->formatted_date = Carbon::parse($item->tanggal_janji)->format('d M Y');
-            $item->formatted_time = Carbon::parse($item->tanggal_janji)->format('H:i');
+            if ($item->tanggal_janji) {
+                $item->formatted_date = Carbon::parse($item->tanggal_janji)->format('d M Y');
+                $item->formatted_time = Carbon::parse($item->tanggal_janji)->format('H:i');
+            }
             $item->status_text = Appointment::$statuses[$item->status] ?? $item->status;
             return $item;
         });
 
         return response()->json([
             'success' => true,
-            'data' => $appointments
+            'data' => $appointments,
+            'user_role' => $user->isPemilikTambak() ? 'pemilik_tambak' : ($user->isPengepul() ? 'pengepul' : 'other')
         ]);
     }
 
@@ -147,20 +163,38 @@ class AppointmentController extends Controller
     {
         $user = $request->user();
         
-        // Pastikan janji temu terkait dengan pengguna
-        if ($appointment->pembeli_id !== $user->id && $appointment->penjual_id !== $user->id) {
+        // Check authorization using new field structure
+        $isAuthorized = false;
+        
+        if ($user->isPemilikTambak() && $appointment->user_id === $user->id) {
+            $isAuthorized = true;
+        } elseif ($user->isPengepul()) {
+            $collectorIds = \App\Models\Collector::where('user_id', $user->id)->pluck('id');
+            if ($collectorIds->contains($appointment->collector_id)) {
+                $isAuthorized = true;
+            }
+        } else {
+            // Backward compatibility with old field names
+            if ($appointment->pembeli_id === $user->id || $appointment->penjual_id === $user->id) {
+                $isAuthorized = true;
+            }
+        }
+        
+        if (!$isAuthorized) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'
             ], 403);
         }
         
-        $appointment->load(['seller', 'buyer', 'sellerLocation', 'messages']);
+        $appointment->load(['pemilikTambak', 'pengepul', 'fishFarm', 'collector.user', 'messages']);
         
         // Prepare response data with formatted values
         $responseData = $appointment->toArray();
-        $responseData['formatted_date'] = Carbon::parse($appointment->tanggal_janji)->format('d M Y');
-        $responseData['formatted_time'] = Carbon::parse($appointment->tanggal_janji)->format('H:i');
+        if ($appointment->tanggal_janji) {
+            $responseData['formatted_date'] = Carbon::parse($appointment->tanggal_janji)->format('d M Y');
+            $responseData['formatted_time'] = Carbon::parse($appointment->tanggal_janji)->format('H:i');
+        }
         $responseData['status_text'] = Appointment::$statuses[$appointment->status] ?? $appointment->status;
 
         return response()->json([
@@ -268,7 +302,7 @@ class AppointmentController extends Controller
         $appointment->seller->notifications()->create([
             'judul' => 'Janji Temu Diperbarui',
             'isi' => "{$user->name} telah memperbarui janji temu.",
-            'jenis' => 'janji_temu',
+            'type' => 'janji_temu',
             'janji_temu_id' => $appointment->id,
             'tautan' => '/janji-temu/' . $appointment->id,
         ]);
@@ -327,7 +361,7 @@ class AppointmentController extends Controller
             $seller->notifications()->create([
                 'judul' => 'Janji Temu Dibatalkan',
                 'isi' => "{$user->name} telah membatalkan janji temu.",
-                'jenis' => 'janji_temu',
+                'type' => 'janji_temu',
                 'tautan' => '/janji-temu',
             ]);
         }
@@ -362,25 +396,34 @@ class AppointmentController extends Controller
         $user = $request->user();
         $newStatus = $request->status;
         
-        // Validasi otorisasi berdasarkan status dan peran
-        if ($appointment->penjual_id === $user->id) {
-            // Penjual dapat mengubah status menjadi: dikonfirmasi, selesai, dibatalkan
+        // Validasi otorisasi berdasarkan role baru
+        $isPemilikTambak = $user->isPemilikTambak() && $appointment->user_id === $user->id;
+        $isPengepul = $user->isPengepul() && \App\Models\Collector::where('user_id', $user->id)
+                                                  ->where('id', $appointment->collector_id)
+                                                  ->exists();
+        
+        // Backward compatibility check
+        $isLegacyPenjual = $appointment->penjual_id === $user->id;
+        $isLegacyPembeli = $appointment->pembeli_id === $user->id;
+        
+        if ($isPemilikTambak || $isLegacyPenjual) {
+            // Pemilik tambak/Penjual dapat mengubah status menjadi: dibatalkan
+            if (!in_array($newStatus, ['dibatalkan'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pemilik tambak hanya dapat membatalkan appointment'
+                ], 400);
+            }
+        } elseif ($isPengepul || $isLegacyPembeli) {
+            // Pengepul dapat mengubah status menjadi: dikonfirmasi, selesai, dibatalkan
             if (!in_array($newStatus, ['dikonfirmasi', 'selesai', 'dibatalkan'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Penjual hanya dapat mengubah status menjadi dikonfirmasi, selesai, atau dibatalkan'
-                ], 400);
-            }
-        } elseif ($appointment->pembeli_id === $user->id) {
-            // Pembeli hanya dapat mengubah status menjadi: dibatalkan, selesai
-            if (!in_array($newStatus, ['dibatalkan', 'selesai'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pembeli hanya dapat mengubah status menjadi dibatalkan atau selesai'
+                    'message' => 'Pengepul dapat mengubah status menjadi dikonfirmasi, selesai, atau dibatalkan'
                 ], 400);
             }
             
-            // Pembeli hanya dapat menyelesaikan janji temu yang sudah dikonfirmasi
+            // Pengepul hanya dapat menyelesaikan janji temu yang sudah dikonfirmasi
             if ($newStatus === 'selesai' && $appointment->status !== 'dikonfirmasi') {
                 return response()->json([
                     'success' => false,
@@ -396,19 +439,18 @@ class AppointmentController extends Controller
         
         // Update status
         $oldStatus = $appointment->status;
-        $appointment->updateStatus($newStatus);
+        $appointment->status = $newStatus;
+        $appointment->save();
         
-        // Prepare response data with formatted values
-        $appointment->load(['seller', 'buyer', 'sellerLocation']);
-        $responseData = $appointment->toArray();
-        $responseData['formatted_date'] = Carbon::parse($appointment->tanggal_janji)->format('d M Y');
-        $responseData['formatted_time'] = Carbon::parse($appointment->tanggal_janji)->format('H:i');
-        $responseData['status_text'] = Appointment::$statuses[$appointment->status] ?? $appointment->status;
-
         return response()->json([
             'success' => true,
             'message' => 'Status janji temu berhasil diperbarui',
-            'data' => $responseData
+            'data' => [
+                'appointment' => $appointment,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+                'status_text' => Appointment::$statuses[$newStatus] ?? $newStatus
+            ]
         ]);
     }
     
@@ -497,7 +539,7 @@ class AppointmentController extends Controller
             'collector_id' => 'required|exists:collectors,id',
             'tanggal_janji' => 'required|date|after:today',
             'waktu_janji' => 'nullable|string',
-            'perkiraan_berat' => 'required|numeric|min:1',
+            'perkiraan_berat' => 'required|numeric|min:1', // Keep this for validation (maps to estimated_weight)
             'pesan_pemilik' => 'nullable|string|max:500'
         ]);
 
@@ -512,6 +554,14 @@ class AppointmentController extends Controller
         try {
             $user = $request->user();
 
+            // Validate user is pemilik tambak
+            if (!$user->isPemilikTambak()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only fish farm owners (pemilik tambak) can create appointments with collectors'
+                ], 403);
+            }
+
             // Check if fish farm belongs to user
             $fishFarm = \App\Models\FishFarm::where('id', $request->fish_farm_id)
                 ->where('user_id', $user->id)
@@ -524,55 +574,94 @@ class AppointmentController extends Controller
                 ], 404);
             }
 
-            // Get collector to calculate estimated price
-            $collector = \App\Models\Collector::findOrFail($request->collector_id);
-            $estimatedPrice = $request->perkiraan_berat * $collector->rate_harga_per_kg;
+            // Get collector and validate it belongs to a pengepul user
+            $collector = \App\Models\Collector::with('user')->findOrFail($request->collector_id);
+            
+            if (!$collector->user || !$collector->user->isPengepul()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Selected collector is not associated with a valid pengepul user'
+                ], 400);
+            }
 
-            $appointment = Appointment::create([
+            $estimatedPrice = $request->perkiraan_berat * ($collector->rate_harga_per_kg ?? 0);
+
+            $appointmentData = [
+                'user_id' => $user->id, // Use user_id for pemilik tambak
                 'fish_farm_id' => $request->fish_farm_id,
                 'collector_id' => $request->collector_id,
-                'user_id' => $user->id,
                 'tanggal_janji' => $request->tanggal_janji,
-                'tanggal' => $request->tanggal_janji,
                 'waktu_janji' => $request->waktu_janji,
-                'perkiraan_berat' => $request->perkiraan_berat,
-                'harga_per_kg' => $collector->rate_harga_per_kg,
-                'total_estimasi' => $estimatedPrice,
+                'estimated_weight' => $request->perkiraan_berat, // Map to correct field
+                'price_per_kg' => $collector->rate_harga_per_kg ?? 0, // Map to correct field
                 'pesan_pemilik' => $request->pesan_pemilik,
-                'catatan' => $request->pesan_pemilik,
-                'status' => 'pending',
-                'jenis' => 'penjemputan'
-            ]);
+                'catatan' => $request->catatan ?? $request->pesan_pemilik,
+                'tujuan' => $request->tujuan ?? 'Pengepulan Ikan',
+                'status' => 'menunggu', // Use correct enum value
+                'appointment_type' => 'pengepulan_ikan' // Use correct field and enum value
+            ];
+
+            \Log::info('Creating appointment with data:', $appointmentData);
+
+            $appointment = Appointment::create($appointmentData);
 
             // Load relationships for response
-            $appointment->load(['fishFarm', 'collector.user']);
+            $appointment->load(['fishFarm', 'collector.user', 'pemilikTambak']);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Appointment request sent successfully',
-                'data' => $appointment
+                'message' => 'Appointment request sent successfully to collector',
+                'data' => [
+                    'appointment' => $appointment,
+                    'fish_farm' => $appointment->fishFarm,
+                    'collector' => $appointment->collector,
+                    'pengepul' => $appointment->collector->user,
+                    'pemilik_tambak' => $appointment->pemilikTambak
+                ]
             ], 201);
 
         } catch (\Exception $e) {
+            \Log::error('Appointment creation error:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create appointment',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'debug' => config('app.debug') ? $e->getTraceAsString() : null
             ], 500);
         }
     }
 
     /**
-     * Get user's appointments with collectors
+     * Get appointments based on user role (pemilik_tambak or pengepul)
      */
     public function getCollectorAppointments(Request $request): JsonResponse
     {
         try {
             $user = $request->user();
 
-            $query = Appointment::with(['fishFarm', 'collector'])
-                ->where('user_id', $user->id)
-                ->where('jenis', 'penjemputan');
+            if ($user->isPemilikTambak()) {
+                // Pemilik tambak melihat appointments yang mereka buat
+                $query = Appointment::with(['fishFarm', 'collector.user'])
+                    ->where('user_id', $user->id)
+                    ->where('appointment_type', 'pengepulan_ikan');
+            } elseif ($user->isPengepul()) {
+                // Pengepul melihat appointments yang ditujukan untuk mereka
+                $collectorIds = \App\Models\Collector::where('user_id', $user->id)->pluck('id');
+                
+                $query = Appointment::with(['fishFarm', 'collector.user', 'pemilikTambak'])
+                    ->whereIn('collector_id', $collectorIds)
+                    ->where('appointment_type', 'pengepulan_ikan');
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only pemilik tambak and pengepul can access collector appointments'
+                ], 403);
+            }
 
             // Filter by status
             if ($request->has('status')) {
@@ -593,7 +682,8 @@ class AppointmentController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $appointments
+                'data' => $appointments,
+                'user_role' => $user->isPemilikTambak() ? 'pemilik_tambak' : 'pengepul'
             ]);
 
         } catch (\Exception $e) {
@@ -652,6 +742,148 @@ class AppointmentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to cancel appointment',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Pengepul responds to appointment (accept/reject)
+     */
+    public function respondToAppointment($id, Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|in:dikonfirmasi,dibatalkan',
+            'catatan_collector' => 'nullable|string|max:500'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $user = $request->user();
+
+            // Validate user is pengepul
+            if (!$user->isPengepul()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only pengepul can respond to appointments'
+                ], 403);
+            }
+
+            // Get user's collector IDs
+            $collectorIds = \App\Models\Collector::where('user_id', $user->id)->pluck('id');
+
+            $appointment = Appointment::whereIn('collector_id', $collectorIds)
+                ->where('id', $id)
+                ->where('status', 'pending')
+                ->first();
+
+            if (!$appointment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Appointment not found or not available for response'
+                ], 404);
+            }
+
+            $appointment->update([
+                'status' => $request->status,
+                'catatan_collector' => $request->catatan_collector
+            ]);
+
+            // Load relationships for response
+            $appointment->load(['fishFarm', 'collector.user', 'pemilikTambak']);
+
+            return response()->json([
+                'success' => true,
+                'message' => $request->status === 'dikonfirmasi' ? 'Appointment confirmed successfully' : 'Appointment rejected',
+                'data' => $appointment
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to respond to appointment',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Complete appointment (for pengepul)
+     */
+    public function completeAppointment($id, Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'berat_aktual' => 'required|numeric|min:0.1',
+            'kualitas_ikan' => 'nullable|string|max:255',
+            'catatan_selesai' => 'nullable|string|max:500'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $user = $request->user();
+
+            // Validate user is pengepul
+            if (!$user->isPengepul()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only pengepul can complete appointments'
+                ], 403);
+            }
+
+            // Get user's collector IDs
+            $collectorIds = \App\Models\Collector::where('user_id', $user->id)->pluck('id');
+
+            $appointment = Appointment::whereIn('collector_id', $collectorIds)
+                ->where('id', $id)
+                ->where('status', 'dikonfirmasi')
+                ->first();
+
+            if (!$appointment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Appointment not found or not ready for completion'
+                ], 404);
+            }
+
+            // Calculate final totals
+            $totalAktual = $request->berat_aktual * $appointment->harga_per_kg;
+
+            $appointment->update([
+                'status' => 'selesai',
+                'berat_aktual' => $request->berat_aktual,
+                'total_aktual' => $totalAktual,
+                'kualitas_ikan' => $request->kualitas_ikan,
+                'catatan_selesai' => $request->catatan_selesai,
+                'tanggal_selesai' => now()
+            ]);
+
+            // Load relationships for response
+            $appointment->load(['fishFarm', 'collector.user', 'pemilikTambak']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Appointment completed successfully',
+                'data' => $appointment
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to complete appointment',
                 'error' => $e->getMessage()
             ], 500);
         }

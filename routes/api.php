@@ -138,10 +138,15 @@ Route::post('/register-seller', [AuthController::class, 'registerAsSeller'])->mi
     Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
     Route::put('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
 
-    // Collector Appointments
+    // Collector Appointments (untuk pemilik_tambak dan pengepul)
     Route::post('/appointments/collector', [AppointmentController::class, 'createCollectorAppointment']);
     Route::get('/appointments/collector', [AppointmentController::class, 'getCollectorAppointments']);
     Route::put('/appointments/collector/{id}/cancel', [AppointmentController::class, 'cancelCollectorAppointment']);
+    
+    // Pengepul specific routes
+    Route::put('/appointments/collector/{id}/respond', [AppointmentController::class, 'respondToAppointment']);
+    Route::put('/appointments/collector/{id}/complete', [AppointmentController::class, 'completeAppointment']);
+    
     Route::post('/appointments/{id}/whatsapp-summary', [AppointmentController::class, 'sendWhatsAppSummary']);
 
     // Messages

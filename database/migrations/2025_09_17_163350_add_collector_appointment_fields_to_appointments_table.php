@@ -12,16 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('appointments', function (Blueprint $table) {
-            // Add only missing columns based on existing structure
-            if (!Schema::hasColumn('appointments', 'penjual_id')) {
-                $table->foreignId('penjual_id')->nullable()->constrained('users')->onDelete('cascade');
+            // Add user_id column for pemilik_tambak relationship
+            if (!Schema::hasColumn('appointments', 'user_id')) {
+                $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
             }
-            if (!Schema::hasColumn('appointments', 'pembeli_id')) {
-                $table->foreignId('pembeli_id')->nullable()->constrained('users')->onDelete('cascade');
-            }
-            if (!Schema::hasColumn('appointments', 'lokasi_penjual_id')) {
-                $table->foreignId('lokasi_penjual_id')->nullable()->constrained('seller_locations')->onDelete('cascade');
-            }
+            
+            // Make lokasi_penjual_id nullable for new system
+            $table->unsignedBigInteger('lokasi_penjual_id')->nullable()->change();
+            
+            // Add other missing columns if they don't exist
             if (!Schema::hasColumn('appointments', 'waktu_janji')) {
                 $table->string('waktu_janji')->nullable();
             }
@@ -40,18 +39,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('appointments', function (Blueprint $table) {
-            // Drop only columns that were added
-            if (Schema::hasColumn('appointments', 'penjual_id')) {
-                $table->dropForeign(['penjual_id']);
-                $table->dropColumn('penjual_id');
-            }
-            if (Schema::hasColumn('appointments', 'pembeli_id')) {
-                $table->dropForeign(['pembeli_id']);
-                $table->dropColumn('pembeli_id');
-            }
-            if (Schema::hasColumn('appointments', 'lokasi_penjual_id')) {
-                $table->dropForeign(['lokasi_penjual_id']);
-                $table->dropColumn('lokasi_penjual_id');
+            // Drop user_id column that was added
+            if (Schema::hasColumn('appointments', 'user_id')) {
+                $table->dropForeign(['user_id']);
+                $table->dropColumn('user_id');
             }
             if (Schema::hasColumn('appointments', 'waktu_janji')) {
                 $table->dropColumn('waktu_janji');

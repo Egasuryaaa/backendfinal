@@ -643,6 +643,17 @@
             return null;
         }
 
+        // Helper function to get status text
+        function getStatusText(status) {
+            const statusMap = {
+                'menunggu': 'Menunggu Konfirmasi',
+                'dikonfirmasi': 'Dikonfirmasi',
+                'selesai': 'Selesai',
+                'dibatalkan': 'Dibatalkan'
+            };
+            return statusMap[status] || status;
+        }
+
         async function loadCollectors() {
             try {
                 const token = getToken();
@@ -773,31 +784,59 @@
                     return;
                 }
 
-                // First get current collector info
-                const collectorResponse = await fetch('/api/collectors?user_only=true', {
+                // Use the new collector appointments endpoint
+                const response = await fetch('/api/appointments/collectors', {
                     headers: {
                         'Authorization': 'Bearer ' + token,
                         'Accept': 'application/json'
                     }
                 });
 
-                if (!collectorResponse.ok) {
-                    throw new Error('Failed to get collector info');
-                }
-
-                const collectorResult = await safeParseJSON(collectorResponse);
-                const currentCollector = collectorResult.data?.data?.[0]; // Get first collector from paginated result
-
-                if (!currentCollector) {
-                    throw new Error('No collector found for current user');
-                }
-
-                // Now get pending appointments for this collector
-                const response = await fetch(`/api/collectors/${currentCollector.id}/pending-appointments`, {
-                    headers: {
-                        'Authorization': 'Bearer ' + token,
-                        'Accept': 'application/json'
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Collector appointments API response:', result);
+                    
+                    // Handle different response structures safely
+                    let appointmentsData = [];
+                    if (result.data) {
+                        // If result.data is an array
+                        if (Array.isArray(result.data)) {
+                            appointmentsData = result.data;
+                        }
+                        // If result.data has a data property (paginated response)
+                        else if (result.data.data && Array.isArray(result.data.data)) {
+                            appointmentsData = result.data.data;
+                        }
+                        // If result.data is an object but not an array
+                        else {
+                            appointmentsData = [];
+                        }
+                    } else if (Array.isArray(result)) {
+                        // If result itself is an array
+                        appointmentsData = result;
+                    } else {
+                        appointmentsData = [];
                     }
+                    
+                    appointments = appointmentsData || [];
+                    console.log('Loaded collector appointments:', appointments);
+                    displayAppointments(appointments);
+                } else {
+                    // Try to get error message safely
+                    let errorMessage = 'Failed to load appointments';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.message || errorMessage;
+                    } catch (e) {
+                        console.warn('Could not parse error response:', e);
+                    }
+                    throw new Error(errorMessage);
+                }
+            } catch (error) {
+                console.error('Error loading appointments:', error);
+                displayAppointmentsError();
+            }
+        }
                 });
 
                 if (response.ok) {
@@ -835,39 +874,76 @@
                 return;
             }
 
-            container.innerHTML = appointmentsList.map(appointment => `
+            container.innerHTML = appointmentsList.map(appointment => {
+                // Get farm and owner information
+                const farmName = appointment.fish_farm?.nama || 'Tambak Tidak Diketahui';
+                const ownerName = appointment.pemilik_tambak?.name || appointment.fish_farm?.user?.name || 'Pemilik Tidak Diketahui';
+                
+                // Format date
+                let appointmentDate = 'Tanggal belum ditentukan';
+                if (appointment.tanggal_janji) {
+                    try {
+                        appointmentDate = new Date(appointment.tanggal_janji).toLocaleDateString('id-ID', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
+                        if (appointment.waktu_janji) {
+                            appointmentDate += ' pukul ' + appointment.waktu_janji;
+                        }
+                    } catch (e) {
+                        appointmentDate = appointment.tanggal_janji;
+                    }
+                }
+                
+                // Calculate estimated total
+                const estimatedWeight = appointment.estimated_weight || 0;
+                const pricePerKg = appointment.price_per_kg || 0;
+                const estimatedTotal = estimatedWeight * pricePerKg;
+                
+                return `
                 <div class="card">
                     <div class="card-header">
                         <div class="card-image" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                             <i class="fas fa-calendar-check"></i>
                         </div>
                         <div class="card-info">
-                            <h3>${appointment.fish_farm?.nama || 'Tambak'}</h3>
-                            <p><i class="fas fa-user"></i> ${appointment.fish_farm?.user?.name || 'Petani'}</p>
+                            <h3>${farmName}</h3>
+                            <p><i class="fas fa-user"></i> ${ownerName}</p>
+                            <p><i class="fas fa-clock"></i> ${appointmentDate}</p>
                             <span class="status-badge status-${appointment.status}">${getStatusText(appointment.status)}</span>
                         </div>
                     </div>
                     
                     <div class="card-details">
                         <div class="detail-item">
-                            <span class="detail-label">Tanggal</span>
-                            <span class="detail-value">${formatDate(appointment.tanggal)}</span>
-                        </div>
-                        <div class="detail-item">
                             <span class="detail-label">Estimasi Berat</span>
-                            <span class="detail-value">${appointment.perkiraan_berat || '-'} kg</span>
+                            <span class="detail-value">${estimatedWeight} kg</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Harga per Kg</span>
-                            <span class="detail-value">Rp ${parseInt(appointment.harga_per_kg || 0).toLocaleString()}</span>
+                            <span class="detail-value">Rp ${parseInt(pricePerKg).toLocaleString()}</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Total Estimasi</span>
-                            <span class="detail-value">Rp ${parseInt(appointment.total_estimasi || 0).toLocaleString()}</span>
+                            <span class="detail-value">Rp ${parseInt(estimatedTotal).toLocaleString()}</span>
                         </div>
+                        ${appointment.pesan_pemilik ? `
+                            <div class="detail-item">
+                                <span class="detail-label">Pesan Pemilik</span>
+                                <span class="detail-value">${appointment.pesan_pemilik}</span>
+                            </div>
+                        ` : ''}
+                        ${appointment.catatan ? `
+                            <div class="detail-item">
+                                <span class="detail-label">Catatan</span>
+                                <span class="detail-value">${appointment.catatan}</span>
+                            </div>
+                        ` : ''}
                     </div>
 
-                    ${appointment.status === 'pending' ? `
+                    ${appointment.status === 'menunggu' ? `
                         <div class="card-actions">
                             <button class="btn btn-success" onclick="acceptAppointment(${appointment.id})">
                                 <i class="fas fa-check"></i> Terima
@@ -876,10 +952,13 @@
                                 <i class="fas fa-times"></i> Tolak
                             </button>
                         </div>
-                    ` : appointment.status === 'diterima' ? `
+                    ` : appointment.status === 'dikonfirmasi' ? `
                         <div class="card-actions">
                             <button class="btn btn-success" onclick="completeAppointment(${appointment.id})">
                                 <i class="fas fa-check-circle"></i> Selesai
+                            </button>
+                            <button class="btn btn-danger" onclick="rejectAppointment(${appointment.id})">
+                                <i class="fas fa-times"></i> Batalkan
                             </button>
                         </div>
                     ` : appointment.status === 'selesai' ? `
@@ -898,14 +977,27 @@
                     ${appointment.whatsapp_summary ? `
                         <div class="whatsapp-summary">
                             <h4><i class="fab fa-whatsapp"></i> Summary WhatsApp</h4>
-                            <p><strong>Tanggal:</strong> ${formatDate(appointment.whatsapp_summary.tanggal)}</p>
-                            <p><strong>Berat Aktual:</strong> ${appointment.whatsapp_summary.berat_aktual} kg</p>
-                            <p><strong>Total Harga:</strong> Rp ${parseInt(appointment.whatsapp_summary.total_harga).toLocaleString()}</p>
-                            <p><strong>Status:</strong> ${appointment.whatsapp_summary.status}</p>
+                            ${(() => {
+                                try {
+                                    const summary = typeof appointment.whatsapp_summary === 'string' 
+                                        ? JSON.parse(appointment.whatsapp_summary) 
+                                        : appointment.whatsapp_summary;
+                                    return `
+                                        <p><strong>Tanggal:</strong> ${summary.tanggal || '-'}</p>
+                                        <p><strong>Berat Aktual:</strong> ${summary.berat_aktual || 0} kg</p>
+                                        <p><strong>Total Harga:</strong> Rp ${parseInt(summary.total_harga || 0).toLocaleString()}</p>
+                                        <p><strong>Status:</strong> ${summary.status || 'Selesai'}</p>
+                                    `;
+                                } catch (e) {
+                                    return '<p>Detail transaksi tersedia</p>';
+                                }
+                            })()}
                         </div>
                     ` : ''}
                 </div>
-            `).join('');
+            `;
+            }).join('');
+        }
         }
 
         function displayAppointmentsError() {
@@ -976,35 +1068,12 @@
         }
 
         async function acceptAppointment(appointmentId) {
-            const hargaFinal = prompt('Masukkan harga final per kg (Rp):');
-            if (!hargaFinal || isNaN(hargaFinal)) {
-                alert('Masukkan harga yang valid');
+            if (!confirm('Apakah Anda yakin ingin menerima janji penjemputan ini?')) {
                 return;
             }
 
-            const catatan = prompt('Catatan tambahan (opsional):');
-
             try {
-                // Get current collector info first
-                const collectorResponse = await fetch('/api/collectors?user_only=true', {
-                    headers: {
-                        'Authorization': 'Bearer ' + getToken(),
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (!collectorResponse.ok) {
-                    throw new Error('Failed to get collector info');
-                }
-
-                const collectorResult = await safeParseJSON(collectorResponse);
-                const currentCollector = collectorResult.data?.data?.[0];
-
-                if (!currentCollector) {
-                    throw new Error('No collector found');
-                }
-
-                const response = await fetch(`/api/collectors/${currentCollector.id}/appointments/${appointmentId}`, {
+                const response = await fetch(`/api/appointments/${appointmentId}/status`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': 'Bearer ' + getToken(),
@@ -1013,20 +1082,23 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({ 
-                        action: 'accept',
-                        harga_final: parseFloat(hargaFinal),
-                        catatan_collector: catatan
+                        status: 'dikonfirmasi'
                     })
                 });
 
                 if (response.ok) {
-                    alert('Janji penjemputan berhasil diterima');
-                    await loadAppointments(); // Reload appointments
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('Janji penjemputan berhasil diterima');
+                        await loadAppointments(); // Reload appointments
+                    } else {
+                        throw new Error(result.message || 'Gagal menerima janji penjemputan');
+                    }
                 } else {
                     // Try to get error message safely
                     let errorMessage = 'Gagal menerima janji penjemputan';
                     try {
-                        const errorData = await safeParseJSON(response);
+                        const errorData = await response.json();
                         errorMessage = errorData.message || errorMessage;
                     } catch (e) {
                         console.warn('Could not parse error response:', e);
@@ -1041,30 +1113,12 @@
         }
 
         async function rejectAppointment(appointmentId) {
-            const reason = prompt('Masukkan alasan penolakan (opsional):');
-            if (reason === null) return; // User cancelled
+            if (!confirm('Apakah Anda yakin ingin menolak janji penjemputan ini?')) {
+                return;
+            }
 
             try {
-                // Get current collector info first
-                const collectorResponse = await fetch('/api/collectors?user_only=true', {
-                    headers: {
-                        'Authorization': 'Bearer ' + getToken(),
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (!collectorResponse.ok) {
-                    throw new Error('Failed to get collector info');
-                }
-
-                const collectorResult = await safeParseJSON(collectorResponse);
-                const currentCollector = collectorResult.data?.data?.[0];
-
-                if (!currentCollector) {
-                    throw new Error('No collector found');
-                }
-
-                const response = await fetch(`/api/collectors/${currentCollector.id}/appointments/${appointmentId}`, {
+                const response = await fetch(`/api/appointments/${appointmentId}/status`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': 'Bearer ' + getToken(),
@@ -1073,19 +1127,23 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({ 
-                        action: 'reject',
-                        catatan_collector: reason
+                        status: 'dibatalkan'
                     })
                 });
 
                 if (response.ok) {
-                    alert('Janji penjemputan berhasil ditolak');
-                    await loadAppointments(); // Reload appointments
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('Janji penjemputan berhasil ditolak');
+                        await loadAppointments(); // Reload appointments
+                    } else {
+                        throw new Error(result.message || 'Gagal menolak janji penjemputan');
+                    }
                 } else {
                     // Try to get error message safely
                     let errorMessage = 'Gagal menolak janji penjemputan';
                     try {
-                        const errorData = await safeParseJSON(response);
+                        const errorData = await response.json();
                         errorMessage = errorData.message || errorMessage;
                     } catch (e) {
                         console.warn('Could not parse error response:', e);
@@ -1100,21 +1158,49 @@
         }
 
         async function completeAppointment(appointmentId) {
-            const actualWeight = prompt('Masukkan berat aktual ikan (kg):');
-            if (!actualWeight || isNaN(actualWeight)) {
-                alert('Masukkan berat yang valid');
+            if (!confirm('Apakah Anda yakin ingin menandai janji penjemputan ini sebagai selesai?')) {
                 return;
             }
-
-            const kualitas = prompt('Masukkan kualitas ikan (contoh: Premium, Baik, Standar):');
-            if (!kualitas) {
-                alert('Masukkan kualitas ikan');
-                return;
-            }
-
-            const catatan = prompt('Catatan penyelesaian (opsional):');
 
             try {
+                const response = await fetch(`/api/appointments/${appointmentId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken(),
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ 
+                        status: 'selesai'
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('Janji penjemputan berhasil diselesaikan');
+                        await loadAppointments(); // Reload appointments
+                    } else {
+                        throw new Error(result.message || 'Gagal menyelesaikan janji penjemputan');
+                    }
+                } else {
+                    // Try to get error message safely
+                    let errorMessage = 'Gagal menyelesaikan janji penjemputan';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.message || errorMessage;
+                    } catch (e) {
+                        console.warn('Could not parse error response:', e);
+                        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+            } catch (error) {
+                console.error('Error completing appointment:', error);
+                alert('Terjadi kesalahan saat menyelesaikan janji penjemputan: ' + error.message);
+            }
+        }
                 // Get current collector info first
                 const collectorResponse = await fetch('/api/collectors?user_only=true', {
                     headers: {
