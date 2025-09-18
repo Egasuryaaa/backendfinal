@@ -386,6 +386,24 @@
             box-shadow: 0 8px 25px rgba(245, 87, 108, 0.4);
         }
 
+        .quick-action-card.farm-dashboard {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .quick-action-card.farm-dashboard:hover {
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .quick-action-card.collector-dashboard {
+            background: linear-gradient(135deg, #673AB7 0%, #5E35B1 100%);
+            box-shadow: 0 4px 15px rgba(103, 58, 183, 0.3);
+        }
+
+        .quick-action-card.collector-dashboard:hover {
+            box-shadow: 0 8px 25px rgba(103, 58, 183, 0.4);
+        }
+
         .quick-action-icon {
             font-size: 2rem;
             margin-bottom: 10px;
@@ -811,6 +829,9 @@
                     <a href="/fish-farms" class="cart-button" id="fishFarmButton" title="Tambak & Pengepul">
                         <i class="fas fa-fish"></i>
                     </a>
+                    <a href="/fish-farms/dashboard" class="cart-button" id="farmDashboardButton" title="Dashboard Pemilik Tambak" style="display: none;">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </a>
                     <a href="/cart" class="cart-button" id="cartButton">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="cart-badge hidden" id="cartBadge">0</span>
@@ -992,7 +1013,18 @@
             ];
 
             // Role-specific actions
-            if (user.role === 'farmer' || user.user_type === 'farmer') {
+            if (user.role === 'pemilik_tambak' || user.user_type === 'pemilik_tambak') {
+                // Farm owner - direct access to dashboard only
+                actions = [
+                    {
+                        href: '/fish-farms/dashboard',
+                        icon: 'fas fa-tachometer-alt',
+                        title: 'Dashboard Tambak',
+                        subtitle: 'Kelola tambak & appointment',
+                        class: 'farm-dashboard'
+                    }
+                ];
+            } else if (user.role === 'farmer' || user.user_type === 'farmer') {
                 // Farmer-specific actions
                 actions = [
                     {
@@ -1024,36 +1056,15 @@
                         class: ''
                     }
                 ];
-            } else if (user.role === 'collector' || user.user_type === 'collector') {
-                // Collector-specific actions
+            } else if (user.role === 'pengepul' || user.user_type === 'pengepul') {
+                // Collector - direct access to dashboard only
                 actions = [
                     {
-                        href: '/collectors',
-                        icon: 'fas fa-store',
-                        title: 'Usaha Saya',
-                        subtitle: 'Kelola pengepul',
-                        class: 'collector'
-                    },
-                    {
-                        href: '/collector-appointments',
-                        icon: 'fas fa-calendar-alt',
-                        title: 'Janji Masuk',
-                        subtitle: 'Permintaan pickup',
-                        class: 'collector'
-                    },
-                    {
-                        href: '/fish-farms#fishfarms',
-                        icon: 'fas fa-map-marked-alt',
-                        title: 'Cari Tambak',
-                        subtitle: 'Temukan supplier',
-                        class: ''
-                    },
-                    {
-                        href: '/products',
-                        icon: 'fas fa-shopping-cart',
-                        title: 'Beli Produk',
-                        subtitle: 'Belanja kebutuhan',
-                        class: ''
+                        href: '/collectors/',
+                        icon: 'fas fa-tachometer-alt',
+                        title: 'Dashboard Pengepul',
+                        subtitle: 'Kelola bisnis & penjemputan',
+                        class: 'collector-dashboard'
                     }
                 ];
             }
@@ -1356,6 +1367,17 @@
                     userName.textContent = testData.user.name;
                     userName.style.display = 'block';
                     console.log('User authenticated:', testData.user.name);
+
+                    // Show farm dashboard button for farm owners
+                    if (testData.user.role === 'pemilik_tambak') {
+                        const farmDashboardButton = document.getElementById('farmDashboardButton');
+                        if (farmDashboardButton) {
+                            farmDashboardButton.style.display = 'flex';
+                        }
+                    }
+
+                    // Load quick actions based on user role
+                    displayQuickActions(testData.user);
                 } else {
                     console.log('User not authenticated');
                     updateUIForLoggedOut();

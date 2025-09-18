@@ -62,8 +62,12 @@ class FishFarmCollectorSeeder extends Seeder
         foreach ($farmers as $farmer) {
             $existingUser = User::where('email', $farmer['email'])->first();
             if ($existingUser) {
+                // Update role for existing user
+                $existingUser->update(['role' => 'pemilik_tambak']);
                 $farmerUsers[] = $existingUser;
             } else {
+                // Create new user with role
+                $farmer['role'] = 'pemilik_tambak';
                 $farmerUsers[] = User::create($farmer);
             }
         }
@@ -73,8 +77,12 @@ class FishFarmCollectorSeeder extends Seeder
         foreach ($collectors as $collector) {
             $existingUser = User::where('email', $collector['email'])->first();
             if ($existingUser) {
+                // Update role for existing user
+                $existingUser->update(['role' => 'pengepul']);
                 $collectorUsers[] = $existingUser;
             } else {
+                // Create new user with role
+                $collector['role'] = 'pengepul';
                 $collectorUsers[] = User::create($collector);
             }
         }

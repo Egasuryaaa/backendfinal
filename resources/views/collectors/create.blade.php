@@ -279,7 +279,7 @@
     </style>
 </head>
 <body>
-    <a href="{{ route('collectors.index') }}" class="back-button" title="Kembali">
+    <a href="{{ route('fish-farms.index') }}" class="back-button" title="Kembali">
         <i class="fas fa-arrow-left"></i>
     </a>
 

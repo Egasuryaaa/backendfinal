@@ -198,6 +198,10 @@ Route::middleware(['hybrid.auth'])->group(function () {
         return view('fish-farms.index');
     })->name('fish-farms.index');
 
+    Route::get('/fish-farms/dashboard', function () {
+        return view('fish-farms.dashboard');
+    })->name('fish-farms.dashboard');
+
     Route::get('/fish-farms/create', function () {
         return view('fish-farms.create');
     })->name('fish-farms.create');
