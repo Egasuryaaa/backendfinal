@@ -132,6 +132,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Mendapatkan bisnis collector user (untuk pengepul).
+     */
+    public function collectors()
+    {
+        return $this->hasMany(Collector::class);
+    }
+
+    /**
      * Role Helper Methods
      */
 

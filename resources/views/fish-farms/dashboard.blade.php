@@ -837,7 +837,7 @@
                     }
                     
                     const userAppointments = appointmentsArray.filter(appointment => 
-                        appointment.penjual_id == currentUserId || 
+                        appointment.user_id == currentUserId || 
                         appointment.fish_farm?.user_id == currentUserId
                     ) || [];
                     
@@ -1047,16 +1047,38 @@
 
         async function loadAppointments() {
             try {
-                // Use the new collector appointments endpoint
-                const response = await fetch('/api/appointments/collectors', {
+                console.log('Loading appointments...');
+                const token = getToken();
+                console.log('Using token:', token ? 'Token found' : 'No token');
+                
+                // Try the collector appointments endpoint first
+                let response = await fetch('/api/appointments/collector', {
                     headers: {
-                        'Authorization': 'Bearer ' + getToken(),
-                        'Accept': 'application/json'
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
                     }
                 });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+                // If 404, try the general appointments endpoint as fallback
+                if (response.status === 404) {
+                    console.log('Collector endpoint not found, trying general appointments endpoint...');
+                    response = await fetch('/api/appointments', {
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                }
 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch appointments');
+                    const errorText = await response.text();
+                    console.error('API Error:', response.status, errorText);
+                    throw new Error(`Failed to fetch appointments: ${response.status} ${response.statusText}`);
                 }
 
                 const result = await response.json();
@@ -1110,7 +1132,7 @@
             }
 
             container.innerHTML = appointmentsList.map(appointment => {
-                // Get fish farm name from appointment or farms data
+                // Get fish farm name from appointment
                 let fishFarmName = 'Tambak Tidak Diketahui';
                 if (appointment.fish_farm && appointment.fish_farm.nama) {
                     fishFarmName = appointment.fish_farm.nama;
@@ -1119,12 +1141,10 @@
                     fishFarmName = fishFarm ? fishFarm.nama : fishFarmName;
                 }
                 
-                // Get collector/pengepul name
+                // Get collector name
                 let collectorName = 'Pengepul Tidak Diketahui';
-                if (appointment.collector && appointment.collector.user) {
-                    collectorName = appointment.collector.user.name;
-                } else if (appointment.collector && appointment.collector.nama_perusahaan) {
-                    collectorName = appointment.collector.nama_perusahaan;
+                if (appointment.collector && appointment.collector.nama) {
+                    collectorName = appointment.collector.nama;
                 }
                 
                 // Format date
@@ -1145,26 +1165,36 @@
                     }
                 }
                 
-                // Get status class and text
+                // Get status text
+                function getStatusText(status) {
+                    switch(status) {
+                        case 'menunggu': return 'Menunggu Konfirmasi';
+                        case 'dikonfirmasi': return 'Dikonfirmasi';
+                        case 'selesai': return 'Selesai';
+                        case 'dibatalkan': return 'Dibatalkan';
+                        default: return 'Menunggu';
+                    }
+                }
+                
                 const statusClass = appointment.status ? `status-${appointment.status}` : 'status-menunggu';
-                const statusText = appointment.status_text || appointment.status || 'Menunggu';
+                const statusText = getStatusText(appointment.status);
                 
                 return `
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-image">
+                            <div class="card-image" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                                 <i class="fas fa-calendar-check"></i>
                             </div>
                             <div class="card-info">
                                 <h3>${fishFarmName}</h3>
-                                <p><i class="fas fa-user"></i> ${collectorName}</p>
+                                <p><i class="fas fa-truck"></i> Pengepul: ${collectorName}</p>
                                 <p><i class="fas fa-clock"></i> ${appointmentDate}</p>
                                 <span class="status-badge ${statusClass}">${statusText}</span>
                             </div>
                         </div>
                         <div class="card-details">
                             <div class="detail-item">
-                                <span class="detail-label">Perkiraan Berat</span>
+                                <span class="detail-label">Estimasi Berat</span>
                                 <span class="detail-value">${appointment.estimated_weight || 0} kg</span>
                             </div>
                             <div class="detail-item">
@@ -1183,23 +1213,27 @@
                             ` : ''}
                             ${appointment.catatan ? `
                                 <div class="detail-item">
-                                    <span class="detail-label">Catatan</span>
+                                    <span class="detail-label">Catatan Pengepul</span>
                                     <span class="detail-value">${appointment.catatan}</span>
                                 </div>
                             ` : ''}
                         </div>
+                        
                         ${appointment.whatsapp_summary ? `
                             <div class="whatsapp-summary" style="background: #e8f5e8; border: 1px solid #28a745; border-radius: 8px; padding: 1rem; margin: 1rem 0;">
                                 <h4 style="color: #28a745; margin-bottom: 0.5rem;">
-                                    <i class="fas fa-check-circle"></i> Transaksi Selesai
+                                    <i class="fab fa-whatsapp"></i> Summary WhatsApp
                                 </h4>
                                 ${(() => {
                                     try {
-                                        const summary = JSON.parse(appointment.whatsapp_summary);
+                                        const summary = typeof appointment.whatsapp_summary === 'string' 
+                                            ? JSON.parse(appointment.whatsapp_summary) 
+                                            : appointment.whatsapp_summary;
                                         return `
+                                            <p style="margin: 0.25rem 0; font-size: 0.9rem;"><strong>Tanggal:</strong> ${summary.tanggal || '-'}</p>
                                             <p style="margin: 0.25rem 0; font-size: 0.9rem;"><strong>Berat Aktual:</strong> ${summary.berat_aktual || 0} kg</p>
                                             <p style="margin: 0.25rem 0; font-size: 0.9rem;"><strong>Total Harga:</strong> Rp ${parseInt(summary.total_harga || 0).toLocaleString()}</p>
-                                            <p style="margin: 0.25rem 0; font-size: 0.9rem;"><strong>Tanggal:</strong> ${summary.tanggal || '-'}</p>
+                                            <p style="margin: 0.25rem 0; font-size: 0.9rem;"><strong>Status:</strong> ${summary.status || 'Selesai'}</p>
                                         `;
                                     } catch (e) {
                                         return '<p style="margin: 0; font-size: 0.9rem;">Detail transaksi tersedia</p>';
@@ -1207,17 +1241,21 @@
                                 })()}
                             </div>
                         ` : ''}
+                        
                         <div class="card-actions">
                             ${appointment.status === 'menunggu' ? `
                                 <button class="btn btn-danger" onclick="cancelAppointment(${appointment.id})">
                                     <i class="fas fa-times"></i> Batalkan
                                 </button>
                             ` : ''}
-                            ${appointment.collector && appointment.collector.user && appointment.collector.user.no_telepon ? `
-                                <button class="btn btn-success" onclick="contactCollector('${appointment.collector.user.no_telepon}', '${collectorName}')">
-                                    <i class="fab fa-whatsapp"></i> Hubungi
+                            ${appointment.collector && appointment.collector.no_telepon ? `
+                                <button class="btn btn-success" onclick="contactCollector('${appointment.collector.no_telepon}', '${collectorName}')">
+                                    <i class="fab fa-whatsapp"></i> Hubungi Pengepul
                                 </button>
                             ` : ''}
+                            <span class="status-text" style="color: #666; font-size: 0.9rem;">
+                                Status: ${statusText}
+                            </span>
                         </div>
                     </div>
                 `;

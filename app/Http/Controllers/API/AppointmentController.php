@@ -24,7 +24,7 @@ class AppointmentController extends Controller
         $user = $request->user();
         
         // Use new field names based on user role
-        $query = Appointment::with(['pemilikTambak', 'pengepul', 'fishFarm', 'collector.user']);
+        $query = Appointment::with(['pemilikTambak', 'fishFarm', 'collector.user']);
         
         if ($user->isPemilikTambak()) {
             // Pemilik tambak sees appointments they created
@@ -33,13 +33,6 @@ class AppointmentController extends Controller
             // Pengepul sees appointments directed to their collectors
             $collectorIds = \App\Models\Collector::where('user_id', $user->id)->pluck('id');
             $query->whereIn('collector_id', $collectorIds);
-        } else {
-            // For backward compatibility with old field names
-            $query->where(function($q) use ($user) {
-                $q->where('user_id', $user->id)
-                  ->orWhere('pembeli_id', $user->id)
-                  ->orWhere('penjual_id', $user->id);
-            });
         }
         
         // Filter berdasarkan status
@@ -77,7 +70,9 @@ class AppointmentController extends Controller
                 $item->formatted_time = Carbon::parse($item->tanggal_janji)->format('H:i');
             }
             $item->status_text = Appointment::$statuses[$item->status] ?? $item->status;
-            return $item;
+            
+            // Clean the data by removing unused fields
+            return (object) $this->cleanAppointmentData($item);
         });
 
         return response()->json([
@@ -88,68 +83,15 @@ class AppointmentController extends Controller
     }
 
     /**
-     * Create a new appointment
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * DEPRECATED: Legacy store method
+     * Use createCollectorAppointment instead
      */
     public function store(Request $request): JsonResponse
     {
-        // Validate the request
-        $validator = Validator::make($request->all(), [
-            'seller_id' => 'required|exists:users,id',
-            'location_id' => 'required|exists:seller_locations,id',
-            'date' => 'required|date|after_or_equal:today',
-            'time' => 'required',
-            'purpose' => 'required|string|max:255',
-            'notes' => 'nullable|string|max:1000',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        try {
-            // Get current authenticated user
-            $user = $request->user();
-            
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda harus login untuk membuat janji temu'
-                ], 401);
-            }
-
-            // Create appointment date time
-            $appointmentDateTime = $request->date . ' ' . $request->time;
-            
-            // Create the appointment
-            $appointment = Appointment::create([
-                'pembeli_id' => $user->id,
-                'penjual_id' => $request->seller_id,
-                'lokasi_penjual_id' => $request->location_id,
-                'tanggal_janji' => $appointmentDateTime,
-                'tujuan' => $request->purpose,
-                'catatan' => $request->notes,
-                'status' => 'menunggu',
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Janji temu berhasil dibuat',
-                'data' => $appointment
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat membuat janji temu',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'success' => false,
+            'message' => 'This endpoint is deprecated. Use /api/appointments/collector instead.'
+        ], 410);
     }
 
     /**
@@ -173,11 +115,6 @@ class AppointmentController extends Controller
             if ($collectorIds->contains($appointment->collector_id)) {
                 $isAuthorized = true;
             }
-        } else {
-            // Backward compatibility with old field names
-            if ($appointment->pembeli_id === $user->id || $appointment->penjual_id === $user->id) {
-                $isAuthorized = true;
-            }
         }
         
         if (!$isAuthorized) {
@@ -187,10 +124,10 @@ class AppointmentController extends Controller
             ], 403);
         }
         
-        $appointment->load(['pemilikTambak', 'pengepul', 'fishFarm', 'collector.user', 'messages']);
+        $appointment->load(['pemilikTambak', 'fishFarm', 'collector.user', 'messages']);
         
-        // Prepare response data with formatted values
-        $responseData = $appointment->toArray();
+        // Prepare clean response data with formatted values
+        $responseData = $this->cleanAppointmentData($appointment);
         if ($appointment->tanggal_janji) {
             $responseData['formatted_date'] = Carbon::parse($appointment->tanggal_janji)->format('d M Y');
             $responseData['formatted_time'] = Carbon::parse($appointment->tanggal_janji)->format('H:i');
@@ -214,8 +151,8 @@ class AppointmentController extends Controller
     {
         $user = $request->user();
         
-        // Hanya pembuat janji temu (pembeli) yang dapat mengubah janji
-        if ($appointment->pembeli_id !== $user->id) {
+        // Only appointment creator (pemilik tambak) can update appointment
+        if ($appointment->user_id !== $user->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'
@@ -333,8 +270,8 @@ class AppointmentController extends Controller
     {
         $user = $request->user();
         
-        // Hanya pembuat janji temu (pembeli) yang dapat menghapus janji
-        if ($appointment->pembeli_id !== $user->id) {
+        // Only appointment creator (pemilik tambak) can delete appointment
+        if ($appointment->user_id !== $user->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'
@@ -402,19 +339,15 @@ class AppointmentController extends Controller
                                                   ->where('id', $appointment->collector_id)
                                                   ->exists();
         
-        // Backward compatibility check
-        $isLegacyPenjual = $appointment->penjual_id === $user->id;
-        $isLegacyPembeli = $appointment->pembeli_id === $user->id;
-        
-        if ($isPemilikTambak || $isLegacyPenjual) {
-            // Pemilik tambak/Penjual dapat mengubah status menjadi: dibatalkan
+        if ($isPemilikTambak) {
+            // Pemilik tambak dapat mengubah status menjadi: dibatalkan
             if (!in_array($newStatus, ['dibatalkan'])) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Pemilik tambak hanya dapat membatalkan appointment'
                 ], 400);
             }
-        } elseif ($isPengepul || $isLegacyPembeli) {
+        } elseif ($isPengepul) {
             // Pengepul dapat mengubah status menjadi: dikonfirmasi, selesai, dibatalkan
             if (!in_array($newStatus, ['dikonfirmasi', 'selesai', 'dibatalkan'])) {
                 return response()->json([
@@ -612,10 +545,10 @@ class AppointmentController extends Controller
                 'success' => true,
                 'message' => 'Appointment request sent successfully to collector',
                 'data' => [
-                    'appointment' => $appointment,
+                    'appointment' => $this->cleanAppointmentData($appointment),
                     'fish_farm' => $appointment->fishFarm,
                     'collector' => $appointment->collector,
-                    'pengepul' => $appointment->collector->user,
+                    'collector_user' => $appointment->collector->user,
                     'pemilik_tambak' => $appointment->pemilikTambak
                 ]
             ], 201);
@@ -653,6 +586,22 @@ class AppointmentController extends Controller
                 // Pengepul melihat appointments yang ditujukan untuk mereka
                 $collectorIds = \App\Models\Collector::where('user_id', $user->id)->pluck('id');
                 
+                // If user has no collector businesses, return empty result instead of error
+                if ($collectorIds->isEmpty()) {
+                    return response()->json([
+                        'success' => true,
+                        'data' => [
+                            'data' => [],
+                            'current_page' => 1,
+                            'last_page' => 1,
+                            'per_page' => 15,
+                            'total' => 0
+                        ],
+                        'user_role' => 'pengepul',
+                        'message' => 'No collector businesses found. Please register a collector business first.'
+                    ]);
+                }
+                
                 $query = Appointment::with(['fishFarm', 'collector.user', 'pemilikTambak'])
                     ->whereIn('collector_id', $collectorIds)
                     ->where('appointment_type', 'pengepulan_ikan');
@@ -679,6 +628,17 @@ class AppointmentController extends Controller
 
             $appointments = $query->orderBy('tanggal_janji', 'desc')
                 ->paginate($request->get('per_page', 15));
+
+            // Clean appointment data in pagination results
+            $appointments->getCollection()->transform(function ($appointment) {
+                $cleanData = $this->cleanAppointmentData($appointment);
+                if ($appointment->tanggal_janji) {
+                    $cleanData['formatted_date'] = Carbon::parse($appointment->tanggal_janji)->format('d M Y');
+                    $cleanData['formatted_time'] = Carbon::parse($appointment->tanggal_janji)->format('H:i');
+                }
+                $cleanData['status_text'] = Appointment::$statuses[$appointment->status] ?? $appointment->status;
+                return (object) $cleanData;
+            });
 
             return response()->json([
                 'success' => true,
@@ -979,5 +939,23 @@ class AppointmentController extends Controller
             'whatsapp_url' => null,
             'phone_number' => null
         ];
+    }
+
+    /**
+     * Clean appointment data by removing empty optional fields
+     */
+    private function cleanAppointmentData($appointment)
+    {
+        $cleanData = $appointment->toArray();
+        
+        // Only include these if they have values (optional cleanup)
+        if (empty($cleanData['whatsapp_summary'])) {
+            unset($cleanData['whatsapp_summary']);
+        }
+        if (empty($cleanData['whatsapp_sent_at'])) {
+            unset($cleanData['whatsapp_sent_at']);
+        }
+        
+        return $cleanData;
     }
 }

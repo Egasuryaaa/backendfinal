@@ -51,47 +51,43 @@ class AppointmentResource extends Resource
                     ->schema([
                         Forms\Components\Section::make('Informasi Janji Temu')
                             ->schema([
-                                Forms\Components\Select::make('penjual_id')
-                                    ->label('Penjual')
-                                    ->relationship('seller', 'name')
-                                    ->required(),
-                                
-                                Forms\Components\Select::make('pembeli_id')
-                                    ->label('Pembeli')
-                                    ->relationship('buyer', 'name')
-                                    ->required(),
-                                
-                                Forms\Components\Select::make('lokasi_penjual_id')
-                                    ->label('Lokasi Penjual')
-                                    ->relationship('sellerLocation', 'nama_usaha')
-                                    ->required(),
+                                Forms\Components\Select::make('user_id')
+                                    ->label('Pemilik Tambak')
+                                    ->relationship('pemilikTambak', 'name')
+                                    ->required()
+                                    ->helperText('Pemilik tambak yang membuat appointment'),
                                 
                                 Forms\Components\Select::make('fish_farm_id')
                                     ->label('Tambak Ikan')
                                     ->relationship('fishFarm', 'nama')
                                     ->getOptionLabelFromRecordUsing(fn ($record) => $record->nama . ' - ' . $record->user->name . ' (' . $record->jenis_ikan . ')')
                                     ->searchable(['nama', 'jenis_ikan'])
-                                    ->nullable()
+                                    ->required()
                                     ->helperText('Pilih tambak ikan yang terkait dengan appointment ini'),
                                 
                                 Forms\Components\Select::make('collector_id')
                                     ->label('Pengepul')
-                                    ->relationship('collector', 'nama_usaha')
-                                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->nama_usaha . ' - ' . $record->user->name . ' (Rp' . number_format($record->rate_per_kg ?? 0, 0) . '/kg)')
-                                    ->searchable(['nama_usaha'])
-                                    ->nullable()
+                                    ->relationship('collector', 'nama')
+                                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->nama . ' - ' . $record->user->name)
+                                    ->searchable(['nama'])
+                                    ->required()
                                     ->helperText('Pilih pengepul yang terkait dengan appointment ini'),
                                 
                                 Forms\Components\DateTimePicker::make('tanggal_janji')
                                     ->label('Tanggal dan Waktu')
                                     ->required(),
                                 
+                                Forms\Components\TextInput::make('waktu_janji')
+                                    ->label('Waktu Tambahan')
+                                    ->placeholder('19:56')
+                                    ->helperText('Format HH:mm'),
+                                
                                 Forms\Components\Select::make('status')
                                     ->label('Status')
                                     ->options(Appointment::$statuses)
                                     ->required(),
                                 
-                                Forms\Components\Select::make('jenis')
+                                Forms\Components\Select::make('appointment_type')
                                     ->label('Jenis Appointment')
                                     ->options([
                                         'penjualan_produk' => 'Penjualan Produk',
@@ -107,45 +103,39 @@ class AppointmentResource extends Resource
                                     ->label('Catatan')
                                     ->maxLength(65535)
                                     ->columnSpan('full'),
+                                
+                                Forms\Components\Textarea::make('pesan_pemilik')
+                                    ->label('Pesan dari Pemilik Tambak')
+                                    ->maxLength(65535)
+                                    ->columnSpan('full'),
                             ])
                             ->columns([
                                 'sm' => 2,
                             ]),
                         
-                        Forms\Components\Section::make('Lokasi Pertemuan')
-                            ->schema([
-                                GoogleMapsLocationPicker::make('meeting_location')
-                                    ->label('Pilih Lokasi Pertemuan (Opsional)')
-                                    ->center(-7.1192, 112.4186) // Lamongan center
-                                    ->zoom(12)
-                                    ->searchable(true)
-                                    ->height('300px')
-                                    ->helperText('Pilih lokasi khusus untuk pertemuan, atau kosongkan untuk menggunakan lokasi penjual'),
-                            ]),
-                        
                         Forms\Components\Section::make('Informasi Berat & Harga')
                             ->schema([
-                                Forms\Components\TextInput::make('perkiraan_berat')
+                                Forms\Components\TextInput::make('estimated_weight')
                                     ->label('Perkiraan Berat (kg)')
                                     ->numeric()
                                     ->step(0.01)
                                     ->nullable()
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function ($state, $set, $get) {
-                                        $harga = $get('harga_per_kg');
+                                        $harga = $get('price_per_kg');
                                         if ($state && $harga) {
                                             $set('total_estimasi', $state * $harga);
                                         }
                                     }),
                                 
-                                Forms\Components\TextInput::make('harga_per_kg')
+                                Forms\Components\TextInput::make('price_per_kg')
                                     ->label('Harga per Kg (Rp)')
                                     ->numeric()
                                     ->step(0.01)
                                     ->nullable()
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function ($state, $set, $get) {
-                                        $perkiraan = $get('perkiraan_berat');
+                                        $perkiraan = $get('estimated_weight');
                                         if ($state && $perkiraan) {
                                             $set('total_estimasi', $perkiraan * $state);
                                         }
@@ -191,32 +181,37 @@ class AppointmentResource extends Resource
                 
                 Forms\Components\Group::make()
                     ->schema([
-                        Forms\Components\Section::make('Informasi Lokasi')
+                        Forms\Components\Section::make('Informasi Tambak')
                             ->schema([
-                                Forms\Components\Placeholder::make('info_lokasi')
-                                    ->label('Informasi Lokasi')
+                                Forms\Components\Placeholder::make('info_tambak')
+                                    ->label('Informasi Tambak')
                                     ->content(function ($record) {
-                                        if (!$record || !$record->sellerLocation) {
-                                            return 'Pilih lokasi penjual terlebih dahulu';
+                                        if (!$record || !$record->fishFarm) {
+                                            return 'Pilih tambak ikan terlebih dahulu';
                                         }
                     
-                                        $location = $record->sellerLocation;
+                                        $fishFarm = $record->fishFarm;
                                         return "
-                                            Nama Usaha: {$location->nama_usaha} <br>
-                                            Jenis: {$location->seller_type_text} <br>
-                                            Alamat: {$location->alamat_lengkap}, {$location->kecamatan}, {$location->kota}, {$location->provinsi} {$location->kode_pos} <br>
-                                            Telepon: {$location->telepon}
+                                            Nama Tambak: {$fishFarm->nama} <br>
+                                            Pemilik: {$fishFarm->user->name} <br>
+                                            Jenis Ikan: {$fishFarm->jenis_ikan} <br>
+                                            Banyak Bibit: " . number_format($fishFarm->banyak_bibit ?? 0) . " ekor
                                         ";
                                     }),
                                 
-                                Forms\Components\Placeholder::make('jam_operasional')
-                                    ->label('Jam Operasional')
+                                Forms\Components\Placeholder::make('info_collector')
+                                    ->label('Informasi Pengepul')
                                     ->content(function ($record) {
-                                        if (!$record || !$record->sellerLocation) {
-                                            return 'Pilih lokasi penjual terlebih dahulu';
+                                        if (!$record || !$record->collector) {
+                                            return 'Pilih pengepul terlebih dahulu';
                                         }
                     
-                                        return $record->sellerLocation->formatted_operating_hours;
+                                        $collector = $record->collector;
+                                        return "
+                                            Nama: {$collector->nama} <br>
+                                            User: {$collector->user->name} <br>
+                                            Deskripsi: {$collector->deskripsi}
+                                        ";
                                     }),
                             ]),
                         
@@ -248,50 +243,36 @@ class AppointmentResource extends Resource
                     ->label('ID')
                     ->sortable(),
                 
-                Tables\Columns\TextColumn::make('buyer.name')
-                    ->label('Pembeli')
+                Tables\Columns\TextColumn::make('pemilikTambak.name')
+                    ->label('Pemilik Tambak')
                     ->searchable()
                     ->sortable()
-                    ->description(fn ($record) => $record->buyer?->email),
+                    ->description(fn ($record) => $record->pemilikTambak?->email),
                 
-                Tables\Columns\TextColumn::make('seller.name')
-                    ->label('Penjual')
-                    ->searchable()
-                    ->sortable()
-                    ->description(fn ($record) => $record->seller?->email),
-                
-                Tables\Columns\TextColumn::make('sellerLocation.nama_usaha')
-                    ->label('Lokasi Penjual')
-                    ->searchable()
-                    ->sortable()
-                    ->description(fn ($record) => $record->sellerLocation ? 
-                        $record->sellerLocation->seller_type_text . ' | ' . $record->sellerLocation->alamat_lengkap : '-')
-                    ->wrap(),
-                
-                // Tambahkan informasi Fish Farm jika ada
                 Tables\Columns\TextColumn::make('fishFarm.nama')
                     ->label('Tambak Ikan')
                     ->searchable()
                     ->sortable()
                     ->description(fn ($record) => $record->fishFarm ? 
-                        'Pemilik: ' . $record->fishFarm->user->name . ' | Jenis: ' . $record->fishFarm->jenis_ikan : '-')
-                    ->wrap()
-                    ->toggleable(),
+                        'Jenis: ' . $record->fishFarm->jenis_ikan . ' | Bibit: ' . number_format($record->fishFarm->banyak_bibit ?? 0) : '-')
+                    ->wrap(),
                 
-                // Tambahkan informasi Collector jika ada  
-                Tables\Columns\TextColumn::make('collector.nama_usaha')
+                Tables\Columns\TextColumn::make('collector.nama')
                     ->label('Pengepul')
                     ->searchable()
                     ->sortable()
                     ->description(fn ($record) => $record->collector ? 
-                        'Pemilik: ' . $record->collector->user->name . ' | Rate: Rp' . number_format($record->collector->rate_per_kg ?? 0, 0) . '/kg' : '-')
-                    ->wrap()
-                    ->toggleable(),
+                        'User: ' . $record->collector->user->name : '-')
+                    ->wrap(),
                 
                 Tables\Columns\TextColumn::make('tanggal_janji')
                     ->label('Tanggal & Waktu')
                     ->dateTime('d M Y H:i')
                     ->sortable(),
+                
+                Tables\Columns\TextColumn::make('waktu_janji')
+                    ->label('Waktu Tambahan')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
@@ -304,7 +285,7 @@ class AppointmentResource extends Resource
                         'danger' => 'dibatalkan',
                     ]),
                 
-                Tables\Columns\TextColumn::make('jenis')
+                Tables\Columns\TextColumn::make('appointment_type')
                     ->label('Jenis')
                     ->badge()
                     ->formatStateUsing(fn ($state) => match($state) {
@@ -318,15 +299,15 @@ class AppointmentResource extends Resource
                     ])
                     ->toggleable(),
                 
-                Tables\Columns\TextColumn::make('perkiraan_berat')
+                Tables\Columns\TextColumn::make('estimated_weight')
                     ->label('Perkiraan Berat')
                     ->suffix(' kg')
                     ->numeric(2)
                     ->sortable()
                     ->toggleable(),
                 
-                Tables\Columns\TextColumn::make('total_estimasi')
-                    ->label('Total Estimasi')
+                Tables\Columns\TextColumn::make('price_per_kg')
+                    ->label('Harga per Kg')
                     ->prefix('Rp ')
                     ->numeric(0)
                     ->sortable()
@@ -337,19 +318,20 @@ class AppointmentResource extends Resource
                     ->limit(30)
                     ->toggleable(),
                 
-                Tables\Columns\IconColumn::make('meeting_location')
-                    ->label('Lokasi Pertemuan')
-                    ->boolean()
-                    ->getStateUsing(fn ($record) => !empty($record->meeting_location))
-                    ->trueIcon('heroicon-o-map-pin')
-                    ->falseIcon('heroicon-o-minus')
-                    ->trueColor('success')
-                    ->falseColor('gray')
-                    ->toggleable(),
+                Tables\Columns\TextColumn::make('catatan')
+                    ->label('Catatan')
+                    ->limit(30)
+                    ->toggleable(isToggledHiddenByDefault: true),
                 
-                Tables\Columns\IconColumn::make('whatsapp_sent')
+                Tables\Columns\TextColumn::make('pesan_pemilik')
+                    ->label('Pesan Pemilik')
+                    ->limit(30)
+                    ->toggleable(isToggledHiddenByDefault: true),
+                
+                Tables\Columns\IconColumn::make('whatsapp_sent_at')
                     ->label('WhatsApp')
                     ->boolean()
+                    ->getStateUsing(fn ($record) => !empty($record->whatsapp_sent_at))
                     ->trueIcon('heroicon-o-chat-bubble-left-right')
                     ->falseIcon('heroicon-o-minus')
                     ->trueColor('success')
@@ -367,20 +349,16 @@ class AppointmentResource extends Resource
                     ->label('Status')
                     ->options(Appointment::$statuses),
                 
-                Tables\Filters\SelectFilter::make('jenis')
+                Tables\Filters\SelectFilter::make('appointment_type')
                     ->label('Jenis Appointment')
                     ->options([
                         'penjualan_produk' => 'Penjualan Produk',
                         'pengepulan_ikan' => 'Pengepulan Ikan'
                     ]),
                 
-                Tables\Filters\SelectFilter::make('penjual_id')
-                    ->label('Penjual')
-                    ->relationship('seller', 'name'),
-                
-                Tables\Filters\SelectFilter::make('pembeli_id')
-                    ->label('Pembeli')
-                    ->relationship('buyer', 'name'),
+                Tables\Filters\SelectFilter::make('user_id')
+                    ->label('Pemilik Tambak')
+                    ->relationship('pemilikTambak', 'name'),
                 
                 Tables\Filters\SelectFilter::make('fish_farm_id')
                     ->label('Tambak Ikan')
@@ -389,7 +367,7 @@ class AppointmentResource extends Resource
                 
                 Tables\Filters\SelectFilter::make('collector_id')
                     ->label('Pengepul')
-                    ->relationship('collector', 'nama_usaha')
+                    ->relationship('collector', 'nama')
                     ->searchable(),
                 
                 Tables\Filters\Filter::make('tanggal_janji')
@@ -552,7 +530,7 @@ class AppointmentResource extends Resource
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        return $user && ($user->hasRole(['admin', 'seller']));
+        return $user && ($user->hasRole(['admin', 'pemilik_tambak', 'pengepul']));
     }
 
     public static function canEdit($record): bool
@@ -563,8 +541,14 @@ class AppointmentResource extends Resource
             return true;
         }
         
-        if ($user->isSeller()) {
-            return $record->penjual_id === $user->id;
+        // Pemilik tambak dapat edit appointment mereka sendiri
+        if ($user->hasRole('pemilik_tambak')) {
+            return $record->user_id === $user->id;
+        }
+        
+        // Collector dapat edit appointment yang ditujukan kepada mereka
+        if ($user->hasRole('pengepul')) {
+            return $record->collector_id === $user->id;
         }
         
         return false;
@@ -578,8 +562,9 @@ class AppointmentResource extends Resource
             return true;
         }
         
-        if ($user->isSeller()) {
-            return $record->penjual_id === $user->id;
+        // Pemilik tambak dapat delete appointment mereka sendiri
+        if ($user->hasRole('pemilik_tambak')) {
+            return $record->user_id === $user->id;
         }
         
         return false;
@@ -591,9 +576,14 @@ class AppointmentResource extends Resource
         
         $user = auth()->user();
         
-        // Jika user adalah seller, hanya tampilkan appointment mereka sendiri
-        if ($user && $user->isSeller()) {
-            $query->where('penjual_id', $user->id);
+        // Jika user adalah pemilik tambak, hanya tampilkan appointment mereka sendiri
+        if ($user && $user->hasRole('pemilik_tambak')) {
+            $query->where('user_id', $user->id);
+        }
+        
+        // Jika user adalah pengepul, tampilkan appointment yang ditujukan kepada mereka
+        if ($user && $user->hasRole('pengepul')) {
+            $query->where('collector_id', $user->id);
         }
         
         return $query;

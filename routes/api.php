@@ -133,12 +133,8 @@ Route::post('/register-seller', [AuthController::class, 'registerAsSeller'])->mi
     // Appointments
     Route::get('/appointments', [AppointmentController::class, 'index']);
     Route::post('/appointments', [AppointmentController::class, 'store']);
-    Route::get('/appointments/{appointment}', [AppointmentController::class, 'show']);
-    Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
-    Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
-    Route::put('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
-
-    // Collector Appointments (untuk pemilik_tambak dan pengepul)
+    
+    // Collector Appointments (untuk pemilik_tambak dan pengepul) - Must come before generic routes
     Route::post('/appointments/collector', [AppointmentController::class, 'createCollectorAppointment']);
     Route::get('/appointments/collector', [AppointmentController::class, 'getCollectorAppointments']);
     Route::put('/appointments/collector/{id}/cancel', [AppointmentController::class, 'cancelCollectorAppointment']);
@@ -146,6 +142,12 @@ Route::post('/register-seller', [AuthController::class, 'registerAsSeller'])->mi
     // Pengepul specific routes
     Route::put('/appointments/collector/{id}/respond', [AppointmentController::class, 'respondToAppointment']);
     Route::put('/appointments/collector/{id}/complete', [AppointmentController::class, 'completeAppointment']);
+    
+    // Generic appointment routes - Must come after specific routes
+    Route::get('/appointments/{appointment}', [AppointmentController::class, 'show']);
+    Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
+    Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
+    Route::put('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
     
     Route::post('/appointments/{id}/whatsapp-summary', [AppointmentController::class, 'sendWhatsAppSummary']);
 

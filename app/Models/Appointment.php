@@ -11,18 +11,23 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * App\Models\Appointment
  *
  * @property int $id
- * @property int $pembeli_id
- * @property int $penjual_id
- * @property int $lokasi_penjual_id
- * @property \Illuminate\Support\Carbon $tanggal_temu
- * @property \Illuminate\Support\Carbon $waktu_mulai
- * @property \Illuminate\Support\Carbon $waktu_selesai
+ * @property int $user_id
+ * @property int $fish_farm_id
+ * @property int $collector_id
+ * @property \Illuminate\Support\Carbon $tanggal_janji
  * @property string $status
- * @property string|null $catatan_pembeli
- * @property string|null $catatan_penjual
+ * @property string|null $catatan
+ * @property string|null $appointment_type
+ * @property decimal $estimated_weight
+ * @property decimal $price_per_kg
+ * @property string|null $whatsapp_summary
+ * @property \Illuminate\Support\Carbon|null $whatsapp_sent_at
+ * @property string|null $waktu_janji
+ * @property string|null $tujuan
+ * @property string|null $pesan_pemilik
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\User $buyer
+ * @property-read \App\Models\User $pemilikTambak
  * @property-read \App\Models\User $seller
  * @property-read \App\Models\SellerLocation $sellerLocation
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Notification[] $notifications
@@ -51,9 +56,6 @@ class Appointment extends Model
      */
     protected $fillable = [
         'user_id',
-        'penjual_id',
-        'pembeli_id',
-        'lokasi_penjual_id',
         'fish_farm_id',
         'collector_id',
         'tanggal_janji',
@@ -62,12 +64,11 @@ class Appointment extends Model
         'tujuan',
         'catatan',
         'pesan_pemilik',
-        'meeting_location',
         'estimated_weight',
         'price_per_kg',
         'appointment_type',
         'whatsapp_summary',
-        'whatsapp_sent_at'
+        'whatsapp_sent_at',
     ];
 
     /**
@@ -94,14 +95,6 @@ class Appointment extends Model
         'selesai' => 'Selesai',
         'dibatalkan' => 'Dibatalkan',
     ];
-
-    /**
-     * Mendapatkan lokasi penjual untuk janji temu ini.
-     */
-    public function sellerLocation(): BelongsTo
-    {
-        return $this->belongsTo(SellerLocation::class, 'lokasi_penjual_id');
-    }
 
     /**
      * Mendapatkan fish farm yang terkait dengan appointment ini.
@@ -137,46 +130,11 @@ class Appointment extends Model
 
     /**
      * Mendapatkan pengepul yang dituju untuk appointment.
+     * Access via collector.user relationship instead
      */
-    public function pengepul(): BelongsTo
+    public function pengepul()
     {
-        // Ambil user dari collector relationship
-        return $this->hasOneThrough(User::class, Collector::class, 'id', 'id', 'collector_id', 'user_id');
-    }
-
-    /**
-     * Legacy method - Mendapatkan penjual/pemilik tambak.
-     * @deprecated Use pemilikTambak() instead
-     */
-    public function penjual(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-
-    /**
-     * Legacy method - Mendapatkan pembeli/pengepul.
-     * @deprecated Use pengepul() instead
-     */
-    public function pembeli(): BelongsTo
-    {
-        return $this->hasOneThrough(User::class, Collector::class, 'id', 'id', 'collector_id', 'user_id');
-    }
-
-    /**
-     * Legacy method for backward compatibility
-     * @deprecated Use user() instead
-     */
-    public function seller(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-
-    /**
-     * Legacy method for backward compatibility
-     * @deprecated Use pengepul() instead
-     */
-    public function buyer(): BelongsTo
-    {
+        // Use collector.user instead for cleaner access
         return $this->hasOneThrough(User::class, Collector::class, 'id', 'id', 'collector_id', 'user_id');
     }
 

@@ -32,10 +32,6 @@ DROP TABLE IF EXISTS `appointments`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `appointments` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `penjual_id` bigint unsigned DEFAULT NULL,
-  `pembeli_id` bigint unsigned DEFAULT NULL,
-  `lokasi_penjual_id` bigint unsigned NOT NULL,
-  `meeting_location` json DEFAULT NULL,
   `tanggal_janji` datetime NOT NULL,
   `status` enum('menunggu','dikonfirmasi','selesai','dibatalkan') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'menunggu',
   `catatan` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
@@ -53,17 +49,11 @@ CREATE TABLE `appointments` (
   `tujuan` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `pesan_pemilik` text COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`id`),
-  KEY `appointments_penjual_id_foreign` (`penjual_id`),
-  KEY `appointments_pembeli_id_foreign` (`pembeli_id`),
-  KEY `appointments_lokasi_penjual_id_foreign` (`lokasi_penjual_id`),
   KEY `appointments_fish_farm_id_foreign` (`fish_farm_id`),
   KEY `appointments_collector_id_foreign` (`collector_id`),
   KEY `appointments_user_id_foreign` (`user_id`),
   CONSTRAINT `appointments_collector_id_foreign` FOREIGN KEY (`collector_id`) REFERENCES `collectors` (`id`) ON DELETE SET NULL,
   CONSTRAINT `appointments_fish_farm_id_foreign` FOREIGN KEY (`fish_farm_id`) REFERENCES `fish_farms` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `appointments_lokasi_penjual_id_foreign` FOREIGN KEY (`lokasi_penjual_id`) REFERENCES `seller_locations` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `appointments_pembeli_id_foreign` FOREIGN KEY (`pembeli_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `appointments_penjual_id_foreign` FOREIGN KEY (`penjual_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `appointments_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -640,4 +630,5 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (25,'2025_09_15_154
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (26,'2025_09_16_140000_add_role_and_coordinates_to_users_table',4);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (27,'2025_09_17_070006_cleanup_appointments_remove_seller_location_fields',5);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (28,'2025_09_17_065652_add_store_info_to_users_table',6);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (30,'2025_09_17_163350_add_collector_appointment_fields_to_appointments_table',7);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (31,'2025_09_17_163350_add_collector_appointment_fields_to_appointments_table',7);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (32,'2025_09_18_154551_drop_unused_fields_from_appointments_table',8);

@@ -230,6 +230,26 @@
             font-weight: 600;
         }
 
+        .status-menunggu {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-dikonfirmasi {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-selesai {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-dibatalkan {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
         .status-pending {
             background: #fff3cd;
             color: #856404;
@@ -406,10 +426,10 @@
                 <div class="search-box">
                     <select class="search-input" id="statusFilter">
                         <option value="">Semua Status</option>
-                        <option value="pending">Menunggu</option>
-                        <option value="confirmed">Dikonfirmasi</option>
-                        <option value="completed">Selesai</option>
-                        <option value="cancelled">Dibatalkan</option>
+                        <option value="menunggu">Menunggu</option>
+                        <option value="dikonfirmasi">Dikonfirmasi</option>
+                        <option value="selesai">Selesai</option>
+                        <option value="dibatalkan">Dibatalkan</option>
                     </select>
                     <input type="date" class="search-input" id="dateFilter">
                     <button class="btn btn-secondary" onclick="filterAppointments()">
@@ -654,12 +674,22 @@
             return statusMap[status] || status;
         }
 
+        // Helper function to safely parse JSON responses
+        async function safeParseJSON(response) {
+            try {
+                return await response.json();
+            } catch (error) {
+                console.warn('Failed to parse JSON response:', error);
+                return { success: false, message: 'Invalid response format' };
+            }
+        }
+
         async function loadCollectors() {
             try {
                 const token = getToken();
 
-                // fetch collectors
-                const response = await fetch('/api/collectors', {
+                // fetch collectors for current user only
+                const response = await fetch('/api/collectors?user_only=true', {
                     headers: {
                         'Authorization': 'Bearer ' + token,
                         'Accept': 'application/json'
@@ -673,9 +703,9 @@
                 }
 
                 const result = await response.json();
-                let list = normalizeArrayResponse(result);
+                collectors = normalizeArrayResponse(result);
 
-                // fetch user
+                // Also get user info for other purposes
                 const userResp = await fetch('/api/user', {
                     headers: {
                         'Authorization': 'Bearer ' + token,
@@ -688,15 +718,7 @@
                     currentUserId = extractUserId(userJson);
                 }
 
-                // filter by current user if we could get an id
-                collectors = Array.isArray(list) ? list : [];
-                if (currentUserId) {
-                    collectors = collectors.filter(c => {
-                        const ownerId = c.user_id ?? (c.user && c.user.id);
-                        return String(ownerId) === String(currentUserId);
-                    });
-                }
-
+                console.log('Loaded my collectors:', collectors);
                 displayCollectors(collectors);
             } catch (error) {
                 console.error('Error loading collectors:', error);
@@ -777,20 +799,27 @@
 
         async function loadAppointments() {
             try {
+                console.log('Loading collector appointments...');
                 const token = getToken();
+                console.log('Using token:', token ? 'Token found' : 'No token');
+                
                 if (!token) {
                     alert('Anda harus login terlebih dahulu');
                     window.location.href = '/login';
                     return;
                 }
 
-                // Use the new collector appointments endpoint
-                const response = await fetch('/api/appointments/collectors', {
+                // Use the collector appointments endpoint
+                const response = await fetch('/api/appointments/collector', {
                     headers: {
                         'Authorization': 'Bearer ' + token,
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
                     }
                 });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
                 if (response.ok) {
                     const result = await response.json();
@@ -824,35 +853,26 @@
                 } else {
                     // Try to get error message safely
                     let errorMessage = 'Failed to load appointments';
+                    let isNoCollectorError = false;
                     try {
                         const errorData = await response.json();
                         errorMessage = errorData.message || errorMessage;
+                        isNoCollectorError = errorData.message && errorData.message.includes('No collector businesses found');
+                        console.error('API Error:', response.status, errorData);
                     } catch (e) {
+                        const errorText = await response.text();
+                        console.error('API Error:', response.status, errorText);
                         console.warn('Could not parse error response:', e);
                     }
-                    throw new Error(errorMessage);
-                }
-            } catch (error) {
-                console.error('Error loading appointments:', error);
-                displayAppointmentsError();
-            }
-        }
-                });
-
-                if (response.ok) {
-                    const result = await safeParseJSON(response);
-                    appointments = result.data || [];
-                    displayAppointments(appointments);
-                } else {
-                    // Try to get error message safely
-                    let errorMessage = 'Failed to load appointments';
-                    try {
-                        const errorData = await safeParseJSON(response);
-                        errorMessage = errorData.message || errorMessage;
-                    } catch (e) {
-                        console.warn('Could not parse error response:', e);
+                    
+                    if (isNoCollectorError) {
+                        // Show empty state for no collector businesses
+                        appointments = [];
+                        displayAppointments(appointments);
+                        return;
                     }
-                    throw new Error(errorMessage);
+                    
+                    throw new Error(`${errorMessage}: ${response.status} ${response.statusText}`);
                 }
             } catch (error) {
                 console.error('Error loading appointments:', error);
@@ -998,7 +1018,6 @@
             `;
             }).join('');
         }
-        }
 
         function displayAppointmentsError() {
             document.getElementById('appointmentsContainer').innerHTML = `
@@ -1073,7 +1092,7 @@
             }
 
             try {
-                const response = await fetch(`/api/appointments/${appointmentId}/status`, {
+                const response = await fetch(`/api/appointments/collector/${appointmentId}/respond`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': 'Bearer ' + getToken(),
@@ -1082,7 +1101,7 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({ 
-                        status: 'dikonfirmasi'
+                        response: 'accept'
                     })
                 });
 
@@ -1118,7 +1137,7 @@
             }
 
             try {
-                const response = await fetch(`/api/appointments/${appointmentId}/status`, {
+                const response = await fetch(`/api/appointments/collector/${appointmentId}/respond`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': 'Bearer ' + getToken(),
@@ -1127,7 +1146,7 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({ 
-                        status: 'dibatalkan'
+                        response: 'reject'
                     })
                 });
 
@@ -1163,7 +1182,7 @@
             }
 
             try {
-                const response = await fetch(`/api/appointments/${appointmentId}/status`, {
+                const response = await fetch(`/api/appointments/collector/${appointmentId}/complete`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': 'Bearer ' + getToken(),
@@ -1172,7 +1191,7 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({ 
-                        status: 'selesai'
+                        // Add any additional data required for completion
                     })
                 });
 
@@ -1199,60 +1218,6 @@
             } catch (error) {
                 console.error('Error completing appointment:', error);
                 alert('Terjadi kesalahan saat menyelesaikan janji penjemputan: ' + error.message);
-            }
-        }
-                // Get current collector info first
-                const collectorResponse = await fetch('/api/collectors?user_only=true', {
-                    headers: {
-                        'Authorization': 'Bearer ' + getToken(),
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (!collectorResponse.ok) {
-                    throw new Error('Failed to get collector info');
-                }
-
-                const collectorResult = await safeParseJSON(collectorResponse);
-                const currentCollector = collectorResult.data?.data?.[0];
-
-                if (!currentCollector) {
-                    throw new Error('No collector found');
-                }
-
-                const response = await fetch(`/api/collectors/${currentCollector.id}/appointments/${appointmentId}/complete`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': 'Bearer ' + getToken(),
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({ 
-                        berat_aktual: parseFloat(actualWeight),
-                        kualitas_ikan: kualitas,
-                        catatan_completion: catatan
-                    })
-                });
-
-                if (response.ok) {
-                    alert('Penjemputan berhasil diselesaikan');
-                    await loadAppointments(); // Reload appointments
-                } else {
-                    // Try to get error message safely
-                    let errorMessage = 'Gagal menyelesaikan penjemputan';
-                    try {
-                        const errorData = await safeParseJSON(response);
-                        errorMessage = errorData.message || errorMessage;
-                    } catch (e) {
-                        console.warn('Could not parse error response:', e);
-                        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-                    }
-                    throw new Error(errorMessage);
-                }
-            } catch (error) {
-                console.error('Error completing appointment:', error);
-                alert('Terjadi kesalahan saat menyelesaikan penjemputan: ' + error.message);
             }
         }
 
@@ -1297,6 +1262,49 @@
                 console.error('Error sending WhatsApp summary:', error);
                 alert('Terjadi kesalahan saat mengirim summary WhatsApp: ' + error.message);
             }
+        }
+
+        // Search collectors function
+        function searchCollectors() {
+            const searchTerm = document.getElementById('collectorSearch').value.toLowerCase();
+            if (!searchTerm) {
+                displayCollectors(collectors);
+                return;
+            }
+            
+            const filteredCollectors = collectors.filter(collector => 
+                (collector.nama && collector.nama.toLowerCase().includes(searchTerm)) ||
+                (collector.alamat && collector.alamat.toLowerCase().includes(searchTerm)) ||
+                (collector.deskripsi && collector.deskripsi.toLowerCase().includes(searchTerm))
+            );
+            
+            displayCollectors(filteredCollectors);
+        }
+
+        // Filter appointments function
+        function filterAppointments() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+            
+            let filteredAppointments = [...appointments];
+            
+            // Filter by status
+            if (statusFilter) {
+                filteredAppointments = filteredAppointments.filter(appointment => 
+                    appointment.status === statusFilter
+                );
+            }
+            
+            // Filter by date
+            if (dateFilter) {
+                filteredAppointments = filteredAppointments.filter(appointment => {
+                    if (!appointment.tanggal_janji) return false;
+                    const appointmentDate = new Date(appointment.tanggal_janji).toISOString().split('T')[0];
+                    return appointmentDate === dateFilter;
+                });
+            }
+            
+            displayAppointments(filteredAppointments);
         }
 
         function viewCollectorAppointments(collectorId) {
