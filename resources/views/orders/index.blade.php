@@ -5,25 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Pesanan Saya - IwakMart</title>
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+
     <!-- Auth Script -->
     <script src="/js/auth.js"></script>
-    
+
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Inter', sans-serif;
             background: #F0F8FF;
@@ -210,6 +210,56 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Cancel button styling */
+        .btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        .btn-outline-danger {
+            color: #dc3545;
+            border-color: #dc3545;
+            background: transparent;
+        }
+
+        .btn-primary {
+            color: white;
+            border-color: #1976D2;
+            background: #1976D2;
+        }
+
+        .btn-primary:hover {
+            color: white;
+            background: #0D47A1;
+            border-color: #0D47A1;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+        }
+
+        /* Order card hover effect */
+        .order-card {
+            transition: all 0.3s ease;
+        }
+
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -256,22 +306,22 @@
             try {
                 // Get auth token from auth.js
                 const token = getAuthToken ? getAuthToken() : null;
-                
+
                 const headers = {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',
                 };
-                
+
                 // Add Authorization header if token exists
                 if (token) {
                     headers['Authorization'] = `Bearer ${token}`;
                 }
-                
+
                 const response = await fetch('/api/orders', {
                     method: 'GET',
                     headers: headers
                 });
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
@@ -294,7 +344,7 @@
         // Display orders
         function displayOrders() {
             const container = document.getElementById('ordersContainer');
-            
+
             if (orders.length === 0) {
                 showEmptyState();
                 return;
@@ -308,32 +358,80 @@
         function createOrderCard(order) {
             const statusClass = order.status.toLowerCase();
             const statusText = getStatusText(order.status);
-            const orderDate = new Date(order.created_at).toLocaleDateString('id-ID');
-            
+
+            // Handle date properly - use the formatted date if available, otherwise format created_at
+            let orderDate = 'Invalid Date';
+            if (order.tanggal_pesan_formatted) {
+                orderDate = order.tanggal_pesan_formatted;
+            } else if (order.created_at) {
+                try {
+                    orderDate = new Date(order.created_at).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                } catch (e) {
+                    orderDate = 'Invalid Date';
+                }
+            }
+
+            // Handle order items properly
+            let orderItemsHtml = '';
+            if (order.order_items && order.order_items.length > 0) {
+                orderItemsHtml = order.order_items.map(item => {
+                    // Get image source - handle both array and string formats
+                    let imageSrc = 'https://via.placeholder.com/60x60/BBDEFB/1976D2?text=No+Image';
+                    if (item.product && item.product.gambar) {
+                        if (Array.isArray(item.product.gambar) && item.product.gambar.length > 0) {
+                            imageSrc = `/storage/${item.product.gambar[0]}`;
+                        } else if (typeof item.product.gambar === 'string') {
+                            imageSrc = `/storage/${item.product.gambar}`;
+                        }
+                    }
+
+                    return `
+                        <div class="order-item">
+                            <img src="${imageSrc}"
+                                 alt="${item.nama_produk || 'Product'}" class="item-image"
+                                 onerror="this.src='https://via.placeholder.com/60x60/BBDEFB/1976D2?text=No+Image'">
+                            <div class="item-info">
+                                <div class="item-name">${item.nama_produk || 'Unknown Product'}</div>
+                                <div class="item-quantity">${item.jumlah || 0} pcs</div>
+                            </div>
+                            <div class="item-price">Rp ${formatPrice(item.subtotal || 0)}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                if (order.has_more_items) {
+                    const moreCount = (order.items_count || 0) - 2;
+                    orderItemsHtml += `<p style="text-align: center; color: #666; font-size: 14px; margin-top: 8px;">+${moreCount} item lainnya</p>`;
+                }
+            } else {
+                orderItemsHtml = '<p style="text-align: center; color: #666;">Tidak ada item</p>';
+            }
+
             return `
-                <div class="order-card">
+                <div class="order-card" onclick="viewOrderDetail(${order.id})" style="cursor: pointer;">
                     <div class="order-header">
-                        <div class="order-number">#${order.nomor_pesanan}</div>
+                        <div class="order-number">#${order.nomor_pesanan || 'Unknown'}</div>
                         <div class="order-status ${statusClass}">${statusText}</div>
                     </div>
                     <div class="order-items">
-                        ${order.order_items?.slice(0, 2).map(item => `
-                            <div class="order-item">
-                                <img src="/storage/${item.product?.gambar?.[0] || 'placeholder.jpg'}" 
-                                     alt="${item.nama_produk}" class="item-image"
-                                     onerror="this.src='https://via.placeholder.com/60x60/BBDEFB/1976D2?text=No+Image'">
-                                <div class="item-info">
-                                    <div class="item-name">${item.nama_produk}</div>
-                                    <div class="item-quantity">${item.jumlah} pcs</div>
-                                </div>
-                                <div class="item-price">Rp ${formatPrice(item.subtotal)}</div>
-                            </div>
-                        `).join('')}
-                        ${order.order_items?.length > 2 ? `<p>+${order.order_items.length - 2} item lainnya</p>` : ''}
+                        ${orderItemsHtml}
                     </div>
                     <div class="order-footer">
                         <div class="order-date">${orderDate}</div>
-                        <div class="order-total">Total: Rp ${formatPrice(order.total)}</div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div class="order-total">Total: Rp ${formatPrice(order.total || 0)}</div>
+                            ${order.status === 'menunggu' || order.status === 'diproses' ?
+                                `<button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); cancelOrder(${order.id}, '${order.nomor_pesanan}')">
+                                    <i class="fas fa-times me-1"></i>Batal
+                                </button>` : ''}
+                            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); viewOrderDetail(${order.id})">
+                                <i class="fas fa-eye me-1"></i>Detail
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -353,8 +451,60 @@
 
         // Format price
         function formatPrice(price) {
-            return new Intl.NumberFormat('id-ID').format(price);
+            if (price === null || price === undefined || isNaN(price)) {
+                return '0';
+            }
+            return new Intl.NumberFormat('id-ID').format(Math.round(price));
         }
+
+        // Cancel order function
+        async function cancelOrder(orderId, orderNumber) {
+            if (!confirm(`Apakah Anda yakin ingin membatalkan pesanan #${orderNumber}?`)) {
+                return;
+            }
+
+            try {
+                // Get auth token from auth.js
+                const token = getAuthToken ? getAuthToken() : null;
+
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                };
+
+                // Add Authorization header if token exists
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const response = await fetch(`/api/orders/${orderId}/cancel`, {
+                    method: 'POST',
+                    headers: headers
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    alert('Pesanan berhasil dibatalkan');
+                    // Reload orders list
+                    fetchOrders();
+                } else {
+                    alert(`Gagal membatalkan pesanan: ${data.message || 'Terjadi kesalahan'}`);
+                }
+            } catch (error) {
+                console.error('Cancel order error:', error);
+                alert('Terjadi kesalahan saat membatalkan pesanan');
+            }
+        }
+
+        // View order detail
+        function viewOrderDetail(orderId) {
+            window.location.href = `/orders/${orderId}`;
+        }
+
+        window.cancelOrder = cancelOrder;
+        window.viewOrderDetail = viewOrderDetail;
 
         // Show empty state
         function showEmptyState() {

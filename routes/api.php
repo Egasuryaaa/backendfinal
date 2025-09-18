@@ -86,10 +86,12 @@ Route::post('/register-seller', [AuthController::class, 'registerAsSeller'])->mi
 
     // Orders
     Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/orders/statistics', [OrderController::class, 'statistics']);
     Route::post('/orders/checkout', [OrderController::class, 'checkout']);
     Route::get('/orders/{order}', [OrderController::class, 'show']);
     Route::get('/orders/{order}/items', [OrderController::class, 'items']);
     Route::post('/orders/{order}/cancel', [OrderController::class, 'cancelOrder']);
+    Route::post('/orders/{order}/complete', [OrderController::class, 'completeOrder']);
 
     // Payments
     Route::post('/payments', [PaymentController::class, 'createPayment']);
@@ -135,7 +137,7 @@ Route::post('/register-seller', [AuthController::class, 'registerAsSeller'])->mi
     Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
     Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
     Route::put('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
-    
+
     // Collector Appointments
     Route::post('/appointments/collector', [AppointmentController::class, 'createCollectorAppointment']);
     Route::get('/appointments/collector', [AppointmentController::class, 'getCollectorAppointments']);

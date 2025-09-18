@@ -1,15 +1,244 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background: #F0F8FF;
+        min-height: 100vh;
+        line-height: 1.6;
+    }
+
+    /* Custom Header dengan gradient seperti fishmarket */
+    .profile-header {
+        background: linear-gradient(135deg, #1565C0, #0D47A1, #002171);
+        padding: 30px 0;
+        margin: -20px -15px 30px -15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .profile-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.1) 75%);
+        background-size: 30px 30px;
+        animation: movePattern 20s linear infinite;
+    }
+
+    @keyframes movePattern {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(60px); }
+    }
+
+    .profile-header-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .profile-title {
+        color: white;
+        font-size: 28px;
+        font-weight: 800;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        margin-bottom: 8px;
+    }
+
+    .profile-subtitle {
+        color: rgba(255,255,255,0.9);
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    /* Card styling seperti fishmarket */
+    .profile-card {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border: none;
+        margin-bottom: 20px;
+    }
+
+    .profile-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+
+    .profile-card .card-header {
+        background: linear-gradient(135deg, #1976D2, #0D47A1);
+        color: white;
+        border: none;
+        padding: 20px;
+        border-radius: 16px 16px 0 0 !important;
+    }
+
+    .profile-card .card-body {
+        padding: 24px;
+    }
+
+    /* Avatar styling */
+    .avatar-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .avatar-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1976D2, #0D47A1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 4px solid white;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    .avatar-button {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #FF5722;
+        border: 2px solid white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .avatar-button:hover {
+        transform: scale(1.1);
+        background: #E64A19;
+    }
+
+    /* Menu item styling seperti fishmarket */
+    .menu-item {
+        display: flex;
+        align-items: center;
+        padding: 16px 20px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        background: white;
+        border: 1.5px solid rgba(25, 118, 210, 0.1);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .menu-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(25, 118, 210, 0.15);
+        border-color: rgba(25, 118, 210, 0.3);
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .menu-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+        font-size: 20px;
+    }
+
+    .menu-content {
+        flex: 1;
+    }
+
+    .menu-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #0D47A1;
+        margin-bottom: 4px;
+    }
+
+    .menu-subtitle {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .menu-arrow {
+        color: #1976D2;
+        font-size: 16px;
+    }
+
+    /* Seller menu highlight */
+    .menu-item.seller-active {
+        background: linear-gradient(135deg, rgba(255, 152, 0, 0.1), rgba(255, 193, 7, 0.1));
+        border-color: #FFA000;
+    }
+
+    .menu-item.seller-active .menu-title {
+        color: #F57C00;
+        font-weight: 700;
+    }
+
+    .menu-item.seller-active .menu-arrow {
+        color: #F57C00;
+    }
+
+    /* Loading animation */
+    .fade-in {
+        animation: fadeInUp 0.6s ease-out both;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .profile-header {
+            margin: -20px -15px 20px -15px;
+            padding: 20px 0;
+        }
+
+        .profile-title {
+            font-size: 24px;
+        }
+
+        .avatar-circle {
+            width: 100px;
+            height: 100px;
+        }
+    }
+</style>
+
 <div class="container">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="mb-0"><i class="fas fa-user text-primary me-2"></i>Profil Saya</h2>
-                <div class="text-muted">
+    <!-- Custom Header seperti fishmarket -->
+    <div class="profile-header">
+        <div class="container">
+            <div class="profile-header-content text-center">
+                <h1 class="profile-title">
+                    <i class="fas fa-user me-2"></i>Profil Saya
+                </h1>
+                <p class="profile-subtitle mb-0">
                     <i class="fas fa-calendar me-1"></i>
                     <span id="currentDate"></span>
-                </div>
+                </p>
             </div>
         </div>
     </div>
@@ -24,19 +253,19 @@
 
     <!-- Profile Content -->
     <div id="profileContent" style="display: none;">
-        <!-- Profile Header -->
+        <!-- Profile Header Card -->
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-4">
+                <div class="profile-card fade-in">
+                    <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-md-3 text-center">
-                                <div class="position-relative d-inline-block">
-                                    <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
-                                        <i class="fas fa-user text-primary fa-4x" id="avatarPlaceholder"></i>
+                                <div class="avatar-container">
+                                    <div class="avatar-circle">
+                                        <i class="fas fa-user text-white fa-4x" id="avatarPlaceholder"></i>
                                         <img id="avatarImage" src="" alt="Avatar" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover; display: none;">
                                     </div>
-                                    <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0" onclick="changeAvatar()">
+                                    <button class="avatar-button" onclick="changeAvatar()">
                                         <i class="fas fa-camera"></i>
                                     </button>
                                 </div>
@@ -96,38 +325,44 @@
         <!-- Order Statistics -->
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white">
-                        <h6 class="card-title mb-0">
+                <div class="profile-card fade-in">
+                    <div class="card-header">
+                        <h6 class="mb-0">
                             <i class="fas fa-chart-bar me-2"></i>Statistik Pesanan
                         </h6>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <div class="card bg-primary bg-opacity-10 border-primary">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-shopping-bag text-primary fa-2x mb-2"></i>
-                                        <h5 class="text-primary mb-1" id="totalOrders">0</h5>
-                                        <small class="text-muted">Total Pesanan</small>
+                                <div class="menu-item" style="margin-bottom: 0; cursor: default;">
+                                    <div class="menu-icon bg-primary bg-opacity-10">
+                                        <i class="fas fa-shopping-bag text-primary"></i>
+                                    </div>
+                                    <div class="menu-content text-center">
+                                        <h4 class="text-primary mb-1" id="totalOrders">0</h4>
+                                        <div class="menu-subtitle">Total Pesanan</div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <div class="card bg-warning bg-opacity-10 border-warning">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-clock text-warning fa-2x mb-2"></i>
-                                        <h5 class="text-warning mb-1" id="pendingOrders">0</h5>
-                                        <small class="text-muted">Menunggu</small>
+                                <div class="menu-item" style="margin-bottom: 0; cursor: default;">
+                                    <div class="menu-icon bg-warning bg-opacity-10">
+                                        <i class="fas fa-clock text-warning"></i>
+                                    </div>
+                                    <div class="menu-content text-center">
+                                        <h4 class="text-warning mb-1" id="pendingOrders">0</h4>
+                                        <div class="menu-subtitle">Menunggu</div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <div class="card bg-danger bg-opacity-10 border-danger">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-times-circle text-danger fa-2x mb-2"></i>
-                                        <h5 class="text-danger mb-1" id="cancelledOrders">0</h5>
-                                        <small class="text-muted">Dibatalkan</small>
+                                <div class="menu-item" style="margin-bottom: 0; cursor: default;">
+                                    <div class="menu-icon bg-danger bg-opacity-10">
+                                        <i class="fas fa-times-circle text-danger"></i>
+                                    </div>
+                                    <div class="menu-content text-center">
+                                        <h4 class="text-danger mb-1" id="cancelledOrders">0</h4>
+                                        <div class="menu-subtitle">Dibatalkan</div>
                                     </div>
                                 </div>
                             </div>
@@ -140,136 +375,126 @@
         <!-- Menu Items -->
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white">
-                        <h6 class="card-title mb-0">
+                <div class="profile-card fade-in">
+                    <div class="card-header">
+                        <h6 class="mb-0">
                             <i class="fas fa-list me-2"></i>Menu Akun
                         </h6>
                     </div>
                     <div class="card-body">
-                        <div class="list-group list-group-flush">
-                            <a href="#" class="list-group-item list-group-item-action border-0 d-flex align-items-center" onclick="showOrderHistory()">
-                                <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
-                                    <i class="fas fa-receipt text-primary"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold">Riwayat Pesanan</div>
-                                    <small class="text-muted">Lihat semua pesanan Anda</small>
-                                </div>
-                                <i class="fas fa-chevron-right text-muted"></i>
-                            </a>
-
-                            <a href="/addresses" class="list-group-item list-group-item-action border-0 d-flex align-items-center">
-                                <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
-                                    <i class="fas fa-map-marker-alt text-success"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold">Kelola Alamat</div>
-                                    <small class="text-muted">Atur alamat pengiriman</small>
-                                </div>
-                                <i class="fas fa-chevron-right text-muted"></i>
-                            </a>
-
-                            <!-- Seller Dashboard Menu - Show for seller users -->
-                            <div id="sellerDashboardMenuItem" style="display: none;">
-                                <a href="/seller/dashboard" class="list-group-item list-group-item-action border-0 d-flex align-items-center">
-                                    <div class="bg-warning bg-opacity-10 rounded-circle p-2 me-3">
-                                        <i class="fas fa-store text-warning seller-badge"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="fw-bold text-warning">Dashboard Penjual</div>
-                                        <small class="text-muted">Kelola toko dan produk Anda</small>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-warning"></i>
-                                </a>
+                        <!-- Riwayat Pesanan -->
+                        <a href="#" class="menu-item" onclick="showOrderHistory()">
+                            <div class="menu-icon bg-primary bg-opacity-10">
+                                <i class="fas fa-receipt text-primary"></i>
                             </div>
-
-                            <!-- Seller Dashboard Menu For Buyers - Show for non-seller users -->
-                            <div id="sellerDashboardMenuItemForBuyers" style="display: none;">
-                                <a href="#" class="list-group-item list-group-item-action border-0 d-flex align-items-center" onclick="handleBuyerDashboardAccess()">
-                                    <div class="bg-warning bg-opacity-10 rounded-circle p-2 me-3">
-                                        <i class="fas fa-store text-warning"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="fw-bold">Dashboard Penjual</div>
-                                        <small class="text-muted">Kelola toko dan produk Anda</small>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-muted"></i>
-                                </a>
+                            <div class="menu-content">
+                                <div class="menu-title">Riwayat Pesanan</div>
+                                <div class="menu-subtitle">Lihat semua pesanan Anda</div>
                             </div>
+                            <i class="fas fa-chevron-right menu-arrow"></i>
+                        </a>
 
-                            <!-- Mode Penjual Menu - Hidden by default, akan ditampilkan melalui JavaScript jika diperlukan -->
-                            <div id="sellerMenuItem" style="display: none;">
-                                <a href="#" class="list-group-item list-group-item-action border-0 d-flex align-items-center" onclick="handleSellerAccess()">
-                                    <div class="bg-warning bg-opacity-10 rounded-circle p-2 me-3">
-                                        <i class="fas fa-store text-warning"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="fw-bold">Mode Penjual</div>
-                                        <small class="text-muted" id="sellerSubtitle">Mulai berjualan di IwakMart</small>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-muted"></i>
-                                </a>
+                        <!-- Kelola Alamat -->
+                        <a href="/addresses" class="menu-item">
+                            <div class="menu-icon bg-success bg-opacity-10">
+                                <i class="fas fa-map-marker-alt text-success"></i>
                             </div>
-
-                            <a href="#" class="list-group-item list-group-item-action border-0 d-flex align-items-center" onclick="showNotificationSettings()">
-                                <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
-                                    <i class="fas fa-bell text-primary"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold">Pengaturan Notifikasi</div>
-                                    <small class="text-muted">Atur notifikasi aplikasi</small>
-                                </div>
-                                <i class="fas fa-chevron-right text-muted"></i>
-                            </a>
-
-                            <a href="#" class="list-group-item list-group-item-action border-0 d-flex align-items-center" onclick="showSecuritySettings()">
-                                <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3">
-                                    <i class="fas fa-shield-alt text-info"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold">Keamanan</div>
-                                    <small class="text-muted">Ubah password dan keamanan</small>
-                                </div>
-                                <i class="fas fa-chevron-right text-muted"></i>
-                            </a>
-
-                            <!-- Seller Menu Item - Conditional -->
-                            <div id="sellerMenuItem" style="display: none;">
-                                <a href="#" class="list-group-item list-group-item-action border-0 d-flex align-items-center" onclick="handleSellerAccess()">
-                                    <div class="bg-warning bg-opacity-10 rounded-circle p-2 me-3">
-                                        <i class="fas fa-store text-warning"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="fw-bold">Mode Penjual</div>
-                                        <small class="text-muted" id="sellerSubtitle">Mulai berjualan di IwakMart</small>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-muted"></i>
-                                </a>
+                            <div class="menu-content">
+                                <div class="menu-title">Kelola Alamat</div>
+                                <div class="menu-subtitle">Atur alamat pengiriman</div>
                             </div>
+                            <i class="fas fa-chevron-right menu-arrow"></i>
+                        </a>
 
-                            <a href="#" class="list-group-item list-group-item-action border-0 d-flex align-items-center" onclick="showHelpCenter()">
-                                <div class="bg-secondary bg-opacity-10 rounded-circle p-2 me-3">
-                                    <i class="fas fa-question-circle text-secondary"></i>
+                        <!-- Seller Dashboard Menu - Show for seller users -->
+                        <div id="sellerDashboardMenuItem" style="display: none;">
+                            <a href="/seller/dashboard" class="menu-item seller-active">
+                                <div class="menu-icon bg-warning bg-opacity-20">
+                                    <i class="fas fa-store text-warning seller-badge"></i>
                                 </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold">Pusat Bantuan</div>
-                                    <small class="text-muted">FAQ dan panduan aplikasi</small>
+                                <div class="menu-content">
+                                    <div class="menu-title" style="color: #F57C00 !important;">Dashboard Penjual</div>
+                                    <div class="menu-subtitle">Kelola toko dan produk Anda</div>
                                 </div>
-                                <i class="fas fa-chevron-right text-muted"></i>
-                            </a>
-
-                            <a href="#" class="list-group-item list-group-item-action border-0 d-flex align-items-center" onclick="showAboutApp()">
-                                <div class="bg-dark bg-opacity-10 rounded-circle p-2 me-3">
-                                    <i class="fas fa-info-circle text-dark"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold">Tentang Aplikasi</div>
-                                    <small class="text-muted">Informasi aplikasi IwakMart</small>
-                                </div>
-                                <i class="fas fa-chevron-right text-muted"></i>
+                                <i class="fas fa-chevron-right" style="color: #F57C00;"></i>
                             </a>
                         </div>
+
+                        <!-- Seller Dashboard Menu For Buyers - Show for non-seller users -->
+                        <div id="sellerDashboardMenuItemForBuyers" style="display: none;">
+                            <a href="#" class="menu-item" onclick="handleBuyerDashboardAccess()">
+                                <div class="menu-icon bg-warning bg-opacity-10">
+                                    <i class="fas fa-store text-warning"></i>
+                                </div>
+                                <div class="menu-content">
+                                    <div class="menu-title">Dashboard Penjual</div>
+                                    <div class="menu-subtitle">Kelola toko dan produk Anda</div>
+                                </div>
+                                <i class="fas fa-chevron-right menu-arrow"></i>
+                            </a>
+                        </div>
+
+                        <!-- Mode Penjual Menu - Hidden by default -->
+                        <div id="sellerMenuItem" style="display: none;">
+                            <a href="#" class="menu-item" onclick="handleSellerAccess()">
+                                <div class="menu-icon bg-warning bg-opacity-10">
+                                    <i class="fas fa-store text-warning"></i>
+                                </div>
+                                <div class="menu-content">
+                                    <div class="menu-title">Mode Penjual</div>
+                                    <div class="menu-subtitle" id="sellerSubtitle">Mulai berjualan di IwakMart</div>
+                                </div>
+                                <i class="fas fa-chevron-right menu-arrow"></i>
+                            </a>
+                        </div>
+
+                        <!-- Pengaturan Notifikasi -->
+                        <a href="#" class="menu-item" onclick="showNotificationSettings()">
+                            <div class="menu-icon bg-primary bg-opacity-10">
+                                <i class="fas fa-bell text-primary"></i>
+                            </div>
+                            <div class="menu-content">
+                                <div class="menu-title">Pengaturan Notifikasi</div>
+                                <div class="menu-subtitle">Atur notifikasi aplikasi</div>
+                            </div>
+                            <i class="fas fa-chevron-right menu-arrow"></i>
+                        </a>
+
+                        <!-- Keamanan -->
+                        <a href="#" class="menu-item" onclick="showSecuritySettings()">
+                            <div class="menu-icon bg-info bg-opacity-10">
+                                <i class="fas fa-shield-alt text-info"></i>
+                            </div>
+                            <div class="menu-content">
+                                <div class="menu-title">Keamanan</div>
+                                <div class="menu-subtitle">Ubah password dan keamanan</div>
+                            </div>
+                            <i class="fas fa-chevron-right menu-arrow"></i>
+                        </a>
+
+                        <!-- Pusat Bantuan -->
+                        <a href="#" class="menu-item" onclick="showHelpCenter()">
+                            <div class="menu-icon bg-secondary bg-opacity-10">
+                                <i class="fas fa-question-circle text-secondary"></i>
+                            </div>
+                            <div class="menu-content">
+                                <div class="menu-title">Pusat Bantuan</div>
+                                <div class="menu-subtitle">FAQ dan panduan aplikasi</div>
+                            </div>
+                            <i class="fas fa-chevron-right menu-arrow"></i>
+                        </a>
+
+                        <!-- Tentang Aplikasi -->
+                        <a href="#" class="menu-item" onclick="showAboutApp()">
+                            <div class="menu-icon bg-dark bg-opacity-10">
+                                <i class="fas fa-info-circle text-dark"></i>
+                            </div>
+                            <div class="menu-content">
+                                <div class="menu-title">Tentang Aplikasi</div>
+                                <div class="menu-subtitle">Informasi aplikasi IwakMart</div>
+                            </div>
+                            <i class="fas fa-chevron-right menu-arrow"></i>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -278,11 +503,15 @@
         <!-- Logout Button -->
         <div class="row">
             <div class="col-12">
-                <div class="card border-0 shadow-sm border-danger">
+                <div class="profile-card fade-in" style="border: 1.5px solid rgba(244, 67, 54, 0.2);">
                     <div class="card-body text-center">
-                        <button class="btn btn-danger" onclick="confirmLogout()">
-                            <i class="fas fa-sign-out-alt me-1"></i>Keluar dari Akun
+                        <button class="btn btn-danger px-4 py-2 rounded-pill" onclick="confirmLogout()" style="box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3); font-weight: 600;">
+                            <i class="fas fa-sign-out-alt me-2"></i>Keluar dari Akun
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
                     </div>
                 </div>
             </div>
@@ -406,7 +635,7 @@
             document.getElementById('sellerDashboardMenuItem').style.display = 'none';
             document.getElementById('sellerDashboardMenuItemForBuyers').style.display = 'block';
         }
-        
+
         // Semua menu dasar selalu ditampilkan untuk kedua role
         // (Riwayat Pesanan, Kelola Alamat, Pengaturan Notifikasi, Keamanan, Pusat Bantuan, Tentang Aplikasi)
     }
@@ -423,18 +652,40 @@
     // Fetch order statistics
     async function fetchOrderStats() {
         try {
-            // Mock data for now - replace with real API call
-            orderStats = {
-                total: Math.floor(Math.random() * 20),
-                pending: Math.floor(Math.random() * 5),
-                cancelled: Math.floor(Math.random() * 3)
-            };
+            // Gunakan endpoint statistik yang baru dibuat
+            const response = await authenticatedFetch('/api/orders/statistics');
 
-            document.getElementById('totalOrders').textContent = orderStats.total;
-            document.getElementById('pendingOrders').textContent = orderStats.pending;
-            document.getElementById('cancelledOrders').textContent = orderStats.cancelled;
+            if (response && response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    orderStats = data.data;
+
+                    // Update tampilan statistik
+                    document.getElementById('totalOrders').textContent = orderStats.total_pesanan || 0;
+                    document.getElementById('pendingOrders').textContent = orderStats.menunggu || 0;
+                    document.getElementById('cancelledOrders').textContent = orderStats.dibatalkan || 0;
+
+                    // Bisa ditambahkan statistik lainnya jika diperlukan
+                    console.log('Order Statistics:', orderStats);
+                } else {
+                    throw new Error(data.message || 'Failed to fetch order statistics');
+                }
+            } else {
+                throw new Error('Network response was not ok');
+            }
         } catch (error) {
             console.error('Error fetching order stats:', error);
+
+            // Fallback ke data default jika gagal
+            orderStats = {
+                total_pesanan: 0,
+                menunggu: 0,
+                dibatalkan: 0
+            };
+
+            document.getElementById('totalOrders').textContent = '0';
+            document.getElementById('pendingOrders').textContent = '0';
+            document.getElementById('cancelledOrders').textContent = '0';
         }
     }
 
@@ -496,7 +747,7 @@
                             <h4 class="mt-3 text-warning">Mulai Berjualan di IwakMart!</h4>
                             <p class="text-muted">Bergabunglah dengan ribuan penjual lainnya dan raih kesuksesan dalam bisnis ikan Anda.</p>
                         </div>
-                        
+
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <div class="card border-0 bg-light h-100">
@@ -517,7 +768,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <div class="card border-0 bg-light h-100">
@@ -565,7 +816,7 @@
                 </div>
             </div>
         `;
-        
+
         document.body.appendChild(modal);
         const bootstrapModal = new bootstrap.Modal(modal);
         bootstrapModal.show();
@@ -580,7 +831,7 @@
     function registerAsSeller() {
         const registerBtn = document.getElementById('registerSellerBtn');
         const originalText = registerBtn.innerHTML;
-        
+
         // Show loading state
         registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Mendaftar...';
         registerBtn.disabled = true;
@@ -599,7 +850,7 @@
                 // Close modal
                 const modal = bootstrap.Modal.getInstance(document.querySelector('.modal'));
                 modal.hide();
-                
+
                 // Show success message
                 Swal.fire({
                     icon: 'success',
@@ -697,7 +948,8 @@
 
     // Menu functions
     function showOrderHistory() {
-        alert('Fitur riwayat pesanan akan segera hadir');
+        // Redirect ke halaman riwayat pesanan yang sudah ada
+        window.location.href = '/orders';
     }
 
     function showNotificationSettings() {

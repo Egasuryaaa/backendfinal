@@ -27,11 +27,13 @@ class OrderCollection extends ResourceCollection
                     'total_formatted' => 'Rp ' . number_format($order->total, 0, ',', '.'),
                     'tanggal_pesan' => $order->created_at->format('Y-m-d H:i:s'),
                     'tanggal_pesan_formatted' => $order->created_at->translatedFormat('d F Y H:i'),
+                    'created_at' => $order->created_at->format('Y-m-d H:i:s'),
                     'items_count' => $order->orderItems->count(),
-                    'items_preview' => $order->orderItems->take(2)->map(function($item) {
+                    'order_items' => $order->orderItems->take(2)->map(function($item) {
                         return [
                             'nama_produk' => $item->nama_produk,
                             'jumlah' => $item->jumlah,
+                            'subtotal' => $item->subtotal,
                             'product' => $item->relationLoaded('product') && $item->product ? [
                                 'gambar' => $item->product->gambar
                             ] : null

@@ -28,6 +28,72 @@ class OrderController extends Controller
         $this->xenditService = $xenditService;
     }
     /**
+     * Mendapatkan statistik pesanan pengguna.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function statistics(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            // Hitung statistik pesanan berdasarkan status
+            $stats = [
+                'total_pesanan' => Order::where('user_id', $user->id)->count(),
+                'menunggu' => Order::where('user_id', $user->id)->where('status', 'menunggu')->count(),
+                'diproses' => Order::where('user_id', $user->id)->where('status', 'diproses')->count(),
+                'dikirim' => Order::where('user_id', $user->id)->where('status', 'dikirim')->count(),
+                'selesai' => Order::where('user_id', $user->id)->where('status', 'selesai')->count(),
+                'dibatalkan' => Order::where('user_id', $user->id)->where('status', 'dibatalkan')->count(),
+
+                // Total pembayaran yang sudah selesai
+                'total_belanja' => Order::where('user_id', $user->id)
+                                       ->where('status', 'selesai')
+                                       ->sum('total'),
+
+                // Pesanan terbaru
+                'pesanan_terbaru' => Order::where('user_id', $user->id)
+                                          ->latest()
+                                          ->first(),
+            ];
+
+            // Format total belanja
+            $stats['total_belanja_formatted'] = 'Rp ' . number_format((float)$stats['total_belanja'], 0, ',', '.');
+
+            // Format pesanan terbaru
+            if ($stats['pesanan_terbaru']) {
+                $stats['pesanan_terbaru'] = [
+                    'id' => $stats['pesanan_terbaru']->id,
+                    'nomor_pesanan' => $stats['pesanan_terbaru']->nomor_pesanan,
+                    'status' => $stats['pesanan_terbaru']->status,
+                    'status_label' => $this->getStatusLabel($stats['pesanan_terbaru']->status),
+                    'total' => $stats['pesanan_terbaru']->total,
+                    'total_formatted' => 'Rp ' . number_format((float)$stats['pesanan_terbaru']->total, 0, ',', '.'),
+                    'created_at' => $stats['pesanan_terbaru']->created_at->format('Y-m-d H:i:s'),
+                    'created_at_formatted' => $stats['pesanan_terbaru']->created_at->translatedFormat('d F Y H:i'),
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $stats
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get order statistics: ' . $e->getMessage(), [
+                'user_id' => $request->user()->id ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat statistik pesanan'
+            ], 500);
+        }
+    }
+
+    /**
      * Mendapatkan daftar pesanan pengguna.
      * PERBAIKAN: Eager loading yang konsisten
      */

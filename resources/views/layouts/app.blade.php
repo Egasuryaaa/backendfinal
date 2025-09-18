@@ -78,14 +78,12 @@
                         <a class="nav-link {{ request()->routeIs('fishmarket') ? 'active' : '' }}" href="{{ route('fishmarket') }}">Pasar Ikan</a>
                     </li>
                     @auth
-                        @if(auth()->user()->role && auth()->user()->role !== 'penjual_biasa')
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('locations*') ? 'active' : '' }}" href="{{ route('locations') }}">Lokasi</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('appointments*') ? 'active' : '' }}" href="{{ route('appointments') }}">Janji Temu</a>
                         </li>
-                        @endif
                     @else
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('locations*') ? 'active' : '' }}" href="{{ route('locations') }}">Lokasi</a>
@@ -116,9 +114,7 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="{{ route('profile') }}"><i class="fas fa-user me-2"></i>Profil</a></li>
-                                @if(auth()->user()->role && auth()->user()->role !== 'penjual_biasa')
                                 <li><a class="dropdown-item" href="{{ route('appointments') }}"><i class="fas fa-calendar-check me-2"></i>Janji Temu</a></li>
-                                @endif
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <form action="{{ route('logout') }}" method="POST">
