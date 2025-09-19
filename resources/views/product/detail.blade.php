@@ -252,6 +252,77 @@
             font-size: 12px;
         }
 
+        /* Store Address Section */
+        .store-address-section {
+            background: #F8FBFF;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(25, 118, 210, 0.2);
+            margin-bottom: 24px;
+        }
+
+        .store-address-section h3 {
+            color: #0D47A1;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        .store-address-info {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(25, 118, 210, 0.1);
+        }
+
+        .address-item {
+            display: flex;
+            margin-bottom: 12px;
+            align-items: flex-start;
+        }
+
+        .address-item:last-of-type {
+            margin-bottom: 16px;
+        }
+
+        .address-label {
+            color: #666;
+            font-size: 14px;
+            font-weight: 600;
+            min-width: 140px;
+            flex-shrink: 0;
+        }
+
+        .address-value {
+            color: #333;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .address-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            background: rgba(25, 118, 210, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid #1976D2;
+        }
+
+        .address-note i {
+            color: #1976D2;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .address-note span {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
         .description-section h3 {
             color: #0D47A1;
             font-size: 18px;
@@ -587,6 +658,30 @@
                         <div class="seller-details">
                             <p>Penjual</p>
                             <h3 id="sellerName"></h3>
+                            <p id="sellerPhone" style="font-size: 12px; color: #666; margin-top: 4px;"></p>
+                        </div>
+                    </div>
+
+                    <!-- Store Address Info -->
+                    <div class="store-address-section" id="storeAddressSection" style="display: none;">
+                        <h3><i class="fas fa-map-marker-alt me-2"></i>Alamat Toko</h3>
+                        <div class="store-address-info">
+                            <div class="address-item">
+                                <div class="address-label">Alamat Lengkap:</div>
+                                <div class="address-value" id="storeFullAddress">-</div>
+                            </div>
+                            <div class="address-item">
+                                <div class="address-label">Kota/Kabupaten:</div>
+                                <div class="address-value" id="storeCity">-</div>
+                            </div>
+                            <div class="address-item">
+                                <div class="address-label">Provinsi:</div>
+                                <div class="address-value" id="storeProvince">-</div>
+                            </div>
+                            <div class="address-note">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Ini adalah alamat toko untuk kunjungan langsung. Pengiriman produk akan disesuaikan dengan alamat pengiriman Anda.</span>
+                            </div>
                         </div>
                     </div>
 
@@ -660,6 +755,51 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadProductDetail();
         });
+
+        // Load seller store information
+        async function loadSellerStoreInfo(sellerId) {
+            try {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                };
+
+                const response = await fetch(`/api/sellers/${sellerId}`, {
+                    headers: headers
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.data && data.data.store_address) {
+                    displayStoreAddress(data.data.store_address);
+                }
+            } catch (error) {
+                console.error('Error loading seller store info:', error);
+                // Don't show error to user, just log it
+            }
+        }
+
+        // Display store address information
+        function displayStoreAddress(storeAddress) {
+            const storeAddressSection = document.getElementById('storeAddressSection');
+
+            if (!storeAddress || !storeAddress.alamat) {
+                return; // Don't show section if no address available
+            }
+
+            // Update address fields
+            document.getElementById('storeFullAddress').textContent = storeAddress.alamat || '-';
+            document.getElementById('storeCity').textContent = storeAddress.kota || '-';
+            document.getElementById('storeProvince').textContent = storeAddress.provinsi || '-';
+
+            // Show the store address section
+            storeAddressSection.style.display = 'block';
+        }
 
         // Load product detail from API
         async function loadProductDetail() {
@@ -737,6 +877,16 @@
 
             // Seller
             document.getElementById('sellerName').textContent = product.seller?.name || 'Nama Penjual';
+
+            // Get seller phone if available
+            if (product.seller?.phone) {
+                document.getElementById('sellerPhone').textContent = `📞 ${product.seller.phone}`;
+            }
+
+            // Load seller store information
+            if (product.seller?.id || product.penjual_id) {
+                loadSellerStoreInfo(product.seller?.id || product.penjual_id);
+            }
 
             // Description
             document.getElementById('productDescription').textContent = stripHtmlTags(product.deskripsi || 'Tidak ada deskripsi');
@@ -821,12 +971,12 @@
                 // Helper function to get image URL
         function getImageUrl(imagePath) {
             if (!imagePath) return 'https://via.placeholder.com/400x400/BBDEFB/1976D2?text=No+Image';
-            
+
             // If it's already a full URL, return as is
             if (imagePath.startsWith('http')) {
                 return imagePath;
             }
-            
+
             // Otherwise, construct the storage URL
             return `/storage/${imagePath}`;
         }

@@ -881,6 +881,98 @@
             animation: spin 1s linear infinite;
         }
 
+        /* Loading Overlay */
+        .checkout-loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 99999; /* Pastikan paling atas */
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .checkout-loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+            background: white;
+            padding: 40px 60px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: fadeInScale 0.5s ease-out;
+        }
+
+        .loading-spinner-large {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .loading-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .loading-dots {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            background: #007bff;
+            border-radius: 50%;
+            animation: loadingDots 1.4s ease-in-out infinite both;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+        .loading-dot:nth-child(3) { animation-delay: 0; }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes loadingDots {
+            0%, 80%, 100% {
+                transform: scale(0);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
         /* Success Modal */
         .modal {
             display: none;
@@ -906,6 +998,15 @@
             }
             to {
                 opacity: 1;
+            }
+        }
+
+        @keyframes modalFadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
             }
         }
 
@@ -1044,6 +1145,458 @@
             .modal-content {
                 padding: 32px 24px;
                 margin: 20px;
+            }
+        }
+
+        /* Manual Payment Modal Styles */
+        .manual-payment-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1001;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+        }
+
+        .manual-payment-modal.show {
+            display: flex;
+            animation: modalFadeIn 0.5s ease-out;
+        }
+
+        .manual-payment-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 650px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+        }
+
+        .manual-payment-header {
+            background: linear-gradient(135deg, #1565C0 0%, #0D47A1 50%, #002171 100%);
+            color: white;
+            padding: 24px 28px;
+            border-radius: 20px 20px 0 0;
+            position: relative;
+        }
+
+        .manual-payment-header h3 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .manual-payment-header .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .manual-payment-header .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .manual-payment-body {
+            padding: 28px;
+        }
+
+        .payment-status-card {
+            background: linear-gradient(135deg, #E8F5E8 0%, #F1F8E9 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border-left: 5px solid #4CAF50;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .payment-status-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="%234CAF50" opacity="0.1"/><circle cx="80" cy="80" r="2" fill="%234CAF50" opacity="0.1"/></svg>');
+        }
+
+        .payment-status-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: #2E7D32;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .payment-deadline-card {
+            background: linear-gradient(135deg, #FFF3E0 0%, #FFF8E1 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border-left: 5px solid #FF9800;
+        }
+
+        .deadline-timer {
+            font-weight: 800;
+            font-size: 18px;
+            color: #F57C00;
+            margin-top: 12px;
+            padding: 8px 16px;
+            background: rgba(245, 124, 0, 0.1);
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .bank-account-card {
+            background: linear-gradient(135deg, #F8F9FA 0%, #FFFFFF 100%);
+            border: 2px solid #E5E5E5;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .bank-account-card h4 {
+            margin: 0 0 16px 0;
+            color: #1565C0;
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bank-info-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .bank-info-item {
+            background: white;
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid #E5E5E5;
+        }
+
+        .bank-info-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .bank-info-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .account-number {
+            font-size: 20px !important;
+            color: #1565C0 !important;
+            letter-spacing: 1px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .copy-btn {
+            background: linear-gradient(135deg, #1565C0 0%, #1976D2 100%);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(21, 101, 192, 0.3);
+        }
+
+        .instructions-card {
+            background: linear-gradient(135deg, #E3F2FD 0%, #F3E5F5 100%);
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+        }
+
+        .instructions-title {
+            margin: 0 0 16px 0;
+            color: #1565C0;
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions-list {
+            margin: 0;
+            padding-left: 24px;
+            color: #333;
+        }
+
+        .instructions-list li {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .instructions-list strong {
+            color: #1565C0;
+        }
+
+        .warning-card {
+            background: linear-gradient(135deg, #FFEBEE 0%, #FCE4EC 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border-left: 5px solid #D32F2F;
+        }
+
+        .warning-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: #D32F2F;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .warning-list {
+            margin: 0;
+            padding-left: 20px;
+            color: #D32F2F;
+            font-size: 14px;
+        }
+
+        .warning-list li {
+            margin-bottom: 8px;
+        }
+
+        /* Upload Payment Proof Styles */
+        .upload-payment-card {
+            background: linear-gradient(135deg, #E8F5E8 0%, #F1F8E9 100%);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border-left: 5px solid #4CAF50;
+        }
+
+        .upload-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2E7D32;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .upload-description {
+            color: #2E7D32;
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .file-upload-area {
+            margin-bottom: 20px;
+        }
+
+        .file-upload-box {
+            border: 3px dashed #4CAF50;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #FFFFFF;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-upload-box:hover {
+            border-color: #2E7D32;
+            background: #F8F9FA;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.2);
+        }
+
+        .file-upload-content {
+            pointer-events: none;
+        }
+
+        .file-upload-icon {
+            font-size: 48px;
+            color: #4CAF50;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .file-upload-text {
+            color: #2E7D32;
+            font-size: 16px;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .file-upload-formats {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .selected-file-name {
+            background: #E8F5E8;
+            color: #2E7D32;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .selected-file-name::before {
+            content: "📎";
+            font-size: 16px;
+        }
+
+        .upload-actions {
+            text-align: center;
+        }
+
+        .btn-upload {
+            background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 200px;
+            justify-content: center;
+        }
+
+        .btn-upload:hover:not(:disabled) {
+            background: linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-upload:disabled {
+            background: #E0E0E0;
+            color: #9E9E9E;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .manual-payment-footer {
+            padding: 20px 28px;
+            background: #F8F9FA;
+            border-radius: 0 0 20px 20px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .manual-payment-footer .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1565C0 0%, #1976D2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(21, 101, 192, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .manual-payment-content {
+                width: 98%;
+                margin: 10px;
+            }
+
+            .manual-payment-header {
+                padding: 20px;
+            }
+
+            .manual-payment-body {
+                padding: 20px;
+            }
+
+            .manual-payment-footer {
+                padding: 16px 20px;
+                flex-direction: column;
+            }
+
+            .manual-payment-footer .btn {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
@@ -1185,8 +1738,8 @@
             let cartItems = [];
             let addresses = [];
             let selectedAddressId = null;
-            let selectedShippingMethod = 'reguler';
-            let selectedPaymentMethod = 'cod';
+            let selectedShippingMethod = null; // User harus memilih
+            let selectedPaymentMethod = null; // User harus memilih
             let selectedPaymentType = 'cod';
             let selectedXenditMethod = '';
             let selectedPaymentChannel = '';
@@ -1307,6 +1860,9 @@
                 const methods = [
                     { id: 'cak-ed', name: 'Cak Ed Delivery', desc: 'Pengiriman gratis dengan pelayanan ramah - Hubungi: +62 813-3519-0701', price: 0 }
                 ];
+
+                // Tidak ada auto-select, user harus memilih sendiri
+
                 const container = document.getElementById('shippingMethodList');
                 container.innerHTML = methods.map(method => `
                     <div class="option-item ${selectedShippingMethod === method.id ? 'selected' : ''}" onclick="selectShipping('${method.id}', ${method.price})">
@@ -1732,6 +2288,9 @@
 
                 // Tidak perlu re-render, hanya update visual
                 console.log('Payment selected:', { id, type, paymentMethod, paymentChannel });
+
+                // Update validasi button
+                updateTotals();
             };
 
             function updateTotals() {
@@ -1742,12 +2301,549 @@
                 document.getElementById('grandTotalPrice').textContent = `Rp ${formatPrice(grandTotal)}`;
                 document.getElementById('footerTotalPrice').textContent = `Rp ${formatPrice(grandTotal)}`;
 
-                document.getElementById('processCheckoutBtn').disabled = !selectedAddressId || isLoading;
+                // Validasi lengkap untuk enable/disable button
+                const isValid = selectedAddressId && selectedShippingMethod && selectedPaymentMethod && !isLoading;
+                const btnElement = document.getElementById('processCheckoutBtn');
+
+                // Button tetap disabled sampai semua field dipilih
+                btnElement.disabled = !isValid;
+
+                // Text button tetap sama, hanya warna yang berubah berdasarkan state
+                // Button akan berwarna abu-abu jika disabled, biru jika enabled
+            }
+
+            // Show manual payment instructions modal
+            function showManualPaymentInstructions(orderData) {
+                const order = orderData.order;
+                const bankAccount = orderData.bank_account;
+
+                // Debug order data
+                console.log('Order data:', order);
+                console.log('Payment deadline from order:', order.payment_deadline);
+
+                // Parse payment deadline with better error handling
+                let paymentDeadline;
+                if (order.payment_deadline) {
+                    // Create date object from the format 'Y-m-d H:i:s'
+                    paymentDeadline = new Date(order.payment_deadline.replace(' ', 'T'));
+                    console.log('Parsed deadline:', paymentDeadline);
+                    console.log('Deadline time (ms):', paymentDeadline.getTime());
+                } else {
+                    // Fallback: create deadline 2 hours from now
+                    paymentDeadline = new Date();
+                    paymentDeadline.setHours(paymentDeadline.getHours() + 2);
+                    console.log('Fallback deadline (2 hours from now):', paymentDeadline);
+                }
+
+                // Check current time
+                const now = new Date();
+                console.log('Current time:', now);
+                console.log('Current time (ms):', now.getTime());
+                console.log('Time difference (ms):', paymentDeadline.getTime() - now.getTime());
+
+                // Validate date
+                if (isNaN(paymentDeadline.getTime())) {
+                    console.error('Invalid date, using fallback');
+                    paymentDeadline = new Date();
+                    paymentDeadline.setHours(paymentDeadline.getHours() + 2);
+                }
+
+                // Format deadline
+                const deadlineFormatted = paymentDeadline.toLocaleString('id-ID', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                const modalHtml = `
+                    <div id="manualPaymentModal" class="manual-payment-modal show">
+                        <div class="manual-payment-content">
+                            <div class="manual-payment-header">
+                                <h3>
+                                    <i class="fas fa-university"></i>
+                                    Instruksi Pembayaran Manual
+                                </h3>
+                                <button class="close-btn" onclick="closeManualPaymentModal()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+
+                            <div class="manual-payment-body">
+                                <!-- Payment Status -->
+                                <div class="payment-status-card">
+                                    <div class="payment-status-icon">
+                                        <i class="fas fa-check-circle"></i>
+                                        Pesanan Berhasil Dibuat!
+                                    </div>
+                                    <div style="color: #388E3C; font-size: 14px; line-height: 1.5;">
+                                        Nomor Pesanan: <strong>#${order.nomor_pesanan}</strong><br>
+                                        Total Pembayaran: <strong>${order.total_formatted}</strong>
+                                    </div>
+                                </div>
+
+                                <!-- Payment Deadline -->
+                                <div class="payment-deadline-card">
+                                    <div class="payment-status-icon" style="color: #F57C00;">
+                                        <i class="fas fa-clock"></i>
+                                        Batas Waktu Pembayaran
+                                    </div>
+                                    <div style="color: #F57C00; font-size: 14px; line-height: 1.5; margin-bottom: 8px;">
+                                        <strong>${deadlineFormatted}</strong><br>
+                                        <small>Pesanan akan otomatis dibatalkan jika tidak dibayar sebelum batas waktu</small>
+                                    </div>
+                                    <div id="paymentCountdown" class="deadline-timer"></div>
+                                </div>
+
+                                <!-- Bank Account Info -->
+                                <div class="bank-account-card">
+                                    <h4>
+                                        <i class="fas fa-credit-card"></i>
+                                        Informasi Rekening Tujuan
+                                    </h4>
+                                    <div class="bank-info-grid">
+                                        <div class="bank-info-item">
+                                            <div class="bank-info-label">Bank</div>
+                                            <div class="bank-info-value">${bankAccount.bank_name}</div>
+                                        </div>
+                                        <div class="bank-info-item">
+                                            <div class="bank-info-label">Nomor Rekening</div>
+                                            <div class="bank-info-value">
+                                                <span class="account-number">${bankAccount.account_number}</span>
+                                                <button class="copy-btn" onclick="copyAccountNumber('${bankAccount.account_number}')">
+                                                    <i class="fas fa-copy"></i>
+                                                    Salin
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="bank-info-item">
+                                            <div class="bank-info-label">Atas Nama</div>
+                                            <div class="bank-info-value">${bankAccount.account_holder_name}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Instructions -->
+                                <div class="instructions-card">
+                                    <h4 class="instructions-title">
+                                        <i class="fas fa-list-ol"></i>
+                                        Langkah-langkah Pembayaran
+                                    </h4>
+                                    <ol class="instructions-list">
+                                        <li>Transfer ke rekening di atas dengan nominal <strong>PERSIS ${order.total_formatted}</strong></li>
+                                        <li>Simpan bukti transfer Anda</li>
+                                        <li>Buka halaman "Detail Pesanan" dan upload bukti pembayaran</li>
+                                        <li>Tunggu konfirmasi dari penjual (maksimal 1x24 jam)</li>
+                                    </ol>
+                                </div>
+
+                                <!-- Upload Bukti Pembayaran -->
+                                <div class="upload-payment-card">
+                                    <h4 class="upload-title">
+                                        <i class="fas fa-upload"></i>
+                                        Upload Bukti Pembayaran
+                                    </h4>
+                                    <div class="upload-description">
+                                        Setelah melakukan transfer, upload bukti pembayaran Anda di bawah ini:
+                                    </div>
+
+                                    <form id="paymentProofForm" enctype="multipart/form-data">
+                                        <div class="file-upload-area">
+                                            <input type="file" id="paymentProof" name="payment_proof" accept="image/*" style="display: none;">
+                                            <div class="file-upload-box" onclick="document.getElementById('paymentProof').click()">
+                                                <div class="file-upload-content">
+                                                    <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
+                                                    <div class="file-upload-text">
+                                                        <strong>Klik untuk pilih gambar</strong>
+                                                        <br>atau drag & drop file di sini
+                                                    </div>
+                                                    <div class="file-upload-formats">
+                                                        Format: JPG, PNG, GIF (Max 5MB)
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div id="selectedFileName" class="selected-file-name" style="display: none;"></div>
+                                        </div>
+
+                                        <div class="upload-actions">
+                                            <button type="button" class="btn btn-upload" onclick="uploadPaymentProof('${order.id}')" disabled id="uploadBtn">
+                                                <i class="fas fa-upload"></i>
+                                                Upload Bukti Pembayaran
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- Warning -->
+                                <div class="warning-card">
+                                    <div class="warning-title">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        Penting!
+                                    </div>
+                                    <ul class="warning-list">
+                                        <li>Transfer harus dilakukan dengan nominal yang PERSIS sama</li>
+                                        <li>Upload bukti pembayaran yang jelas dan mudah dibaca</li>
+                                        <li>Pesanan akan dibatalkan otomatis jika melewati batas waktu</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="manual-payment-footer">
+                                <button class="btn btn-secondary" onclick="closeManualPaymentModal()">
+                                    <i class="fas fa-times"></i>
+                                    Tutup
+                                </button>
+                                <button class="btn btn-primary" onclick="goToOrderDetail('${order.id}')">
+                                    <i class="fas fa-eye"></i>
+                                    Lihat Detail Pesanan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Add modal to page
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+                // Add event listeners for closing modal
+                const modal = document.getElementById('manualPaymentModal');
+                if (modal) {
+                    // Close when clicking backdrop
+                    modal.addEventListener('click', function(e) {
+                        if (e.target === modal) {
+                            closeManualPaymentModal();
+                        }
+                    });
+
+                    // Close with Escape key
+                    document.addEventListener('keydown', function(e) {
+                        if (e.key === 'Escape') {
+                            closeManualPaymentModal();
+                        }
+                    });
+                }
+
+                // Start countdown timer
+                startPaymentCountdown(paymentDeadline);
+
+                // Setup file upload functionality
+                setTimeout(() => {
+                    setupFileUpload();
+                }, 100);
+            }
+
+            // Start payment countdown timer
+            function startPaymentCountdown(deadline) {
+                const countdownElement = document.getElementById('paymentCountdown');
+                if (!countdownElement) {
+                    console.error('Countdown element not found');
+                    return;
+                }
+
+                console.log('Starting countdown with deadline:', deadline);
+
+                function updateCountdown() {
+                    const now = new Date().getTime();
+                    const deadlineTime = deadline.getTime();
+
+                    console.log('Now:', now, 'Deadline:', deadlineTime);
+
+                    // Validate both dates
+                    if (isNaN(now) || isNaN(deadlineTime)) {
+                        console.error('Invalid date values');
+                        countdownElement.innerHTML = '<span style="color: #D32F2F;">⏰ Error: Invalid date</span>';
+                        return;
+                    }
+
+                    const distance = deadlineTime - now;
+                    console.log('Distance:', distance);
+
+                    if (distance < 0) {
+                        countdownElement.innerHTML = '<span style="color: #D32F2F;">⏰ Waktu pembayaran telah habis</span>';
+                        return;
+                    }
+
+                    const hours = Math.floor(distance / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    // Validate calculated values
+                    if (isNaN(hours) || isNaN(minutes) || isNaN(seconds)) {
+                        console.error('Invalid calculated time values');
+                        countdownElement.innerHTML = '<span style="color: #D32F2F;">⏰ Error: Invalid time calculation</span>';
+                        return;
+                    }
+
+                    countdownElement.innerHTML = `⏰ Sisa waktu: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+
+                updateCountdown();
+                const countdownInterval = setInterval(updateCountdown, 1000);
+
+                // Store interval ID so we can clear it when modal is closed
+                if (window.paymentCountdownInterval) {
+                    clearInterval(window.paymentCountdownInterval);
+                }
+                window.paymentCountdownInterval = countdownInterval;
+            }
+
+            // Copy to clipboard function
+            function copyToClipboard(text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('✅ Nomor rekening berhasil disalin!');
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                    alert('❌ Gagal menyalin nomor rekening');
+                });
+            }
+
+            // Copy account number with better UX
+            function copyAccountNumber(accountNumber) {
+                navigator.clipboard.writeText(accountNumber).then(() => {
+                    // Show success message with animation
+                    const successMsg = document.createElement('div');
+                    successMsg.innerHTML = `
+                        <div style="
+                            position: fixed;
+                            top: 20px;
+                            right: 20px;
+                            background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+                            color: white;
+                            padding: 16px 20px;
+                            border-radius: 12px;
+                            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+                            z-index: 9999;
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                            font-weight: 600;
+                            animation: slideInRight 0.3s ease-out;
+                        ">
+                            <i class="fas fa-check-circle"></i>
+                            Nomor rekening berhasil disalin!
+                        </div>
+                    `;
+                    document.body.appendChild(successMsg);
+
+                    // Add animation CSS
+                    if (!document.getElementById('copyAnimationCSS')) {
+                        const style = document.createElement('style');
+                        style.id = 'copyAnimationCSS';
+                        style.textContent = `
+                            @keyframes slideInRight {
+                                from { transform: translateX(100%); opacity: 0; }
+                                to { transform: translateX(0); opacity: 1; }
+                            }
+                            @keyframes slideOutRight {
+                                from { transform: translateX(0); opacity: 1; }
+                                to { transform: translateX(100%); opacity: 0; }
+                            }
+                        `;
+                        document.head.appendChild(style);
+                    }
+
+                    // Remove after 3 seconds
+                    setTimeout(() => {
+                        const msg = successMsg.firstElementChild;
+                        if (msg) {
+                            msg.style.animation = 'slideOutRight 0.3s ease-out forwards';
+                            setTimeout(() => successMsg.remove(), 300);
+                        }
+                    }, 3000);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                    alert('❌ Gagal menyalin nomor rekening');
+                });
+            }
+
+            // Close manual payment modal
+            function closeManualPaymentModal() {
+                const modal = document.getElementById('manualPaymentModal');
+                if (modal) {
+                    // Clear countdown interval
+                    if (window.paymentCountdownInterval) {
+                        clearInterval(window.paymentCountdownInterval);
+                        window.paymentCountdownInterval = null;
+                    }
+
+                    // Add fade out animation
+                    modal.classList.remove('show');
+                    modal.style.animation = 'modalFadeOut 0.3s ease-out forwards';
+
+                    setTimeout(() => {
+                        modal.remove();
+                    }, 300);
+                } else {
+                    console.error('Modal not found for closing');
+                }
+            }
+
+            // Go to order detail page
+            function goToOrderDetail(orderId) {
+                // Clear countdown interval before navigation
+                if (window.paymentCountdownInterval) {
+                    clearInterval(window.paymentCountdownInterval);
+                    window.paymentCountdownInterval = null;
+                }
+                window.location.href = `/orders/${orderId}`;
+            }
+
+            // File upload handling for payment proof
+            function setupFileUpload() {
+                const fileInput = document.getElementById('paymentProof');
+                const fileNameDisplay = document.getElementById('selectedFileName');
+                const uploadBtn = document.getElementById('uploadBtn');
+                const fileUploadBox = document.querySelector('.file-upload-box');
+
+                if (fileInput) {
+                    fileInput.addEventListener('change', function(e) {
+                        const file = e.target.files[0];
+
+                        if (file) {
+                            // Validate file size (5MB limit)
+                            if (file.size > 5 * 1024 * 1024) {
+                                alert('❌ File terlalu besar! Maksimal 5MB.');
+                                fileInput.value = '';
+                                return;
+                            }
+
+                            // Validate file type
+                            if (!file.type.startsWith('image/')) {
+                                alert('❌ File harus berupa gambar!');
+                                fileInput.value = '';
+                                return;
+                            }
+
+                            // Show selected file name
+                            fileNameDisplay.textContent = `File dipilih: ${file.name}`;
+                            fileNameDisplay.style.display = 'block';
+
+                            // Enable upload button
+                            uploadBtn.disabled = false;
+
+                            // Change upload box appearance
+                            fileUploadBox.style.borderColor = '#4CAF50';
+                            fileUploadBox.style.background = '#E8F5E8';
+                        } else {
+                            fileNameDisplay.style.display = 'none';
+                            uploadBtn.disabled = true;
+                            fileUploadBox.style.borderColor = '#4CAF50';
+                            fileUploadBox.style.background = '#FFFFFF';
+                        }
+                    });
+                }
+
+                // Drag and drop functionality
+                if (fileUploadBox) {
+                    fileUploadBox.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        fileUploadBox.style.borderColor = '#2E7D32';
+                        fileUploadBox.style.background = '#E8F5E8';
+                    });
+
+                    fileUploadBox.addEventListener('dragleave', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        fileUploadBox.style.borderColor = '#4CAF50';
+                        fileUploadBox.style.background = '#FFFFFF';
+                    });
+
+                    fileUploadBox.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const files = e.dataTransfer.files;
+                        if (files.length > 0) {
+                            fileInput.files = files;
+                            // Trigger change event
+                            const event = new Event('change', { bubbles: true });
+                            fileInput.dispatchEvent(event);
+                        }
+
+                        fileUploadBox.style.borderColor = '#4CAF50';
+                        fileUploadBox.style.background = '#FFFFFF';
+                    });
+                }
+            }
+
+            // Upload payment proof function
+            async function uploadPaymentProof(orderId) {
+                const fileInput = document.getElementById('paymentProof');
+                const uploadBtn = document.getElementById('uploadBtn');
+
+                if (!fileInput.files[0]) {
+                    alert('❌ Pilih file bukti pembayaran terlebih dahulu!');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('payment_proof', fileInput.files[0]);
+
+                // Disable button and show loading
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+                try {
+                    const response = await fetch(`/api/orders/${orderId}/payment-proof`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                        },
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        // Success
+                        alert('✅ Bukti pembayaran berhasil diupload!');
+
+                        // Update button to success state
+                        uploadBtn.innerHTML = '<i class="fas fa-check"></i> Berhasil Diupload';
+                        uploadBtn.style.background = 'linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%)';
+
+                        // Optionally redirect to order detail
+                        setTimeout(() => {
+                            goToOrderDetail(orderId);
+                        }, 2000);
+
+                    } else {
+                        throw new Error(result.message || 'Upload gagal');
+                    }
+
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    alert(`❌ Upload gagal: ${error.message}`);
+
+                    // Reset button
+                    uploadBtn.disabled = false;
+                    uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Bukti Pembayaran';
+                }
             }
 
             async function processCheckout() {
+                // Validasi lengkap sebelum proses
                 if (!selectedAddressId) {
-                    alert('Pilih alamat pengiriman terlebih dahulu.');
+                    alert('❌ Pilih alamat pengiriman terlebih dahulu!');
+                    return;
+                }
+
+                if (!selectedShippingMethod) {
+                    alert('❌ Pilih metode pengiriman terlebih dahulu!');
+                    return;
+                }
+
+                if (!selectedPaymentMethod) {
+                    alert('❌ Pilih metode pembayaran terlebih dahulu!');
+                    return;
+                }
+
+                if (cartItems.length === 0) {
+                    alert('❌ Keranjang belanja kosong!');
                     return;
                 }
 
@@ -1755,12 +2851,16 @@
                 const btnElement = document.getElementById('processCheckoutBtn');
                 const btnTextElement = document.getElementById('checkoutBtnText');
                 const btnIcon = btnElement.querySelector('i');
+                const loadingOverlay = document.getElementById('checkoutLoadingOverlay');
 
-                // Update button state
-                btnElement.classList.add('loading');
+                // Show loading overlay
+                loadingOverlay.classList.add('show');
+
+                // Hide button loading state since we're using overlay
+                btnElement.style.visibility = 'hidden';
+
+                // Keep button disabled
                 btnElement.disabled = true;
-                btnIcon.className = 'loading-spinner';
-                btnTextElement.textContent = 'Memproses...';
 
                 const checkoutData = {
                     alamat_id: selectedAddressId,
@@ -1804,8 +2904,11 @@
 
                         // Jika ada payment_url, redirect ke Xendit
                         if (data.data.payment_url && data.data.requires_payment) {
-                            // Update button untuk redirect
-                            btnTextElement.textContent = 'Mengarahkan ke pembayaran...';
+                            // Update overlay text for redirect
+                            const loadingText = document.querySelector('.loading-text');
+                            const loadingSubtitle = document.querySelector('.loading-subtitle');
+                            if (loadingText) loadingText.textContent = 'Mengarahkan ke Pembayaran';
+                            if (loadingSubtitle) loadingSubtitle.textContent = 'Anda akan diarahkan ke halaman pembayaran...';
 
                             // Simpan order info untuk redirect nanti
                             sessionStorage.setItem('checkout_success', JSON.stringify({
@@ -1817,27 +2920,55 @@
                             // Redirect ke halaman pembayaran Xendit
                             setTimeout(() => {
                                 window.location.href = data.data.payment_url;
-                            }, 1000);
-                        } else {
-                            // COD atau tidak perlu payment, tampilkan modal sukses
-                            btnTextElement.textContent = 'Berhasil!';
-                            btnIcon.className = 'fas fa-check';
+                            }, 2000);
+                        } else if (selectedPaymentMethod === 'manual' && data.data.bank_account) {
+                            // Manual payment - tampilkan instruksi pembayaran dengan bank account
+                            const loadingText = document.querySelector('.loading-text');
+                            const loadingSubtitle = document.querySelector('.loading-subtitle');
+                            if (loadingText) loadingText.textContent = 'Pesanan Berhasil!';
+                            if (loadingSubtitle) loadingSubtitle.textContent = 'Silakan lakukan pembayaran sesuai instruksi...';
 
                             setTimeout(() => {
+                                // Hide loading overlay
+                                const loadingOverlay = document.getElementById('checkoutLoadingOverlay');
+                                loadingOverlay.classList.remove('show');
+
+                                // Show manual payment instructions
+                                showManualPaymentInstructions(data.data);
+                            }, 1500);
+                        } else {
+                            // COD atau tidak perlu payment, tampilkan modal sukses
+                            const loadingText = document.querySelector('.loading-text');
+                            const loadingSubtitle = document.querySelector('.loading-subtitle');
+                            if (loadingText) loadingText.textContent = 'Pesanan Berhasil!';
+                            if (loadingSubtitle) loadingSubtitle.textContent = 'Pesanan Anda telah berhasil diproses...';
+
+                            setTimeout(() => {
+                                // Hide loading overlay
+                                const loadingOverlay = document.getElementById('checkoutLoadingOverlay');
+                                loadingOverlay.classList.remove('show');
+
                                 document.getElementById('successModal').classList.add('show');
-                            }, 500);
+                            }, 1500);
                         }
                     } else {
                         throw new Error(data.message || 'Terjadi kesalahan');
                     }
                 } catch (error) {
                     console.error('Checkout error:', error);
+
+                    // Hide loading overlay
+                    const loadingOverlay = document.getElementById('checkoutLoadingOverlay');
+                    loadingOverlay.classList.remove('show');
+
                     alert(`Checkout gagal: ${error.message}`);
 
                     // Reset button state
+                    btnElement.style.visibility = 'visible';
                     btnElement.classList.remove('loading');
-                    btnIcon.className = 'fas fa-shield-alt';
-                    btnTextElement.textContent = 'Proses Checkout';
+                    btnElement.disabled = false;
+                    if (btnIcon) btnIcon.className = 'fas fa-shield-alt';
+                    if (btnTextElement) btnTextElement.textContent = 'Proses Checkout';
                     isLoading = false;
                     updateTotals();
                 }
@@ -1849,5 +2980,19 @@
             init();
         });
     </script>
+
+    <!-- Loading Overlay -->
+    <div id="checkoutLoadingOverlay" class="checkout-loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner-large"></div>
+            <div class="loading-text">Memproses Pesanan Anda</div>
+            <div class="loading-subtitle">Mohon tunggu sebentar, kami sedang memproses checkout Anda...</div>
+            <div class="loading-dots">
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

@@ -38,6 +38,9 @@ class User extends Authenticatable
         'deskripsi',
         'jam_buka',
         'jam_tutup',
+        'bank_name',
+        'account_number',
+        'account_holder_name',
         'active',
     ];
 

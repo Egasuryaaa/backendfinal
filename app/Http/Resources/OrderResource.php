@@ -37,6 +37,8 @@ class OrderResource extends JsonResource
             'tanggal_pesan_formatted' => $this->created_at->translatedFormat('d F Y H:i'),
             'tanggal_selesai' => $this->tanggal_selesai ? $this->tanggal_selesai->format('Y-m-d H:i:s') : null,
             'tanggal_selesai_formatted' => $this->tanggal_selesai ? $this->tanggal_selesai->translatedFormat('d F Y H:i') : null,
+            'payment_deadline' => $this->payment_deadline ? $this->payment_deadline->format('Y-m-d H:i:s') : null,
+            'payment_deadline_formatted' => $this->payment_deadline ? $this->payment_deadline->translatedFormat('d F Y H:i') : null,
 
             // User/Pembeli
             'user' => $this->whenLoaded('user', function() {

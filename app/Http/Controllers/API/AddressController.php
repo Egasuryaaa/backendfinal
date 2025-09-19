@@ -10,8 +10,13 @@ use App\Models\Address;
 
 class AddressController extends Controller
 {
-    /**zz
-     * Mendapatkan semua alamat untuk pengguna yang login.
+    /**
+     * Mendapatkan semua alamat pengiriman untuk pengguna yang login.
+     *
+     * Address ini digunakan untuk:
+     * - Alamat pengiriman pesanan
+     * - Alamat penerima barang
+     * - Bukan alamat toko/usaha
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -23,7 +28,12 @@ class AddressController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $addresses
+            'message' => 'Alamat pengiriman berhasil diambil',
+            'data' => $addresses,
+            'meta' => [
+                'type' => 'delivery_addresses',
+                'description' => 'Alamat untuk menerima pengiriman pesanan'
+            ]
         ]);
     }
 
@@ -57,15 +67,15 @@ class AddressController extends Controller
         }
 
         $user = $request->user();
-        
+
         $addressData = $request->all();
         $addressData['user_id'] = $user->id;
-        
+
         // Jika alamat ini diset sebagai utama, atur semua alamat lain menjadi bukan utama
         if ($request->has('utama') && $request->utama) {
             Address::where('user_id', $user->id)->update(['utama' => false]);
         }
-        
+
         $address = Address::create($addressData);
 
         return response()->json([
@@ -85,7 +95,7 @@ class AddressController extends Controller
     public function show(Address $address, Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         // Pastikan alamat milik pengguna
         if ($address->user_id !== $user->id) {
             return response()->json([
@@ -110,7 +120,7 @@ class AddressController extends Controller
     public function update(Request $request, Address $address): JsonResponse
     {
         $user = $request->user();
-        
+
         // Pastikan alamat milik pengguna
         if ($address->user_id !== $user->id) {
             return response()->json([
@@ -146,7 +156,7 @@ class AddressController extends Controller
                   ->where('id', '!=', $address->id)
                   ->update(['utama' => false]);
         }
-        
+
         $address->update($request->all());
 
         return response()->json([
@@ -166,7 +176,7 @@ class AddressController extends Controller
     public function destroy(Address $address, Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         // Pastikan alamat milik pengguna
         if ($address->user_id !== $user->id) {
             return response()->json([
@@ -174,12 +184,12 @@ class AddressController extends Controller
                 'message' => 'Unauthorized'
             ], 403);
         }
-        
+
         // Cek apakah alamat digunakan dalam pesanan aktif
         $activeOrders = $address->orders()
                                ->whereNotIn('status', ['selesai', 'dibatalkan'])
                                ->exists();
-                               
+
         if ($activeOrders) {
             return response()->json([
                 'success' => false,
@@ -214,7 +224,7 @@ class AddressController extends Controller
     public function setAsMain(Address $address, Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         // Pastikan alamat milik pengguna
         if ($address->user_id !== $user->id) {
             return response()->json([
@@ -227,7 +237,7 @@ class AddressController extends Controller
         Address::where('user_id', $user->id)
               ->where('id', '!=', $address->id)
               ->update(['utama' => false]);
-        
+
         // Atur alamat ini sebagai utama
         $address->utama = true;
         $address->save();

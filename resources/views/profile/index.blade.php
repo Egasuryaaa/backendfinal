@@ -1,59 +1,115 @@
-@extends('layouts.app')
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>IwakMart - Profil Saya</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
 
-@section('content')
 <style>
-    body {
-        font-family: 'Inter', sans-serif;
-        background: #F0F8FF;
-        min-height: 100vh;
-        line-height: 1.6;
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
     }
 
-    /* Custom Header dengan gradient seperti fishmarket */
-    .profile-header {
-        background: linear-gradient(135deg, #1565C0, #0D47A1, #002171);
-        padding: 30px 0;
-        margin: -20px -15px 30px -15px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #F0F8FF 0%, #E3F2FD 50%, #BBDEFB 100%);
+        min-height: 100vh;
+        line-height: 1.6;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding-bottom: 120px; /* Space for floating footer */
+    }
+
+    /* Header */
+    .header {
+        background: linear-gradient(135deg, #1565C0 0%, #0D47A1 50%, #002171 100%);
+        color: white;
+        padding: 20px;
+        box-shadow: 0 8px 32px rgba(21, 101, 192, 0.3);
         position: relative;
         overflow: hidden;
     }
 
-    .profile-header::before {
+    .header::before {
         content: '';
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.1) 75%);
-        background-size: 30px 30px;
-        animation: movePattern 20s linear infinite;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+        animation: float 20s ease-in-out infinite;
     }
 
-    @keyframes movePattern {
-        0% { transform: translateX(0); }
-        100% { transform: translateX(60px); }
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
     }
 
-    .profile-header-content {
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin: 0 auto;
         position: relative;
-        z-index: 2;
+        z-index: 1;
+        padding: 0 20px;
     }
 
-    .profile-title {
+    .back-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
         color: white;
-        font-size: 28px;
-        font-weight: 800;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        margin-bottom: 8px;
+        padding: 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
     }
 
-    .profile-subtitle {
-        color: rgba(255,255,255,0.9);
-        font-size: 16px;
-        font-weight: 500;
+    .back-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     }
+
+    .back-btn:active {
+        transform: translateY(0) scale(0.95);
+    }
+
+    .header-icon {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 12px;
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        animation: pulse 3s ease-in-out infinite;
+    }
+
+    .header-info h1 {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+
+    .header-info p {
+        opacity: 0.9;
+        font-size: 14px;
+    }
+
+
 
     /* Card styling seperti fishmarket */
     .profile-card {
@@ -209,6 +265,23 @@
         }
     }
 
+    /* Simple profile info styling */
+    .profile-info-simple {
+        padding: 20px 0;
+    }
+
+    .profile-info-simple h4 {
+        font-size: 28px;
+        font-weight: 700;
+        color: #0D47A1;
+        margin-bottom: 16px;
+    }
+
+    .profile-info-simple .text-muted {
+        font-size: 16px;
+        color: #666 !important;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
         .profile-header {
@@ -226,35 +299,41 @@
         }
     }
 </style>
-
-<div class="container">
-    <!-- Custom Header seperti fishmarket -->
-    <div class="profile-header">
-        <div class="container">
-            <div class="profile-header-content text-center">
-                <h1 class="profile-title">
-                    <i class="fas fa-user me-2"></i>Profil Saya
-                </h1>
-                <p class="profile-subtitle mb-0">
-                    <i class="fas fa-calendar me-1"></i>
-                    <span id="currentDate"></span>
-                </p>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <button class="back-btn" onclick="window.location.href='/fishmarket'">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-icon">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="header-info">
+                <h1>Profil Saya</h1>
             </div>
         </div>
     </div>
 
-    <!-- Loading State -->
-    <div id="loadingState" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-        <p class="mt-3 text-muted">Memuat profil...</p>
-    </div>
+    <div class="container">
 
-    <!-- Profile Content -->
-    <div id="profileContent" style="display: none;">
-        <!-- Profile Header Card -->
-        <div class="row mb-4">
+        <!-- Content Area -->
+        <div class="container" style="margin-top: 0;">
+            <div style="padding: 20px;">
+
+            <!-- Loading State -->
+            <div id="loadingState" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 text-muted">Memuat profil...</p>
+            </div>
+
+            <!-- Profile Content -->
+            <div id="profileContent" style="display: none;">
+                <!-- Profile Header Card -->
+                <div class="row mb-4">
             <div class="col-12">
                 <div class="profile-card fade-in">
                     <div class="card-body">
@@ -271,38 +350,11 @@
                                 </div>
                             </div>
                             <div class="col-md-9">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <h4 class="mb-2 text-primary" id="profileName">-</h4>
-                                        <div class="mb-2">
-                                            <i class="fas fa-envelope text-muted me-2"></i>
-                                            <span id="profileEmail">-</span>
-                                        </div>
-                                        <div class="mb-2">
-                                            <i class="fas fa-phone text-muted me-2"></i>
-                                            <span id="profilePhone">-</span>
-                                        </div>
-                                        <div class="mb-3">
-                                            <i class="fas fa-tag text-muted me-2"></i>
-                                            <span class="badge bg-primary" id="profileRole">Member</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-2">
-                                            <i class="fas fa-calendar text-muted me-2"></i>
-                                            <span class="text-muted">Bergabung: </span>
-                                            <span id="joinDate">-</span>
-                                        </div>
-                                        <div class="mb-2">
-                                            <i class="fas fa-check-circle text-muted me-2"></i>
-                                            <span class="text-muted">Status: </span>
-                                            <span class="badge bg-success" id="profileStatus">Aktif</span>
-                                        </div>
-                                        <div class="mb-2">
-                                            <i class="fas fa-envelope-check text-muted me-2"></i>
-                                            <span class="text-muted">Email: </span>
-                                            <span class="badge bg-success" id="emailVerified">Terverifikasi</span>
-                                        </div>
+                                <div class="profile-info-simple">
+                                    <h4 class="mb-3 text-primary" id="profileName">-</h4>
+                                    <div class="mb-3">
+                                        <i class="fas fa-envelope text-muted me-2"></i>
+                                        <span id="profileEmail" class="text-muted">-</span>
                                     </div>
                                 </div>
                                 <div class="mt-3">
@@ -515,12 +567,13 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-@endsection
+            </div> <!-- Penutup padding wrapper -->
+        </div> <!-- Penutup container -->
+</body>
+</html>
 
-@push('scripts')
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/auth.js"></script>
 <script>
     let user = null;
@@ -528,17 +581,11 @@
 
     // Load profile data on page load
     document.addEventListener('DOMContentLoaded', function() {
-        // Set current date
-        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('id-ID', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-
         fetchProfile();
         fetchOrderStats();
     });
+
+
 
     // Fetch user profile
     async function fetchProfile() {
@@ -565,87 +612,28 @@
     function displayProfile() {
         if (!user) return;
 
+        // Hanya tampilkan nama dan email
         document.getElementById('profileName').textContent = user.name || '-';
         document.getElementById('profileEmail').textContent = user.email || '-';
 
-        if (user.phone) {
-            document.getElementById('profilePhone').textContent = user.phone;
-            document.getElementById('profilePhone').style.display = 'block';
-        }
-
-        // Update role badge
-        const roleElement = document.getElementById('profileRole');
-        if (user.role === 'penjual_biasa') {
-            roleElement.textContent = 'Penjual';
-            roleElement.className = 'badge bg-warning';
-        } else if (user.role === 'admin') {
-            roleElement.textContent = 'Admin';
-            roleElement.className = 'badge bg-danger';
-        } else {
-            roleElement.textContent = 'Member';
-            roleElement.className = 'badge bg-primary';
-        }
-
-        // Update join date
-        if (user.created_at) {
-            const joinDate = new Date(user.created_at).toLocaleDateString('id-ID', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            document.getElementById('joinDate').textContent = joinDate;
-        }
-
-        // Update status
-        document.getElementById('profileStatus').textContent = user.active ? 'Aktif' : 'Tidak Aktif';
-        document.getElementById('profileStatus').className = user.active ? 'badge bg-success' : 'badge bg-danger';
-
-        // Update email verification status
-        const emailVerified = document.getElementById('emailVerified');
-        if (user.email_verified_at) {
-            emailVerified.textContent = 'Terverifikasi';
-            emailVerified.className = 'badge bg-success';
-        } else {
-            emailVerified.textContent = 'Belum Terverifikasi';
-            emailVerified.className = 'badge bg-warning';
-        }
-
-        // Check if user is seller and show appropriate sections
-        updateSellerDisplay();
+        // Always show Dashboard Penjual menu - checking will be done on click
+        document.getElementById('sellerDashboardMenuItemForBuyers').style.display = 'block';
 
         // Hide loading and show content
         document.getElementById('loadingState').style.display = 'none';
         document.getElementById('profileContent').style.display = 'block';
     }
 
-    // Update seller display based on user role
-    function updateSellerDisplay() {
-        if (!user) return;
 
-        const isSellerUser = user.role === 'penjual_biasa' || user.role === 'seller' || hasSellerPermissions(user);
-
-        if (isSellerUser) {
-            // User is already a seller - show real dashboard menu, hide registration menus
-            document.getElementById('sellerMenuItem').style.display = 'none';
-            document.getElementById('sellerDashboardMenuItem').style.display = 'block';
-            document.getElementById('sellerDashboardMenuItemForBuyers').style.display = 'none';
-        } else {
-            // User is not a seller - show dashboard menu for buyers (will prompt registration)
-            document.getElementById('sellerMenuItem').style.display = 'none';
-            document.getElementById('sellerDashboardMenuItem').style.display = 'none';
-            document.getElementById('sellerDashboardMenuItemForBuyers').style.display = 'block';
-        }
-
-        // Semua menu dasar selalu ditampilkan untuk kedua role
-        // (Riwayat Pesanan, Kelola Alamat, Pengaturan Notifikasi, Keamanan, Pusat Bantuan, Tentang Aplikasi)
-    }
 
     // Check if user has seller permissions
     function hasSellerPermissions(user) {
         return user.role === 'seller' ||
                user.role === 'penjual_biasa' ||
+               user.role === 'penjual' ||
                user.is_seller === true ||
                (user.roles && user.roles.includes('seller')) ||
+               (user.roles && user.roles.includes('penjual_biasa')) ||
                (user.permissions && user.permissions.includes('sell'));
     }
 
@@ -689,39 +677,25 @@
         }
     }
 
-    // Handle seller access
-    function handleSellerAccess() {
-        if (!user) {
-            showError('Silakan login terlebih dahulu');
-            return;
-        }
 
-        // Check if user is already a seller
-        if (user.role === 'penjual_biasa' || user.role === 'seller') {
-            // User is already a seller, redirect to dashboard
-            window.location.href = '/seller/dashboard';
-            return;
-        }
 
-        // User is not a seller, show registration modal or redirect to registration
-        showSellerRegistrationModal();
-    }
-
-    // Handle buyer dashboard access - show registration modal
+    // Handle dashboard penjual access - check role only when clicked
     function handleBuyerDashboardAccess() {
         if (!user) {
             showError('Silakan login terlebih dahulu');
             return;
         }
 
-        // Check if user is already a seller
-        if (user.role === 'penjual_biasa' || user.role === 'seller') {
-            // User is already a seller, redirect to dashboard
+        // Check if user has seller role when clicking
+        if (user.role === 'penjual_biasa' || user.role === 'seller' || hasSellerPermissions(user)) {
+            // User is already a seller, redirect to dashboard immediately
+            console.log('User is seller, redirecting to dashboard');
             window.location.href = '/seller/dashboard';
             return;
         }
 
         // User is not a seller, show registration modal
+        console.log('User is not seller, showing registration modal');
         showSellerRegistrationModal();
     }
 
@@ -851,16 +825,28 @@
                 const modal = bootstrap.Modal.getInstance(document.querySelector('.modal'));
                 modal.hide();
 
-                // Show success message
+                // Update user object with new role
+                if (user) {
+                    user.role = 'penjual_biasa';
+
+                    // Update role badge immediately
+                    const roleElement = document.getElementById('profileRole');
+                    if (roleElement) {
+                        roleElement.textContent = 'Penjual';
+                        roleElement.className = 'badge bg-warning';
+                    }
+                }
+
+                // Show success message and redirect to seller dashboard
                 Swal.fire({
                     icon: 'success',
                     title: 'Berhasil!',
-                    text: 'Anda berhasil terdaftar sebagai penjual. Halaman akan dimuat ulang.',
+                    text: 'Anda berhasil terdaftar sebagai penjual. Mengarahkan ke dashboard penjual...',
                     timer: 2000,
                     showConfirmButton: false
                 }).then(() => {
-                    // Reload page to update UI
-                    window.location.reload();
+                    // Redirect to seller dashboard
+                    window.location.href = '/seller/dashboard';
                 });
             } else {
                 throw new Error(data.message || 'Gagal mendaftar sebagai penjual');
@@ -1219,5 +1205,8 @@
         50% { opacity: 0.7; }
         100% { opacity: 1; }
     }
-</style>
-@endpush
+
+
+</script>
+</body>
+</html>

@@ -109,10 +109,46 @@ class ProductController extends Controller
                                  ->take(4)
                                  ->get();
 
+        // Transform seller data for better display
+        $sellerData = $product->seller ? [
+            'id' => $product->seller->id,
+            'name' => $product->seller->name,
+            'store_name' => $product->seller->nama_toko ?? $product->seller->name,
+            'description' => $product->seller->deskripsi ?? 'Belum ada deskripsi toko',
+            'phone' => $product->seller->phone,
+            'store_address' => [
+                'full_address' => $product->seller->alamat,
+                'city' => $product->seller->kota,
+                'province' => $product->seller->provinsi,
+                'note' => 'Alamat toko yang dapat dikunjungi'
+            ],
+            'opening_hours' => [
+                'open' => $product->seller->jam_buka,
+                'close' => $product->seller->jam_tutup
+            ],
+            'is_active' => $product->seller->active,
+            'joined_date' => $product->seller->created_at->format('d M Y'),
+            'locations' => $product->seller->sellerLocations->where('aktif', true)->map(function ($location) {
+                return [
+                    'id' => $location->id,
+                    'name' => $location->nama_usaha,
+                    'store_address' => [
+                        'full_address' => $location->alamat_lengkap,
+                        'city' => $location->kota,
+                        'province' => $location->provinsi,
+                        'note' => 'Alamat cabang toko'
+                    ],
+                    'phone' => $location->telepon,
+                    'type' => $location->jenis_penjual
+                ];
+            })->values()
+        ] : null;
+
         return response()->json([
             'success' => true,
             'data' => [
                 'product' => $product,
+                'seller' => $sellerData,
                 'related_products' => $relatedProducts
             ]
         ]);

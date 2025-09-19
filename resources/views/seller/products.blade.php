@@ -1,26 +1,158 @@
-@extends('layouts.app')
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Kelola Produk - IwakMart</title>
 
-@section('content')
-<div class="container">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2 class="mb-1"><i class="fas fa-fish text-primary me-2"></i>Kelola Produk</h2>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb mb-0">
-                            <li class="breadcrumb-item"><a href="/profile">Profil</a></li>
-                            <li class="breadcrumb-item"><a href="/seller/dashboard">Dashboard Seller</a></li>
-                            <li class="breadcrumb-item active">Produk</li>
-                        </ol>
-                    </nav>
-                </div>
-                <button class="btn btn-primary" onclick="showAddProductModal()">
-                    <i class="fas fa-plus me-1"></i>Tambah Produk
-                </button>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+
+    <!-- Auth Script -->
+    <script src="/js/auth.js"></script>
+
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #F0F8FF 0%, #E3F2FD 50%, #BBDEFB 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-bottom: 120px; /* Space for floating footer */
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1565C0 0%, #0D47A1 50%, #002171 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(21, 101, 192, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            padding: 0 20px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .back-btn:active {
+            transform: translateY(0) scale(0.95);
+        }
+
+        .header-icon {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 12px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .header-info h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .header-info p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <button class="back-btn" onclick="window.location.href='/seller/dashboard'">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-icon">
+                <i class="fas fa-fish"></i>
+            </div>
+            <div class="header-info">
+                <h1>Kelola Produk</h1>
+
             </div>
         </div>
     </div>
+
+<div class="container">
+    <div style="padding: 20px;">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+
+                    <button class="btn btn-primary" onclick="showAddProductModal()">
+                        <i class="fas fa-plus me-1"></i>Tambah Produk
+                    </button>
+                </div>
+            </div>
+        </div>
 
     <!-- Seller Navigation Tabs -->
     <div class="row mb-4">
@@ -44,11 +176,6 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('seller.locations') }}">
                         <i class="fas fa-store me-2"></i>Info Toko
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('seller.profile') }}">
-                        <i class="fas fa-user me-2"></i>Profil
                     </a>
                 </li>
             </ul>
@@ -263,7 +390,7 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="productWeight" class="form-label">Berat (gram) <span class="text-danger">*</span></label>
+                            <label for="productWeight" class="form-label">Berat (kg) <span class="text-danger">*</span></label>
                             <input type="number" class="form-control" id="productWeight" min="0" required>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -308,10 +435,10 @@
             </div>
         </div>
     </div>
+    </div>
 </div>
-@endsection
 
-@push('styles')
+<!-- Inline Styles -->
 <style>
     .card {
         transition: transform 0.2s;
@@ -360,10 +487,29 @@
     .badge-existing {
         font-size: 0.65rem;
     }
-</style>
-@endpush
 
-@push('scripts')
+    .nav-tabs .nav-link {
+        border: none;
+        color: #6c757d;
+        padding: 1rem 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .nav-tabs .nav-link:hover {
+        border: none;
+        color: #0d6efd;
+        background-color: rgba(13, 110, 253, 0.1);
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        background-color: rgba(13, 110, 253, 0.1);
+        border: none;
+        border-bottom: 3px solid #0d6efd;
+    }
+</style>
+
+<!-- JavaScript -->
 <script src="/js/auth.js"></script>
 <script>
     let products = [];
@@ -977,25 +1123,22 @@
     }
 </script>
 
-<style>
-    .nav-tabs .nav-link {
-        border: none;
-        color: #6c757d;
-        padding: 1rem 1.5rem;
-        transition: all 0.3s ease;
-    }
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    .nav-tabs .nav-link:hover {
-        border: none;
-        color: #0d6efd;
-        background-color: rgba(13, 110, 253, 0.1);
-    }
+<script>
+    // Set current date in header
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentDate = new Date().toLocaleDateString('id-ID', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
 
-    .nav-tabs .nav-link.active {
-        color: #0d6efd;
-        background-color: rgba(13, 110, 253, 0.1);
-        border: none;
-        border-bottom: 3px solid #0d6efd;
-    }
-</style>
-@endpush
+        document.getElementById('currentDateHeader').textContent = currentDate;
+    });
+</script>
+
+</body>
+</html>

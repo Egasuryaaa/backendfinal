@@ -37,6 +37,9 @@ class Order extends Model
         'pajak',
         'total',
         'catatan',
+        'payment_deadline',
+        'payment_proof',
+        'payment_proof_uploaded_at',
     ];
 
     /**
@@ -49,6 +52,8 @@ class Order extends Model
         'subtotal' => 'decimal:2',
         'pajak' => 'decimal:2',
         'total' => 'decimal:2',
+        'payment_deadline' => 'datetime',
+        'payment_proof_uploaded_at' => 'datetime',
     ];
 
     /**
@@ -72,6 +77,7 @@ class Order extends Model
      */
     public static $paymentStatuses = [
         'menunggu' => 'Menunggu Pembayaran',
+        'menunggu_verifikasi' => 'Menunggu Verifikasi',
         'dibayar' => 'Pembayaran Diterima',
         'gagal' => 'Pembayaran Gagal'
     ];
@@ -172,7 +178,7 @@ class Order extends Model
      */
     public function getFormattedTotalAttribute()
     {
-        return 'Rp ' . number_format($this->total, 0, ',', '.');
+        return 'Rp ' . number_format((float) $this->total, 0, ',', '.');
     }
 
     /**
@@ -180,7 +186,7 @@ class Order extends Model
      */
     public function getFormattedSubtotalAttribute()
     {
-        return 'Rp ' . number_format($this->subtotal, 0, ',', '.');
+        return 'Rp ' . number_format((float) $this->subtotal, 0, ',', '.');
     }
 
     /**
@@ -188,7 +194,7 @@ class Order extends Model
      */
     public function getFormattedShippingAttribute()
     {
-        return 'Rp ' . number_format($this->biaya_kirim, 0, ',', '.');
+        return 'Rp ' . number_format((float) $this->biaya_kirim, 0, ',', '.');
     }
 
     /**
@@ -261,6 +267,106 @@ class Order extends Model
         ]);
 
         return $this;
+    }
+
+    /**
+     * Set payment deadline (2 hours from now)
+     */
+    public function setPaymentDeadline()
+    {
+        $this->payment_deadline = now()->addHours(2);
+        $this->save();
+        
+        return $this;
+    }
+
+    /**
+     * Check if payment deadline has passed
+     */
+    public function isPaymentExpired(): bool
+    {
+        if (!$this->payment_deadline) {
+            return false;
+        }
+        
+        return now()->isAfter($this->payment_deadline);
+    }
+
+    /**
+     * Check if order can be cancelled due to expired payment
+     */
+    public function canBeCancelledDueToExpiration(): bool
+    {
+        return $this->status === 'menunggu' && 
+               $this->metode_pembayaran === 'manual' && 
+               $this->isPaymentExpired();
+    }
+
+    /**
+     * Cancel order due to payment timeout
+     */
+    public function cancelDueToTimeout()
+    {
+        if ($this->canBeCancelledDueToExpiration()) {
+            $this->status = 'dibatalkan';
+            $this->status_pembayaran = 'gagal';
+            $this->save();
+
+            // Create notification
+            $this->user->notifications()->create([
+                'judul' => 'Pesanan Dibatalkan - Timeout Pembayaran',
+                'isi' => "Pesanan #{$this->nomor_pesanan} telah dibatalkan karena tidak ada pembayaran dalam batas waktu 2 jam.",
+                'jenis' => 'pesanan',
+                'pesanan_id' => $this->id,
+                'tautan' => '/orders/' . $this->id,
+            ]);
+        }
+        
+        return $this;
+    }
+
+    /**
+     * Upload payment proof
+     */
+    public function uploadPaymentProof($proofPath)
+    {
+        $this->payment_proof = $proofPath;
+        $this->payment_proof_uploaded_at = now();
+        $this->status_pembayaran = 'menunggu_verifikasi';
+        $this->save();
+
+        // Create notification for user
+        $this->user->notifications()->create([
+            'judul' => 'Bukti Pembayaran Berhasil Diupload',
+            'isi' => "Bukti pembayaran untuk pesanan #{$this->nomor_pesanan} telah berhasil diupload dan sedang menunggu verifikasi.",
+            'jenis' => 'pembayaran',
+            'pesanan_id' => $this->id,
+            'tautan' => '/orders/' . $this->id,
+        ]);
+
+        return $this;
+    }
+
+    /**
+     * Get bank account information from seller
+     */
+    public function getSellerBankAccount()
+    {
+        // Get seller from first order item (assuming all items from same seller)
+        $firstItem = $this->orderItems()->with('product.seller')->first();
+        
+        if ($firstItem && $firstItem->product && $firstItem->product->seller) {
+            $seller = $firstItem->product->seller;
+            
+            return [
+                'bank_name' => $seller->bank_name,
+                'account_number' => $seller->account_number,
+                'account_holder_name' => $seller->account_holder_name,
+                'seller_name' => $seller->name,
+            ];
+        }
+        
+        return null;
     }
 
     /**

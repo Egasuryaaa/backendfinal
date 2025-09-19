@@ -465,10 +465,25 @@ class OrderController extends Controller
                 }
             }
 
-            // Buat pembayaran Xendit jika metode pembayaran bukan COD
+            // Buat pembayaran Xendit jika metode pembayaran bukan COD dan bukan manual
             $paymentUrl = null;
             $paymentId = null;
-            if ($request->metode_pembayaran !== 'cod' && $request->has('payment_method')) {
+            $bankAccount = null;
+
+            if ($request->metode_pembayaran === 'manual') {
+                // Set payment deadline (2 hours) for manual payment
+                $order->setPaymentDeadline();
+
+                // Get seller bank account information
+                $bankAccount = $order->getSellerBankAccount();
+
+                Log::info('Manual payment order created', [
+                    'order_id' => $order->id,
+                    'payment_deadline' => $order->payment_deadline,
+                    'bank_account' => $bankAccount
+                ]);
+
+            } elseif ($request->metode_pembayaran !== 'cod' && $request->has('payment_method')) {
                 try {
                     // Data untuk Xendit
                     $paymentData = [
@@ -538,6 +553,13 @@ class OrderController extends Controller
                 'payment_id' => $paymentId,
                 'requires_payment' => $request->metode_pembayaran !== 'cod'
             ];
+
+            // Add bank account info for manual payment
+            if ($request->metode_pembayaran === 'manual' && $bankAccount) {
+                $responseData['bank_account'] = $bankAccount;
+                $responseData['payment_deadline'] = $order->payment_deadline;
+                $responseData['payment_instructions'] = 'Silakan transfer ke rekening berikut dalam waktu 2 jam. Upload bukti transfer setelah pembayaran.';
+            }
 
             return response()->json([
                 'success' => true,
@@ -932,6 +954,190 @@ class OrderController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Internal server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Upload payment proof for manual payment.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $orderId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function uploadPaymentProof(Request $request, $orderId)
+    {
+        try {
+            $user = $request->user();
+
+            $order = Order::where('id', $orderId)
+                         ->where('user_id', $user->id)
+                         ->first();
+
+            if (!$order) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order not found'
+                ], 404);
+            }
+
+            // Check if order is eligible for payment proof upload
+            if ($order->metode_pembayaran !== 'manual') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment proof can only be uploaded for manual payment orders'
+                ], 400);
+            }
+
+            if ($order->status !== 'menunggu') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment proof can only be uploaded for pending orders'
+                ], 400);
+            }
+
+            // Check if payment deadline has passed
+            if ($order->isPaymentExpired()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment deadline has passed. Order will be cancelled automatically.'
+                ], 400);
+            }
+
+            $request->validate([
+                'payment_proof' => 'required|image|mimes:jpeg,png,jpg|max:5120', // Max 5MB
+            ]);
+
+            // Upload file
+            $file = $request->file('payment_proof');
+            $filename = 'payment_proof_' . $order->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('payment_proofs', $filename, 'public');
+
+            // Update order with payment proof
+            $order->uploadPaymentProof($path);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment proof uploaded successfully',
+                'data' => [
+                    'order_id' => $order->id,
+                    'payment_proof' => $path,
+                    'status_pembayaran' => $order->status_pembayaran,
+                    'uploaded_at' => $order->payment_proof_uploaded_at
+                ]
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error uploading payment proof: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to upload payment proof',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get order with bank account information for manual payment.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $orderId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getOrderWithBankAccount(Request $request, $orderId)
+    {
+        try {
+            $user = $request->user();
+
+            $order = Order::with(['orderItems.product.seller', 'address'])
+                         ->where('id', $orderId)
+                         ->where('user_id', $user->id)
+                         ->first();
+
+            if (!$order) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order not found'
+                ], 404);
+            }
+
+            // Get basic order data
+            $orderData = [
+                'id' => $order->id,
+                'nomor_pesanan' => $order->nomor_pesanan,
+                'status' => $order->status,
+                'metode_pembayaran' => $order->metode_pembayaran,
+                'status_pembayaran' => $order->status_pembayaran,
+                'total' => $order->total,
+                'total_formatted' => $order->formatted_total,
+                'payment_deadline' => $order->payment_deadline,
+                'payment_proof' => $order->payment_proof,
+                'created_at' => $order->created_at,
+                'is_payment_expired' => $order->isPaymentExpired(),
+            ];
+
+            // Add bank account info if manual payment
+            if ($order->metode_pembayaran === 'manual') {
+                $bankAccount = $order->getSellerBankAccount();
+                $orderData['bank_account'] = $bankAccount;
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $orderData
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting order with bank account: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve order information',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Check and cancel expired orders.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function checkExpiredOrders()
+    {
+        try {
+            $expiredOrders = Order::where('status', 'menunggu')
+                                 ->where('metode_pembayaran', 'manual')
+                                 ->whereNotNull('payment_deadline')
+                                 ->where('payment_deadline', '<', now())
+                                 ->get();
+
+            $cancelledCount = 0;
+            foreach ($expiredOrders as $order) {
+                $order->cancelDueToTimeout();
+                $cancelledCount++;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Cancelled {$cancelledCount} expired orders",
+                'cancelled_count' => $cancelledCount
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error checking expired orders: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to check expired orders',
+                'error' => $e->getMessage()
             ], 500);
         }
     }

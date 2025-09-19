@@ -35,9 +35,7 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+            padding-bottom: 20px;
         }
 
         /* Header */
@@ -46,12 +44,16 @@
             color: white;
             padding: 20px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            width: 100%;
         }
 
         .header-content {
             display: flex;
             align-items: center;
             gap: 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
 
         .back-btn {
@@ -81,6 +83,9 @@
         .main-content {
             flex: 1;
             padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
         }
 
         .orders-list {
@@ -263,33 +268,31 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-content">
-                <button class="back-btn" onclick="history.back()">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <h1 class="header-title">Pesanan Saya</h1>
-            </div>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <button class="back-btn" onclick="history.back()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h1 class="header-title">Pesanan Saya</h1>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div id="loadingState" class="loading">
+            <div class="spinner"></div>
+            <p>Memuat pesanan...</p>
         </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <div id="loadingState" class="loading">
-                <div class="spinner"></div>
-                <p>Memuat pesanan...</p>
-            </div>
+        <div id="ordersContainer" class="orders-list" style="display: none;">
+            <!-- Orders will be loaded here -->
+        </div>
 
-            <div id="ordersContainer" class="orders-list" style="display: none;">
-                <!-- Orders will be loaded here -->
-            </div>
-
-            <div id="emptyState" class="empty-state" style="display: none;">
-                <i class="fas fa-shopping-bag"></i>
-                <h3>Belum Ada Pesanan</h3>
-                <p>Anda belum memiliki pesanan. Yuk belanja sekarang!</p>
-            </div>
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <i class="fas fa-shopping-bag"></i>
+            <h3>Belum Ada Pesanan</h3>
+            <p>Anda belum memiliki pesanan. Yuk belanja sekarang!</p>
         </div>
     </div>
 

@@ -1,17 +1,149 @@
-@extends('layouts.app')
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Dashboard Penjual - IwakMart</title>
 
-@section('content')
-<div class="container">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="mb-0"><i class="fas fa-tachometer-alt text-primary me-2"></i>Dashboard Penjual</h2>
-                <div class="text-muted">
-                    <i class="fas fa-calendar me-1"></i>
-                    <span id="currentDate"></span>
-                </div>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+
+    <!-- Auth Script -->
+    <script src="/js/auth.js"></script>
+
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #F0F8FF 0%, #E3F2FD 50%, #BBDEFB 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-bottom: 120px; /* Space for floating footer */
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1565C0 0%, #0D47A1 50%, #002171 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(21, 101, 192, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            padding: 0 20px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .back-btn:active {
+            transform: translateY(0) scale(0.95);
+        }
+
+        .header-icon {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 12px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .header-info h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .header-info p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <button class="back-btn" onclick="window.location.href='/profile'">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-icon">
+                <i class="fas fa-tachometer-alt"></i>
+            </div>
+            <div class="header-info">
+                <h1>Dashboard Penjual</h1>
             </div>
         </div>
+    </div>
+
+    <div class="container">
+        <div style="padding: 20px;">
+    <div class="row">
+
     </div>
 
     <!-- Seller Navigation Tabs -->
@@ -36,11 +168,6 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('seller.locations') }}">
                         <i class="fas fa-store me-2"></i>Info Toko
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('seller.profile') }}">
-                        <i class="fas fa-user me-2"></i>Profil
                     </a>
                 </li>
             </ul>
@@ -138,76 +265,6 @@
             </div>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-gradient-primary text-white">
-                        <h5 class="mb-0"><i class="fas fa-rocket me-2"></i>Aksi Cepat</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-lg-3 col-md-6">
-                                <a href="/seller/products" class="btn btn-outline-primary w-100 py-3 text-start">
-                                    <div class="d-flex align-items-center">
-                                        <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
-                                            <i class="fas fa-fish text-primary fa-lg"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold">Kelola Produk</div>
-                                            <small class="text-muted">Tambah & edit produk</small>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-
-                            <div class="col-lg-3 col-md-6">
-                                <a href="/seller/orders" class="btn btn-outline-success w-100 py-3 text-start">
-                                    <div class="d-flex align-items-center">
-                                        <div class="bg-success bg-opacity-10 rounded-circle p-3 me-3">
-                                            <i class="fas fa-shopping-cart text-success fa-lg"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold">Kelola Pesanan</div>
-                                            <small class="text-muted">Lihat & proses pesanan</small>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-
-                            <div class="col-lg-3 col-md-6">
-                                <a href="/seller/locations" class="btn btn-outline-info w-100 py-3 text-start">
-                                    <div class="d-flex align-items-center">
-                                        <div class="bg-info bg-opacity-10 rounded-circle p-3 me-3">
-                                            <i class="fas fa-map-marker-alt text-info fa-lg"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold">Lokasi Usaha</div>
-                                            <small class="text-muted">Atur lokasi toko</small>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-
-                            <div class="col-lg-3 col-md-6">
-                                <a href="/profile" class="btn btn-outline-warning w-100 py-3 text-start">
-                                    <div class="d-flex align-items-center">
-                                        <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
-                                            <i class="fas fa-user-edit text-warning fa-lg"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold">Edit Profil</div>
-                                            <small class="text-muted">Update informasi</small>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="row">
             <!-- Sales Chart -->
             <div class="col-lg-8 mb-4">
@@ -284,9 +341,8 @@
         </div>
     </div>
 </div>
-@endsection
 
-@push('styles')
+<!-- Inline Styles -->
 <style>
     .card {
         transition: transform 0.2s;
@@ -314,23 +370,14 @@
         background: rgba(var(--bs-primary-rgb), 0.02);
     }
 </style>
-@endpush
 
-@push('scripts')
+<!-- JavaScript -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="/js/auth.js"></script>
 <script>
     let salesChart = null;
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Set current date
-        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('id-ID', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-
         loadDashboard();
     });
 
@@ -529,5 +576,8 @@
         if (parts.length === 2) return parts.pop().split(';').shift();
         return '';
     }
+
 </script>
-@endpush
+
+</body>
+</html>

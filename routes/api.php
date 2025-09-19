@@ -13,14 +13,21 @@ use App\Http\Controllers\API\OrderController;
 use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\SellerController;
+use App\Http\Controllers\API\SellerInfoController;
 use App\Http\Controllers\API\SellerLocationController;
 use App\Http\Controllers\API\PaymentController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 // CSRF Cookie route
 Route::get('/csrf-cookie', function () {
     return response()->json(['message' => 'CSRF cookie set']);
+});
+
+// Test route
+Route::get('/test-seller', function () {
+    return response()->json(['message' => 'Test seller route working']);
 });
 
 // Public routes
@@ -40,6 +47,15 @@ Route::get('/categories/{category}/products', [ProductController::class, 'byCate
 
 // Reviews (public read)
 Route::get('/products/{product}/reviews', [ReviewController::class, 'productReviews']);
+
+// Seller info (public)
+Route::get('/sellers/from-product', [SellerInfoController::class, 'getFromProduct']);
+Route::get('/sellers/{sellerId}', [SellerInfoController::class, 'show']);
+
+// Protected seller bank account (requires auth and valid order)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/sellers/{sellerId}/bank-account', [SellerInfoController::class, 'getBankAccount']);
+});
 
 // Payment methods (public)
 Route::get('/payment/methods', [PaymentController::class, 'getPaymentMethods']);
@@ -93,6 +109,11 @@ Route::post('/register-seller', [AuthController::class, 'registerAsSeller'])->mi
     Route::post('/orders/{order}/cancel', [OrderController::class, 'cancelOrder']);
     Route::post('/orders/{order}/complete', [OrderController::class, 'completeOrder']);
 
+    // Manual payment features
+    Route::get('/orders/{order}/bank-account', [OrderController::class, 'getOrderWithBankAccount']);
+    Route::post('/orders/{order}/payment-proof', [OrderController::class, 'uploadPaymentProof']);
+    Route::post('/orders/check-expired', [OrderController::class, 'checkExpiredOrders']);
+
     // Payments
     Route::post('/payments', [PaymentController::class, 'createPayment']);
     Route::get('/payments/{paymentId}/status', [PaymentController::class, 'getPaymentStatus']);
@@ -133,22 +154,22 @@ Route::post('/register-seller', [AuthController::class, 'registerAsSeller'])->mi
     // Appointments
     Route::get('/appointments', [AppointmentController::class, 'index']);
     Route::post('/appointments', [AppointmentController::class, 'store']);
-    
+
     // Collector Appointments (untuk pemilik_tambak dan pengepul) - Must come before generic routes
     Route::post('/appointments/collector', [AppointmentController::class, 'createCollectorAppointment']);
     Route::get('/appointments/collector', [AppointmentController::class, 'getCollectorAppointments']);
     Route::put('/appointments/collector/{id}/cancel', [AppointmentController::class, 'cancelCollectorAppointment']);
-    
+
     // Pengepul specific routes
     Route::put('/appointments/collector/{id}/respond', [AppointmentController::class, 'respondToAppointment']);
     Route::put('/appointments/collector/{id}/complete', [AppointmentController::class, 'completeAppointment']);
-    
+
     // Generic appointment routes - Must come after specific routes
     Route::get('/appointments/{appointment}', [AppointmentController::class, 'show']);
     Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
     Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
     Route::put('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
-    
+
     Route::post('/appointments/{id}/whatsapp-summary', [AppointmentController::class, 'sendWhatsAppSummary']);
 
     // Messages
@@ -162,10 +183,27 @@ Route::post('/register-seller', [AuthController::class, 'registerAsSeller'])->mi
     Route::put('/notifications/{notification}', [NotificationController::class, 'markAsRead']);
     Route::put('/notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead']);
 
+    // Test seller auth route
+    Route::get('/test-seller-auth', function (Request $request) {
+        $user = $request->user();
+        return response()->json([
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'role' => $user->role,
+            'is_seller' => $user->isSeller()
+        ]);
+    });
+
     // Seller routes - role checking moved to controller level
     Route::prefix('seller')->group(function () {
         // Dashboard
         Route::get('/dashboard', [SellerController::class, 'dashboard']);
+
+        // Store Info
+        Route::get('/store-info', [SellerController::class, 'getStoreInfo']);
+
+        // Bank Account Management
+        Route::put('/bank-account', [SellerController::class, 'updateBankAccount']);
 
         // Products
         Route::get('/products', [ProductController::class, 'sellerProducts']);

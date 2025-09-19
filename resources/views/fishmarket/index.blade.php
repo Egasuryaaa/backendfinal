@@ -823,9 +823,9 @@
                     <a href="/profile" class="cart-button" id="profileButton" title="Profil Saya">
                         <i class="fas fa-user-circle"></i>
                     </a>
-                    <a href="/locations" class="cart-button" id="locationsButton" title="Lokasi Penjual">
+                    {{-- <a href="/locations" class="cart-button" id="locationsButton" title="Lokasi Penjual">
                         <i class="fas fa-map-marker-alt"></i>
-                    </a>
+                    </a> --}}
                     <a href="/fish-farms" class="cart-button" id="fishFarmButton" title="Tambak & Pengepul">
                         <i class="fas fa-fish"></i>
                     </a>
@@ -993,7 +993,7 @@
         function displayQuickActions(user) {
             const quickActionsSection = document.getElementById('quickActionsSection');
             const quickActionsGrid = document.getElementById('quickActionsGrid');
-            
+
             // Default actions for all users
             let actions = [
                 {

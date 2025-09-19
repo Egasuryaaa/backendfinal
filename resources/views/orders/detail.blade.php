@@ -35,9 +35,7 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+            padding-bottom: 20px;
         }
 
         /* Header */
@@ -46,12 +44,16 @@
             color: white;
             padding: 20px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            width: 100%;
         }
 
         .header-content {
             display: flex;
             align-items: center;
             gap: 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
 
         .back-btn {
@@ -81,6 +83,9 @@
         .main-content {
             flex: 1;
             padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
         }
 
         .detail-card {
@@ -359,32 +364,31 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-content">
-                <button class="back-btn" onclick="history.back()">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <h1 class="header-title">Detail Pesanan</h1>
-            </div>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <button class="back-btn" onclick="history.back()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h1 class="header-title">Detail Pesanan</h1>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div id="loadingState" class="loading">
+            <div class="spinner"></div>
         </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <div id="loadingState" class="loading">
-                <div class="spinner"></div>
-            </div>
-
-            <div id="errorState" class="error-state" style="display: none;">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h3>Pesanan Tidak Ditemukan</h3>
-                <p>Pesanan yang Anda cari tidak ditemukan atau Anda tidak memiliki akses ke pesanan ini.</p>
-                <button class="btn btn-primary" onclick="window.location.href='/orders'">
-                    <i class="fas fa-arrow-left"></i>
-                    Kembali ke Daftar Pesanan
-                </button>
-            </div>
+        <div id="errorState" class="error-state" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Pesanan Tidak Ditemukan</h3>
+            <p>Pesanan yang Anda cari tidak ditemukan atau Anda tidak memiliki akses ke pesanan ini.</p>
+            <button class="btn btn-primary" onclick="window.location.href='/orders'">
+                <i class="fas fa-arrow-left"></i>
+                Kembali ke Daftar Pesanan
+            </button>
+        </div>
 
             <div id="orderDetail" style="display: none;">
                 <!-- Order Header -->
@@ -416,6 +420,102 @@
                     <!-- Action Buttons -->
                     <div class="action-buttons" id="actionButtons">
                         <!-- Buttons will be dynamically added based on order status -->
+                    </div>
+                </div>
+
+                <!-- Manual Payment Info (shown only for manual payment orders) -->
+                <div class="detail-card" id="manualPaymentSection" style="display: none;">
+                    <div class="section-header">
+                        <i class="fas fa-university section-icon"></i>
+                        Informasi Pembayaran Manual
+                    </div>
+
+                    <!-- Payment Deadline -->
+                    <div id="paymentDeadlineInfo" style="background: #FFF3E0; padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #FF9800;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <i class="fas fa-clock" style="color: #F57C00;"></i>
+                            <span style="font-weight: 600; color: #F57C00;">Batas Waktu Pembayaran</span>
+                        </div>
+                        <div id="paymentDeadlineText" style="color: #F57C00; font-size: 14px; margin-bottom: 8px;"></div>
+                        <div id="paymentCountdownDetail" style="font-weight: 700; font-size: 16px; color: #F57C00;"></div>
+                    </div>
+
+                    <!-- Bank Account Info -->
+                    <div id="bankAccountInfo" style="background: white; border: 1px solid #E5E5E5; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                        <h4 style="margin: 0 0 12px 0; color: #1565C0; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-credit-card"></i>
+                            Rekening Tujuan Transfer
+                        </h4>
+                        <div id="bankAccountDetails" style="background: #F8F9FA; padding: 12px; border-radius: 6px;">
+                            <!-- Bank account details will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Payment Proof Upload -->
+                    <div id="paymentProofSection">
+                        <h4 style="margin: 0 0 12px 0; color: #1565C0; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-upload"></i>
+                            Upload Bukti Pembayaran
+                        </h4>
+
+                        <!-- Upload Form -->
+                        <div id="uploadForm" style="background: #F8F9FA; padding: 16px; border-radius: 8px; border: 2px dashed #DDD;">
+                            <div style="text-align: center; margin-bottom: 16px;">
+                                <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: #1565C0; margin-bottom: 8px;"></i>
+                                <p style="margin: 0; color: #666; font-size: 14px;">
+                                    Pilih atau drag & drop file bukti transfer<br>
+                                    <small>Format yang didukung: JPG, PNG, PDF (max 5MB)</small>
+                                </p>
+                            </div>
+                            <input type="file" id="paymentProofFile" accept="image/*,.pdf" style="display: none;" onchange="handleFileSelect(event)">
+                            <div style="text-align: center;">
+                                <button class="btn btn-primary" onclick="document.getElementById('paymentProofFile').click()">
+                                    <i class="fas fa-folder-open"></i>
+                                    Pilih File
+                                </button>
+                            </div>
+
+                            <!-- Selected file preview -->
+                            <div id="filePreview" style="display: none; margin-top: 16px; padding: 12px; background: white; border-radius: 6px; border: 1px solid #E5E5E5;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <i class="fas fa-file" style="color: #1565C0; font-size: 20px;"></i>
+                                    <div style="flex: 1;">
+                                        <div id="fileName" style="font-weight: 600; color: #333;"></div>
+                                        <div id="fileSize" style="font-size: 12px; color: #666;"></div>
+                                    </div>
+                                    <button class="btn btn-success" onclick="uploadPaymentProof()" id="uploadBtn">
+                                        <i class="fas fa-upload"></i>
+                                        Upload
+                                    </button>
+                                    <button onclick="clearFileSelection()" style="background: none; border: none; color: #D32F2F; cursor: pointer;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Uploaded proof display -->
+                        <div id="uploadedProof" style="display: none; background: #E8F5E8; padding: 16px; border-radius: 8px; border-left: 4px solid #4CAF50; margin-top: 16px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <i class="fas fa-check-circle" style="color: #4CAF50;"></i>
+                                <span style="font-weight: 600; color: #2E7D32;">Bukti Pembayaran Telah Diupload</span>
+                            </div>
+                            <p style="margin: 0; color: #388E3C; font-size: 14px;">
+                                File: <span id="uploadedFileName"></span><br>
+                                Diupload pada: <span id="uploadedDate"></span><br>
+                                Status: Menunggu konfirmasi dari penjual
+                            </p>
+                            <div style="margin-top: 12px;">
+                                <button class="btn btn-secondary" onclick="viewPaymentProof()" style="font-size: 12px; padding: 8px 12px;">
+                                    <i class="fas fa-eye"></i>
+                                    Lihat Bukti
+                                </button>
+                                <button class="btn btn-primary" onclick="showUploadForm()" style="font-size: 12px; padding: 8px 12px; margin-left: 8px;">
+                                    <i class="fas fa-edit"></i>
+                                    Ganti Bukti
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -477,7 +577,6 @@
                 </div>
             </div>
         </div>
-    </div>
 
     <script>
         let order = null;
@@ -544,6 +643,11 @@
             document.getElementById('paymentMethod').textContent = order.metode_pembayaran_label || order.metode_pembayaran || '-';
             document.getElementById('paymentStatus').textContent = order.status_pembayaran_label || order.status_pembayaran || '-';
             document.getElementById('shippingMethod').textContent = order.metode_pengiriman || '-';
+
+            // Manual Payment Section
+            if (order.metode_pembayaran === 'manual') {
+                handleManualPaymentDisplay();
+            }
 
             // Address info
             if (order.address) {
@@ -764,6 +868,271 @@
             } catch (error) {
                 console.error('Complete order error:', error);
                 alert('Terjadi kesalahan saat menyelesaikan pesanan');
+            }
+        }
+
+        // Handle manual payment display
+        async function handleManualPaymentDisplay() {
+            try {
+                // Fetch bank account info for this order
+                const token = getAuthToken ? getAuthToken() : null;
+                const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                };
+
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const response = await fetch(`/api/orders/${orderId}/bank-account`, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data.bank_account) {
+                        displayManualPaymentInfo(data.data);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching bank account info:', error);
+            }
+        }
+
+        // Display manual payment information
+        function displayManualPaymentInfo(data) {
+            const bankAccount = data.bank_account;
+            const manualPaymentSection = document.getElementById('manualPaymentSection');
+
+            // Show manual payment section
+            manualPaymentSection.style.display = 'block';
+
+            // Payment deadline
+            if (order.payment_deadline) {
+                const deadline = new Date(order.payment_deadline);
+                const deadlineFormatted = deadline.toLocaleString('id-ID', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                document.getElementById('paymentDeadlineText').innerHTML = `<strong>${deadlineFormatted}</strong><br><span style="font-size: 12px;">Pesanan akan otomatis dibatalkan jika tidak dibayar sebelum batas waktu</span>`;
+
+                // Start countdown
+                startPaymentCountdownDetail(deadline);
+            }
+
+            // Bank account details
+            const bankAccountHtml = `
+                <div style="margin-bottom: 8px;">
+                    <span style="font-size: 12px; color: #666; text-transform: uppercase;">Bank</span><br>
+                    <strong style="font-size: 16px;">${bankAccount.bank_name}</strong>
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <span style="font-size: 12px; color: #666; text-transform: uppercase;">Nomor Rekening</span><br>
+                    <strong style="font-size: 18px; color: #1565C0; letter-spacing: 1px;">${bankAccount.account_number}</strong>
+                    <button onclick="copyAccountNumber('${bankAccount.account_number}')" style="margin-left: 8px; background: none; border: 1px solid #1565C0; color: #1565C0; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        <i class="fas fa-copy"></i> Salin
+                    </button>
+                </div>
+                <div>
+                    <span style="font-size: 12px; color: #666; text-transform: uppercase;">Atas Nama</span><br>
+                    <strong style="font-size: 16px;">${bankAccount.account_holder_name}</strong>
+                </div>
+            `;
+            document.getElementById('bankAccountDetails').innerHTML = bankAccountHtml;
+
+            // Check if payment proof already uploaded
+            if (order.payment_proof) {
+                showUploadedProof();
+            } else if (order.status_pembayaran === 'menunggu' && new Date() < new Date(order.payment_deadline)) {
+                showUploadForm();
+            } else {
+                // Payment expired or different status
+                hideUploadForm();
+            }
+        }
+
+        // Start payment countdown for detail page
+        function startPaymentCountdownDetail(deadline) {
+            const countdownElement = document.getElementById('paymentCountdownDetail');
+            if (!countdownElement) return;
+
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const distance = deadline.getTime() - now;
+
+                if (distance < 0) {
+                    countdownElement.innerHTML = '<span style="color: #D32F2F;">⏰ Waktu pembayaran telah habis</span>';
+                    hideUploadForm();
+                    return;
+                }
+
+                const hours = Math.floor(distance / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                countdownElement.innerHTML = `⏰ Sisa waktu: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        }
+
+        // Copy account number to clipboard
+        function copyAccountNumber(accountNumber) {
+            navigator.clipboard.writeText(accountNumber).then(() => {
+                alert('✅ Nomor rekening berhasil disalin!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('❌ Gagal menyalin nomor rekening');
+            });
+        }
+
+        // Handle file selection
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('❌ Format file tidak didukung. Gunakan JPG, PNG, atau PDF.');
+                return;
+            }
+
+            // Validate file size (5MB max)
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            if (file.size > maxSize) {
+                alert('❌ Ukuran file terlalu besar. Maksimal 5MB.');
+                return;
+            }
+
+            // Show file preview
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('filePreview').style.display = 'block';
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Clear file selection
+        function clearFileSelection() {
+            document.getElementById('paymentProofFile').value = '';
+            document.getElementById('filePreview').style.display = 'none';
+        }
+
+        // Upload payment proof
+        async function uploadPaymentProof() {
+            const fileInput = document.getElementById('paymentProofFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('❌ Pilih file terlebih dahulu!');
+                return;
+            }
+
+            const uploadBtn = document.getElementById('uploadBtn');
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+            try {
+                const formData = new FormData();
+                formData.append('payment_proof', file);
+
+                const token = getAuthToken ? getAuthToken() : null;
+                const headers = {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                };
+
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const response = await fetch(`/api/orders/${orderId}/upload-payment-proof`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    alert('✅ Bukti pembayaran berhasil diupload!');
+
+                    // Update order data with new payment proof info
+                    order.payment_proof = data.data.payment_proof;
+                    order.payment_proof_uploaded_at = data.data.payment_proof_uploaded_at;
+
+                    // Show uploaded proof
+                    showUploadedProof();
+                } else {
+                    throw new Error(data.message || 'Gagal mengupload bukti pembayaran');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert(`❌ ${error.message}`);
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload';
+            }
+        }
+
+        // Show uploaded proof information
+        function showUploadedProof() {
+            document.getElementById('uploadForm').style.display = 'none';
+            document.getElementById('filePreview').style.display = 'none';
+
+            const uploadedProof = document.getElementById('uploadedProof');
+
+            // Get filename from path
+            let fileName = 'Bukti Pembayaran';
+            if (order.payment_proof) {
+                const parts = order.payment_proof.split('/');
+                fileName = parts[parts.length - 1];
+            }
+
+            // Format upload date
+            let uploadDate = 'Tidak diketahui';
+            if (order.payment_proof_uploaded_at) {
+                const date = new Date(order.payment_proof_uploaded_at);
+                uploadDate = date.toLocaleString('id-ID');
+            }
+
+            document.getElementById('uploadedFileName').textContent = fileName;
+            document.getElementById('uploadedDate').textContent = uploadDate;
+            uploadedProof.style.display = 'block';
+        }
+
+        // Show upload form
+        function showUploadForm() {
+            document.getElementById('uploadForm').style.display = 'block';
+            document.getElementById('uploadedProof').style.display = 'none';
+            clearFileSelection();
+        }
+
+        // Hide upload form
+        function hideUploadForm() {
+            document.getElementById('paymentProofSection').style.display = 'none';
+        }
+
+        // View payment proof
+        function viewPaymentProof() {
+            if (order.payment_proof) {
+                window.open(`/storage/${order.payment_proof}`, '_blank');
             }
         }
 
