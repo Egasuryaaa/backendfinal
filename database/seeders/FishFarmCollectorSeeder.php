@@ -210,62 +210,47 @@ class FishFarmCollectorSeeder extends Seeder
             $createdCollectors[] = Collector::create($collectorData);
         }
 
-        // Create a default seller location for appointments
-        $sellerLocation = SellerLocation::create([
-            'user_id' => $farmerUsers[0]->id,
-            'nama_usaha' => 'Lokasi Tambak Utama',
-            'deskripsi' => 'Lokasi utama untuk penjemputan hasil tambak',
-            'alamat_lengkap' => 'Jl. Raya Tambak No. 123, Bekasi, Jawa Barat 17530',
-            'provinsi' => 'Jawa Barat',
-            'kota' => 'Bekasi',
-            'kecamatan' => 'Bekasi Utara',
-            'kode_pos' => '17530',
-            'latitude' => -6.2088,
-            'longitude' => 106.8456,
-            'aktif' => true,
-            'jam_operasional' => json_encode(['senin' => '06:00-18:00', 'selasa' => '06:00-18:00']),
-            'telepon' => '08123456789',
-            'jenis_penjual' => 'pembudidaya'
-        ]);
-
-        // Create sample appointments
+        // Create sample appointments (using new structure without penjual_id, pembeli_id, lokasi_penjual_id)
         $appointments = [
             [
+                'user_id' => $createdFishFarms[0]->user_id, // ID pemilik tambak
                 'fish_farm_id' => $createdFishFarms[0]->id,
                 'collector_id' => $createdCollectors[0]->id,
-                'penjual_id' => $createdFishFarms[0]->user_id, // Add fish farm owner as penjual
-                'pembeli_id' => $createdCollectors[0]->user_id, // Add collector as pembeli
-                'lokasi_penjual_id' => $sellerLocation->id,
                 'tanggal_janji' => now()->addDays(2)->format('Y-m-d H:i:s'),
+                'waktu_janji' => '08:00-10:00',
                 'estimated_weight' => 500,
                 'price_per_kg' => 25000,
                 'catatan' => 'Lele sudah siap panen, kualitas bagus',
+                'tujuan' => 'Penjemputan lele untuk distribusi',
+                'pesan_pemilik' => 'Harap datang tepat waktu',
                 'status' => 'menunggu',
                 'appointment_type' => 'pengepulan_ikan'
             ],
             [
+                'user_id' => $createdFishFarms[1]->user_id, // ID pemilik tambak
                 'fish_farm_id' => $createdFishFarms[1]->id,
                 'collector_id' => $createdCollectors[1]->id,
-                'penjual_id' => $createdFishFarms[1]->user_id, // Add fish farm owner as penjual
-                'pembeli_id' => $createdCollectors[1]->user_id, // Add collector as pembeli
-                'lokasi_penjual_id' => $sellerLocation->id,
                 'tanggal_janji' => now()->addDays(1)->format('Y-m-d H:i:s'),
+                'waktu_janji' => '09:00-11:00',
                 'estimated_weight' => 400,
                 'price_per_kg' => 28000,
                 'catatan' => 'Nila ukuran konsumsi, siap dijemput',
+                'tujuan' => 'Pengepulan nila untuk pasar',
+                'pesan_pemilik' => 'Sudah dikelompokkan berdasarkan ukuran',
                 'status' => 'dikonfirmasi',
                 'appointment_type' => 'pengepulan_ikan'
             ],
             [
+                'user_id' => $createdFishFarms[2]->user_id, // ID pemilik tambak
                 'fish_farm_id' => $createdFishFarms[2]->id,
                 'collector_id' => $createdCollectors[2]->id,
-                'penjual_id' => $createdFishFarms[2]->user_id, // Add fish farm owner as penjual
-                'pembeli_id' => $createdCollectors[2]->user_id, // Add collector as pembeli
-                'lokasi_penjual_id' => $sellerLocation->id,
                 'tanggal_janji' => now()->subDays(1)->format('Y-m-d H:i:s'),
+                'waktu_janji' => '07:00-09:00',
                 'estimated_weight' => 300,
                 'price_per_kg' => 32000,
                 'catatan' => 'Gurame premium untuk restoran',
+                'tujuan' => 'Pengepulan gurame premium',
+                'pesan_pemilik' => 'Ikan sudah dipuasakan 1 hari',
                 'status' => 'selesai',
                 'appointment_type' => 'pengepulan_ikan',
                 'whatsapp_summary' => json_encode([
