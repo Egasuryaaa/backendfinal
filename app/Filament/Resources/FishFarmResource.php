@@ -21,6 +21,8 @@ class FishFarmResource extends Resource
     
     protected static ?string $navigationLabel = 'Tambak Ikan';
     
+    protected static ?string $navigationGroup = 'Manajemen Tambak';
+    
     protected static ?string $modelLabel = 'Tambak Ikan';
     
     protected static ?string $pluralModelLabel = 'Tambak Ikan';

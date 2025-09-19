@@ -23,11 +23,13 @@ class AppointmentResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
     
-    protected static ?string $navigationLabel = 'Appointments';
+    protected static ?string $navigationLabel = 'Janji Temu';
     
-    protected static ?string $modelLabel = 'Appointment';
+    protected static ?string $navigationGroup = 'Manajemen Janji Temu';
     
-    protected static ?string $pluralModelLabel = 'Appointments';
+    protected static ?string $modelLabel = 'Janji Temu';
+    
+    protected static ?string $pluralModelLabel = 'Janji Temu';
     
     protected static ?int $navigationSort = 3;
     
@@ -524,13 +526,13 @@ class AppointmentResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return $user && ($user->hasRole(['admin', 'seller']));
+        return $user && ($user->isAdmin() || $user->hasRole(['admin', 'seller']));
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        return $user && ($user->hasRole(['admin', 'pemilik_tambak', 'pengepul']));
+        return $user && ($user->isAdmin() || $user->hasRole(['admin', 'pemilik_tambak', 'pengepul']));
     }
 
     public static function canEdit($record): bool
