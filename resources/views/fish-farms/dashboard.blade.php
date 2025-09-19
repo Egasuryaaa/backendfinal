@@ -489,13 +489,6 @@
                 <div class="stat-number" id="pendingAppointments">0</div>
                 <div class="stat-label">Menunggu Konfirmasi</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon revenue">
-                    <i class="fas fa-money-bill-wave"></i>
-                </div>
-                <div class="stat-number" id="totalRevenue">Rp 0</div>
-                <div class="stat-label">Total Pendapatan</div>
-            </div>
         </div>
 
         <!-- Tabs -->
@@ -851,23 +844,6 @@
                     if (pendingAppointmentsElement) {
                         pendingAppointmentsElement.textContent = pendingCount;
                     }
-
-                    // Calculate total revenue from completed appointments
-                    const completedAppointments = userAppointments.filter(app => app && app.status === 'selesai');
-                    const totalRevenue = completedAppointments.reduce((sum, app) => {
-                        try {
-                            const summary = app.whatsapp_summary ? JSON.parse(app.whatsapp_summary) : null;
-                            return sum + (summary?.total_harga || 0);
-                        } catch (e) {
-                            console.error('Error parsing whatsapp_summary:', e);
-                            return sum;
-                        }
-                    }, 0);
-                    
-                    const totalRevenueElement = document.getElementById('totalRevenue');
-                    if (totalRevenueElement) {
-                        totalRevenueElement.textContent = `Rp ${totalRevenue.toLocaleString()}`;
-                    }
                 }
 
             } catch (error) {
@@ -894,7 +870,16 @@
             if (section) section.classList.add('active');
 
             if (tab === 'farms' && farms.length === 0) loadFarms();
-            else if (tab === 'appointments' && appointments.length === 0) loadAppointments();
+            else if (tab === 'appointments') {
+                // Make sure farms are loaded first before loading appointments
+                if (farms.length === 0) {
+                    loadFarms().then(() => {
+                        if (appointments.length === 0) loadAppointments();
+                    });
+                } else if (appointments.length === 0) {
+                    loadAppointments();
+                }
+            }
         }
 
         async function loadFarms() {
@@ -1020,16 +1005,6 @@
                 const pendingCount = appointments.filter(a => a && a.status === 'menunggu').length;
                 pendingAppointmentsElement.textContent = pendingCount;
             }
-            
-            // Calculate and update revenue (example calculation)
-            const totalRevenueElement = document.getElementById('totalRevenue');
-            if (totalRevenueElement) {
-                const completedAppointments = appointments.filter(a => a && a.status === 'selesai');
-                const totalRevenue = completedAppointments.reduce((sum, app) => {
-                    return sum + ((app.estimated_weight || 0) * (app.price_per_kg || 0));
-                }, 0);
-                totalRevenueElement.textContent = `Rp ${totalRevenue.toLocaleString()}`;
-            }
         }
 
         function displayFarmsError() {
@@ -1047,33 +1022,18 @@
 
         async function loadAppointments() {
             try {
-                console.log('Loading appointments...');
+                console.log('Loading appointments for fish farm owner...');
                 const token = getToken();
                 console.log('Using token:', token ? 'Token found' : 'No token');
                 
-                // Try the collector appointments endpoint first
-                let response = await fetch('/api/appointments/collector', {
+                // Get appointments using the general endpoint (for fish farm owners)
+                const response = await fetch('/api/appointments', {
                     headers: {
                         'Authorization': 'Bearer ' + token,
                         'Accept': 'application/json',
                         'Content-Type': 'application/json'
                     }
                 });
-                
-                console.log('Response status:', response.status);
-                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
-                // If 404, try the general appointments endpoint as fallback
-                if (response.status === 404) {
-                    console.log('Collector endpoint not found, trying general appointments endpoint...');
-                    response = await fetch('/api/appointments', {
-                        headers: {
-                            'Authorization': 'Bearer ' + token,
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                }
 
                 if (!response.ok) {
                     const errorText = await response.text();
@@ -1106,10 +1066,15 @@
                     appointmentsData = [];
                 }
                 
-                // Store all appointments for pemilik tambak
-                appointments = appointmentsData || [];
+                // Filter appointments to only show those for fish farms owned by current user
+                const userOwnedFarmIds = farms.map(farm => farm.id);
+                const userAppointments = appointmentsData.filter(appointment => {
+                    // Check if appointment is for user's fish farm
+                    return appointment.fish_farm_id && userOwnedFarmIds.includes(appointment.fish_farm_id);
+                });
                 
-                console.log('Loaded appointments:', appointments);
+                appointments = userAppointments || [];
+                console.log('Loaded user appointments:', appointments);
                 displayAppointments(appointments);
             } catch (error) {
                 console.error('Error loading appointments:', error);

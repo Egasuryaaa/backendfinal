@@ -21,6 +21,7 @@ class ProductResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
     protected static ?string $navigationGroup = 'Manajemen Produk';
+    protected static ?string $navigationLabel = 'Produk';
     protected static ?string $recordTitleAttribute = 'nama';
     protected static ?int $navigationSort = 2;
 
@@ -296,13 +297,13 @@ class ProductResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return $user && ($user->hasRole(['admin', 'seller']));
+        return $user && ($user->isAdmin() || $user->hasRole(['admin', 'seller']));
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        return $user && ($user->hasRole(['admin', 'seller']));
+        return $user && ($user->isAdmin() || $user->hasRole(['admin', 'seller']));
     }
 
     public static function canEdit($record): bool
