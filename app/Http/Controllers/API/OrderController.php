@@ -172,6 +172,9 @@ class OrderController extends Controller
                 'can_review' => $order->status === 'selesai',
                 'created_at' => $order->created_at->format('Y-m-d H:i:s'),
                 'updated_at' => $order->updated_at->format('Y-m-d H:i:s'),
+                'payment_proof' => $order->payment_proof,
+                'payment_proof_uploaded_at' => $order->payment_proof_uploaded_at ? $order->payment_proof_uploaded_at->format('Y-m-d H:i:s') : null,
+                'payment_deadline' => $order->payment_deadline ? $order->payment_deadline->format('Y-m-d H:i:s') : null,
                 // Provide link to items endpoint for detailed items
                 'items_url' => "/api/orders/{$order->id}/items",
                 'items_count' => $order->orderItems->count()
@@ -1138,6 +1141,83 @@ class OrderController extends Controller
                 'success' => false,
                 'message' => 'Failed to check expired orders',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify payment proof and update payment status to 'dibayar'
+     *
+     * @param Request $request
+     * @param Order $order
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function verifyPayment(Request $request, Order $order)
+    {
+        try {
+            $user = $request->user();
+
+            // Check if user is seller involved in this order
+            $isSellerInvolved = $order->orderItems->contains('penjual_id', $user->id);
+            $hasAdminRole = $user->roles()->where('name', 'admin')->exists();
+
+            if (!$isSellerInvolved && !$hasAdminRole) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki izin untuk memverifikasi pembayaran pesanan ini'
+                ], 403);
+            }
+
+            // Check if order has payment proof
+            if (!$order->payment_proof) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada bukti pembayaran yang dapat diverifikasi'
+                ], 400);
+            }
+
+            // Check if payment status can be verified
+            if (!in_array($order->status_pembayaran, ['menunggu', 'menunggu_verifikasi'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Status pembayaran sudah tidak dalam kondisi menunggu verifikasi'
+                ], 400);
+            }
+
+            // Update payment status to paid and main order status
+            $order->status_pembayaran = 'dibayar';
+            $order->status = 'dibayar';  // Update main order status too
+            $order->verified_at = now();
+            $order->verified_by = $user->id;
+            $order->save();
+
+            // Create notification for buyer
+            $order->user->notifications()->create([
+                'judul' => 'Pembayaran Terverifikasi',
+                'isi' => "Pembayaran untuk pesanan #{$order->nomor_pesanan} telah diverifikasi oleh penjual. Pesanan Anda akan segera diproses.",
+                'tipe' => 'payment_verified',
+                'data' => json_encode([
+                    'order_id' => $order->id,
+                    'verified_by' => $user->name
+                ])
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pembayaran berhasil diverifikasi',
+                'data' => [
+                    'order_id' => $order->id,
+                    'status' => $order->status,
+                    'status_pembayaran' => $order->status_pembayaran,
+                    'verified_at' => $order->verified_at->format('Y-m-d H:i:s'),
+                    'verified_by' => $user->name
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memverifikasi pembayaran: ' . $e->getMessage()
             ], 500);
         }
     }

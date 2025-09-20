@@ -416,6 +416,51 @@
     </div>
 </div>
 
+<!-- Payment Verification Modal -->
+<div class="modal fade" id="paymentVerificationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Verifikasi Pembayaran</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Informasi Pesanan</h6>
+                        <div class="mb-2"><strong>No. Pesanan:</strong> <span id="verifyOrderNumber"></span></div>
+                        <div class="mb-2"><strong>Total:</strong> <span id="verifyOrderTotal"></span></div>
+                        <div class="mb-2"><strong>Status Pembayaran:</strong> <span id="verifyPaymentStatus"></span></div>
+                        <div class="mb-3"><strong>Diupload pada:</strong> <span id="verifyUploadDate"></span></div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Bukti Pembayaran</h6>
+                        <div class="text-center">
+                            <img id="verifyPaymentImage" src="" alt="Bukti Pembayaran" class="img-fluid border rounded" style="max-height: 300px;">
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="openPaymentProofFull()">
+                                    <i class="fas fa-expand"></i> Lihat Ukuran Penuh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Perhatian:</strong> Pastikan bukti pembayaran sesuai dengan jumlah total pesanan sebelum memverifikasi.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-success" id="confirmVerifyPayment">
+                    <i class="fas fa-check me-1"></i>Verifikasi Pembayaran
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Inline Styles -->
 <style>
     .card {
@@ -663,6 +708,8 @@
         orders.forEach(order => {
             const statusColors = {
                 'menunggu': 'warning',
+                'menunggu_pembayaran': 'warning',
+                'menunggu_verifikasi': 'warning',
                 'dibayar': 'info',
                 'diproses': 'purple',
                 'dikirim': 'dark',
@@ -672,6 +719,8 @@
 
             const statusTexts = {
                 'menunggu': 'Menunggu Pembayaran',
+                'menunggu_pembayaran': 'Menunggu Pembayaran',
+                'menunggu_verifikasi': 'Menunggu Verifikasi',
                 'dibayar': 'Dibayar',
                 'diproses': 'Sedang Diproses',
                 'dikirim': 'Dikirim',
@@ -717,6 +766,18 @@
                                     onclick="showOrderDetail(${order.id})" title="Detail">
                                 <i class="fas fa-eye"></i>
                             </button>
+                            ${order.payment_proof ? `
+                                <button type="button" class="btn btn-outline-info btn-action"
+                                        onclick="viewPaymentProof('${order.payment_proof}')" title="Lihat Bukti Pembayaran">
+                                    <i class="fas fa-image"></i>
+                                </button>
+                            ` : ''}
+                            ${order.payment_proof && (order.metode_pembayaran === 'manual' || ['menunggu', 'menunggu_verifikasi', 'menunggu_pembayaran'].includes(order.status_pembayaran)) ? `
+                                <button type="button" class="btn btn-outline-warning btn-action"
+                                        onclick="showPaymentVerificationModal(${order.id})" title="Verifikasi Pembayaran">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                            ` : ''}
                             ${order.status !== 'selesai' && order.status !== 'dibatalkan' ? `
                                 <button type="button" class="btn btn-outline-success btn-action"
                                         onclick="showUpdateStatusModal(${order.id})" title="Update Status">
@@ -783,6 +844,26 @@
         document.getElementById('filterDate').value = '';
         currentPage = 1;
         loadOrders();
+    }
+
+    // View payment proof function
+    function viewPaymentProof(paymentProofPath) {
+        if (!paymentProofPath) {
+            showError('Bukti pembayaran tidak ditemukan');
+            return;
+        }
+
+        // Open payment proof in new window
+        const url = `/storage/${paymentProofPath}`;
+        const newWindow = window.open(url, '_blank');
+
+        if (!newWindow) {
+            // If popup blocked, show alternative
+            showSuccess('Bukti pembayaran akan dibuka di tab baru. Pastikan popup tidak diblokir.');
+            setTimeout(() => {
+                location.href = url;
+            }, 1000);
+        }
     }
 
     function showOrderDetail(orderId) {
@@ -905,6 +986,12 @@
             'menunggu': [
                 { value: 'dibatalkan', text: 'Dibatalkan' }
             ],
+            'menunggu_pembayaran': [
+                { value: 'dibatalkan', text: 'Dibatalkan' }
+            ],
+            'menunggu_verifikasi': [
+                { value: 'dibatalkan', text: 'Dibatalkan' }
+            ],
             'dibayar': [
                 { value: 'diproses', text: 'Sedang Diproses' },
                 { value: 'dibatalkan', text: 'Dibatalkan' }
@@ -974,6 +1061,8 @@
     function getStatusText(status) {
         const texts = {
             'menunggu': 'Menunggu Pembayaran',
+            'menunggu_pembayaran': 'Menunggu Pembayaran',
+            'menunggu_verifikasi': 'Menunggu Verifikasi',
             'dibayar': 'Dibayar',
             'diproses': 'Sedang Diproses',
             'dikirim': 'Dikirim',
@@ -1047,7 +1136,7 @@
 
 <script>
     // Set current date in header
-    document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
         const currentDate = new Date().toLocaleDateString('id-ID', {
             weekday: 'long',
             year: 'numeric',
@@ -1055,7 +1144,98 @@
             day: 'numeric'
         });
 
-        document.getElementById('currentDateHeader').textContent = currentDate;
+        const currentDateHeader = document.getElementById('currentDateHeader');
+        if (currentDateHeader) {
+            currentDateHeader.textContent = currentDate;
+        }
+    });    // Payment verification functions
+    let currentVerifyOrderId = null;
+
+    function showPaymentVerificationModal(orderId) {
+        currentVerifyOrderId = orderId;
+        const order = orders.find(o => o.id === orderId);
+        if (!order || !order.payment_proof) return;
+
+        // Fill order information
+        document.getElementById('verifyOrderNumber').textContent = `#${order.nomor_pesanan || order.id}`;
+        document.getElementById('verifyOrderTotal').textContent = `Rp ${(order.total || order.total_amount || 0).toLocaleString('id-ID')}`;
+        document.getElementById('verifyPaymentStatus').textContent = getPaymentStatusText(order.status_pembayaran);
+
+        // Format upload date
+        let uploadDate = 'Tidak diketahui';
+        if (order.payment_proof_uploaded_at) {
+            const date = new Date(order.payment_proof_uploaded_at);
+            uploadDate = date.toLocaleString('id-ID');
+        }
+        document.getElementById('verifyUploadDate').textContent = uploadDate;
+
+        // Set payment proof image
+        const imageUrl = `/storage/${order.payment_proof}`;
+        document.getElementById('verifyPaymentImage').src = imageUrl;
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('paymentVerificationModal'));
+        modal.show();
+    }
+
+    function openPaymentProofFull() {
+        const imageUrl = document.getElementById('verifyPaymentImage').src;
+        window.open(imageUrl, '_blank');
+    }
+
+    function getPaymentStatusText(status) {
+        const statusTexts = {
+            'menunggu': 'Menunggu Pembayaran',
+            'dibayar': 'Sudah Dibayar',
+            'menunggu_verifikasi': 'Menunggu Verifikasi',
+            'gagal': 'Gagal',
+            'dibatalkan': 'Dibatalkan'
+        };
+        return statusTexts[status] || status;
+    }
+
+    // Handle payment verification confirmation
+    document.getElementById('confirmVerifyPayment').addEventListener('click', async function() {
+        if (!currentVerifyOrderId) return;
+
+        const button = this;
+        const originalText = button.innerHTML;
+
+        try {
+            // Show loading
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Memverifikasi...';
+            button.disabled = true;
+
+            const response = await authenticatedFetch(`/api/orders/${currentVerifyOrderId}/verify-payment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showSuccess('Pembayaran berhasil diverifikasi!');
+
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('paymentVerificationModal'));
+                modal.hide();
+
+                // Refresh orders list
+                loadOrders();
+            } else {
+                throw new Error(data.message || 'Gagal memverifikasi pembayaran');
+            }
+
+        } catch (error) {
+            console.error('Error verifying payment:', error);
+            showError(error.message || 'Terjadi kesalahan saat memverifikasi pembayaran');
+        } finally {
+            // Restore button
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
     });
 </script>
 

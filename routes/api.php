@@ -112,6 +112,7 @@ Route::post('/register-seller', [AuthController::class, 'registerAsSeller'])->mi
     // Manual payment features
     Route::get('/orders/{order}/bank-account', [OrderController::class, 'getOrderWithBankAccount']);
     Route::post('/orders/{order}/payment-proof', [OrderController::class, 'uploadPaymentProof']);
+    Route::post('/orders/{order}/verify-payment', [OrderController::class, 'verifyPayment']);
     Route::post('/orders/check-expired', [OrderController::class, 'checkExpiredOrders']);
 
     // Payments

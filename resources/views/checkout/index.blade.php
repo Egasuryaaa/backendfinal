@@ -2016,7 +2016,7 @@
                                             <div class="payment-option-logo logo-manual">💰</div>
                                             <div class="payment-option-info">
                                                 <div class="option-title">Pembayaran Manual</div>
-                                                <div class="option-subtitle">Transfer manual ke rekening toko - Hubungi: +62 813-3519-0701</div>
+                                                <div class="option-subtitle">Transfer manual ke rekening toko</div>
                                                 <div class="payment-option-badge trusted">Terpercaya</div>
                                             </div>
                                         </div>
@@ -2434,46 +2434,9 @@
                                     <ol class="instructions-list">
                                         <li>Transfer ke rekening di atas dengan nominal <strong>PERSIS ${order.total_formatted}</strong></li>
                                         <li>Simpan bukti transfer Anda</li>
-                                        <li>Buka halaman "Detail Pesanan" dan upload bukti pembayaran</li>
+                                        <li>Buka halaman "Pesanan Saya" untuk upload bukti pembayaran</li>
                                         <li>Tunggu konfirmasi dari penjual (maksimal 1x24 jam)</li>
                                     </ol>
-                                </div>
-
-                                <!-- Upload Bukti Pembayaran -->
-                                <div class="upload-payment-card">
-                                    <h4 class="upload-title">
-                                        <i class="fas fa-upload"></i>
-                                        Upload Bukti Pembayaran
-                                    </h4>
-                                    <div class="upload-description">
-                                        Setelah melakukan transfer, upload bukti pembayaran Anda di bawah ini:
-                                    </div>
-
-                                    <form id="paymentProofForm" enctype="multipart/form-data">
-                                        <div class="file-upload-area">
-                                            <input type="file" id="paymentProof" name="payment_proof" accept="image/*" style="display: none;">
-                                            <div class="file-upload-box" onclick="document.getElementById('paymentProof').click()">
-                                                <div class="file-upload-content">
-                                                    <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
-                                                    <div class="file-upload-text">
-                                                        <strong>Klik untuk pilih gambar</strong>
-                                                        <br>atau drag & drop file di sini
-                                                    </div>
-                                                    <div class="file-upload-formats">
-                                                        Format: JPG, PNG, GIF (Max 5MB)
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div id="selectedFileName" class="selected-file-name" style="display: none;"></div>
-                                        </div>
-
-                                        <div class="upload-actions">
-                                            <button type="button" class="btn btn-upload" onclick="uploadPaymentProof('${order.id}')" disabled id="uploadBtn">
-                                                <i class="fas fa-upload"></i>
-                                                Upload Bukti Pembayaran
-                                            </button>
-                                        </div>
-                                    </form>
                                 </div>
 
                                 <!-- Warning -->
@@ -2484,7 +2447,7 @@
                                     </div>
                                     <ul class="warning-list">
                                         <li>Transfer harus dilakukan dengan nominal yang PERSIS sama</li>
-                                        <li>Upload bukti pembayaran yang jelas dan mudah dibaca</li>
+                                        <li>Upload bukti pembayaran di halaman "Pesanan Saya"</li>
                                         <li>Pesanan akan dibatalkan otomatis jika melewati batas waktu</li>
                                     </ul>
                                 </div>
@@ -2495,9 +2458,9 @@
                                     <i class="fas fa-times"></i>
                                     Tutup
                                 </button>
-                                <button class="btn btn-primary" onclick="goToOrderDetail('${order.id}')">
-                                    <i class="fas fa-eye"></i>
-                                    Lihat Detail Pesanan
+                                <button class="btn btn-primary" onclick="window.location.href='/orders'">
+                                    <i class="fas fa-list"></i>
+                                    Lihat Pesanan Saya
                                 </button>
                             </div>
                         </div>
@@ -2527,11 +2490,6 @@
 
                 // Start countdown timer
                 startPaymentCountdown(paymentDeadline);
-
-                // Setup file upload functionality
-                setTimeout(() => {
-                    setupFileUpload();
-                }, 100);
             }
 
             // Start payment countdown timer
@@ -2677,151 +2635,6 @@
                     }, 300);
                 } else {
                     console.error('Modal not found for closing');
-                }
-            }
-
-            // Go to order detail page
-            function goToOrderDetail(orderId) {
-                // Clear countdown interval before navigation
-                if (window.paymentCountdownInterval) {
-                    clearInterval(window.paymentCountdownInterval);
-                    window.paymentCountdownInterval = null;
-                }
-                window.location.href = `/orders/${orderId}`;
-            }
-
-            // File upload handling for payment proof
-            function setupFileUpload() {
-                const fileInput = document.getElementById('paymentProof');
-                const fileNameDisplay = document.getElementById('selectedFileName');
-                const uploadBtn = document.getElementById('uploadBtn');
-                const fileUploadBox = document.querySelector('.file-upload-box');
-
-                if (fileInput) {
-                    fileInput.addEventListener('change', function(e) {
-                        const file = e.target.files[0];
-
-                        if (file) {
-                            // Validate file size (5MB limit)
-                            if (file.size > 5 * 1024 * 1024) {
-                                alert('❌ File terlalu besar! Maksimal 5MB.');
-                                fileInput.value = '';
-                                return;
-                            }
-
-                            // Validate file type
-                            if (!file.type.startsWith('image/')) {
-                                alert('❌ File harus berupa gambar!');
-                                fileInput.value = '';
-                                return;
-                            }
-
-                            // Show selected file name
-                            fileNameDisplay.textContent = `File dipilih: ${file.name}`;
-                            fileNameDisplay.style.display = 'block';
-
-                            // Enable upload button
-                            uploadBtn.disabled = false;
-
-                            // Change upload box appearance
-                            fileUploadBox.style.borderColor = '#4CAF50';
-                            fileUploadBox.style.background = '#E8F5E8';
-                        } else {
-                            fileNameDisplay.style.display = 'none';
-                            uploadBtn.disabled = true;
-                            fileUploadBox.style.borderColor = '#4CAF50';
-                            fileUploadBox.style.background = '#FFFFFF';
-                        }
-                    });
-                }
-
-                // Drag and drop functionality
-                if (fileUploadBox) {
-                    fileUploadBox.addEventListener('dragover', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        fileUploadBox.style.borderColor = '#2E7D32';
-                        fileUploadBox.style.background = '#E8F5E8';
-                    });
-
-                    fileUploadBox.addEventListener('dragleave', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        fileUploadBox.style.borderColor = '#4CAF50';
-                        fileUploadBox.style.background = '#FFFFFF';
-                    });
-
-                    fileUploadBox.addEventListener('drop', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        const files = e.dataTransfer.files;
-                        if (files.length > 0) {
-                            fileInput.files = files;
-                            // Trigger change event
-                            const event = new Event('change', { bubbles: true });
-                            fileInput.dispatchEvent(event);
-                        }
-
-                        fileUploadBox.style.borderColor = '#4CAF50';
-                        fileUploadBox.style.background = '#FFFFFF';
-                    });
-                }
-            }
-
-            // Upload payment proof function
-            async function uploadPaymentProof(orderId) {
-                const fileInput = document.getElementById('paymentProof');
-                const uploadBtn = document.getElementById('uploadBtn');
-
-                if (!fileInput.files[0]) {
-                    alert('❌ Pilih file bukti pembayaran terlebih dahulu!');
-                    return;
-                }
-
-                const formData = new FormData();
-                formData.append('payment_proof', fileInput.files[0]);
-
-                // Disable button and show loading
-                uploadBtn.disabled = true;
-                uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-
-                try {
-                    const response = await fetch(`/api/orders/${orderId}/payment-proof`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                        },
-                        body: formData
-                    });
-
-                    const result = await response.json();
-
-                    if (response.ok) {
-                        // Success
-                        alert('✅ Bukti pembayaran berhasil diupload!');
-
-                        // Update button to success state
-                        uploadBtn.innerHTML = '<i class="fas fa-check"></i> Berhasil Diupload';
-                        uploadBtn.style.background = 'linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%)';
-
-                        // Optionally redirect to order detail
-                        setTimeout(() => {
-                            goToOrderDetail(orderId);
-                        }, 2000);
-
-                    } else {
-                        throw new Error(result.message || 'Upload gagal');
-                    }
-
-                } catch (error) {
-                    console.error('Upload error:', error);
-                    alert(`❌ Upload gagal: ${error.message}`);
-
-                    // Reset button
-                    uploadBtn.disabled = false;
-                    uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Bukti Pembayaran';
                 }
             }
 

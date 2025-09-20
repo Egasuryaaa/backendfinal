@@ -40,6 +40,8 @@ class Order extends Model
         'payment_deadline',
         'payment_proof',
         'payment_proof_uploaded_at',
+        'verified_at',
+        'verified_by',
     ];
 
     /**
@@ -54,6 +56,7 @@ class Order extends Model
         'total' => 'decimal:2',
         'payment_deadline' => 'datetime',
         'payment_proof_uploaded_at' => 'datetime',
+        'verified_at' => 'datetime',
     ];
 
     /**
@@ -276,7 +279,7 @@ class Order extends Model
     {
         $this->payment_deadline = now()->addHours(2);
         $this->save();
-        
+
         return $this;
     }
 
@@ -288,7 +291,7 @@ class Order extends Model
         if (!$this->payment_deadline) {
             return false;
         }
-        
+
         return now()->isAfter($this->payment_deadline);
     }
 
@@ -297,8 +300,8 @@ class Order extends Model
      */
     public function canBeCancelledDueToExpiration(): bool
     {
-        return $this->status === 'menunggu' && 
-               $this->metode_pembayaran === 'manual' && 
+        return $this->status === 'menunggu' &&
+               $this->metode_pembayaran === 'manual' &&
                $this->isPaymentExpired();
     }
 
@@ -321,7 +324,7 @@ class Order extends Model
                 'tautan' => '/orders/' . $this->id,
             ]);
         }
-        
+
         return $this;
     }
 
@@ -354,10 +357,10 @@ class Order extends Model
     {
         // Get seller from first order item (assuming all items from same seller)
         $firstItem = $this->orderItems()->with('product.seller')->first();
-        
+
         if ($firstItem && $firstItem->product && $firstItem->product->seller) {
             $seller = $firstItem->product->seller;
-            
+
             return [
                 'bank_name' => $seller->bank_name,
                 'account_number' => $seller->account_number,
@@ -365,7 +368,7 @@ class Order extends Model
                 'seller_name' => $seller->name,
             ];
         }
-        
+
         return null;
     }
 

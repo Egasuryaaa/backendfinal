@@ -4,6 +4,8 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Services\XenditService;
+use App\Models\Order;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -363,6 +365,11 @@ class PaymentController extends Controller
                         DB::table('payments')
                             ->where('payment_id', $paymentId)
                             ->update($updateData);
+
+                        // Update order status when payment becomes successful
+                        if ($latestStatus === 'paid') {
+                            $this->updateOrderStatusOnPaymentSuccess($paymentRecord->external_id, $statusResult['data']);
+                        }
                     }
                 }
             }
@@ -429,6 +436,71 @@ class PaymentController extends Controller
         ];
 
         return $statusMap[strtoupper($xenditStatus)] ?? 'pending';
+    }
+
+    /**
+     * Update order status when payment is successful
+     */
+    private function updateOrderStatusOnPaymentSuccess($externalId, $webhookData)
+    {
+        try {
+            // Get payment record to find order ID
+            $paymentRecord = DB::table('payments')
+                ->where('external_id', $externalId)
+                ->first();
+
+            if (!$paymentRecord) {
+                Log::warning('Payment record not found for order status update', [
+                    'external_id' => $externalId
+                ]);
+                return;
+            }
+
+            // Find order by ID from payment record
+            $order = Order::find($paymentRecord->order_id);
+
+            if (!$order) {
+                Log::warning('Order not found for payment success update', [
+                    'external_id' => $externalId,
+                    'order_id' => $paymentRecord->order_id
+                ]);
+                return;
+            }
+
+            // Update order status to paid
+            $order->status = 'dibayar';
+            $order->status_pembayaran = 'dibayar';
+            $order->save();
+
+            // Create notification for buyer
+            if ($order->user) {
+                $order->user->notifications()->create([
+                    'judul' => 'Pembayaran Berhasil',
+                    'isi' => "Pembayaran untuk pesanan #{$order->nomor_pesanan} telah berhasil. Pesanan Anda akan segera diproses oleh penjual.",
+                    'tipe' => 'payment_success',
+                    'data' => json_encode([
+                        'order_id' => $order->id,
+                        'payment_method' => $paymentRecord->payment_method,
+                        'amount' => $paymentRecord->amount
+                    ])
+                ]);
+            }
+
+            Log::info('Order status updated after successful payment', [
+                'order_id' => $order->id,
+                'order_number' => $order->nomor_pesanan,
+                'external_id' => $externalId,
+                'payment_method' => $paymentRecord->payment_method,
+                'amount' => $paymentRecord->amount
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to update order status after payment success', [
+                'external_id' => $externalId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
     }
 
     /**
@@ -557,6 +629,11 @@ class PaymentController extends Controller
                     ->update($updateData);
 
                 if ($updated) {
+                    // Update order status when payment is successful
+                    if ($internalStatus === 'paid') {
+                        $this->updateOrderStatusOnPaymentSuccess($externalId, $data);
+                    }
+
                     Log::info('Payment status updated via webhook', [
                         'external_id' => $externalId,
                         'invoice_id' => $invoiceId,

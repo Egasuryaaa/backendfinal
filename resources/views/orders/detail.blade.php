@@ -361,6 +361,240 @@
                 flex-direction: column;
             }
         }
+
+        /* Manual Payment Modal Styles */
+        .manual-payment-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .manual-payment-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .manual-payment-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+        }
+
+        .manual-payment-modal.show .manual-payment-content {
+            transform: scale(1);
+        }
+
+        .manual-payment-header {
+            background: linear-gradient(135deg, #1565C0 0%, #0D47A1 100%);
+            color: white;
+            padding: 24px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            position: relative;
+        }
+
+        .manual-payment-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .manual-payment-body {
+            padding: 24px;
+        }
+
+        .payment-status-card, .payment-deadline-card, .bank-account-card, .instructions-card, .warning-card {
+            background: #F8F9FA;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 5px solid #1565C0;
+        }
+
+        .payment-deadline-card {
+            border-left-color: #F57C00;
+            background: linear-gradient(135deg, #FFF8E1 0%, #FFFDE7 100%);
+        }
+
+        .warning-card {
+            border-left-color: #D32F2F;
+            background: linear-gradient(135deg, #FFEBEE 0%, #FCE4EC 100%);
+        }
+
+        .bank-account-card {
+            border-left-color: #4CAF50;
+            background: linear-gradient(135deg, #E8F5E8 0%, #F1F8E9 100%);
+        }
+
+        .payment-status-icon {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            color: #1565C0;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .bank-info-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .bank-info-item {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #E5E5E5;
+        }
+
+        .bank-info-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .bank-info-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .copy-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%);
+            transform: translateY(-1px);
+        }
+
+        .instructions-title, .warning-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .warning-title {
+            color: #D32F2F;
+        }
+
+        .instructions-list, .warning-list {
+            margin: 0;
+            padding-left: 20px;
+            color: #333;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .warning-list {
+            color: #D32F2F;
+        }
+
+        .instructions-list li, .warning-list li {
+            margin-bottom: 8px;
+        }
+
+        .manual-payment-footer {
+            padding: 20px 24px;
+            border-top: 1px solid #E5E5E5;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .deadline-timer {
+            font-weight: 700;
+            font-size: 18px;
+            color: #F57C00;
+            text-align: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            border: 2px solid #FFB74D;
+        }
+
+        @keyframes modalFadeOut {
+            to {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
     </style>
 </head>
 <body>
@@ -448,6 +682,14 @@
                         </h4>
                         <div id="bankAccountDetails" style="background: #F8F9FA; padding: 12px; border-radius: 6px;">
                             <!-- Bank account details will be loaded here -->
+                        </div>
+
+                        <!-- Show Payment Instructions Button -->
+                        <div style="margin-top: 16px; text-align: center;">
+                            <button class="btn btn-primary" onclick="showManualPaymentInstructions()" style="background: linear-gradient(135deg, #1565C0 0%, #0D47A1 100%);">
+                                <i class="fas fa-info-circle"></i>
+                                Lihat Instruksi Pembayaran Lengkap
+                            </button>
                         </div>
                     </div>
 
@@ -906,6 +1148,11 @@
             const bankAccount = data.bank_account;
             const manualPaymentSection = document.getElementById('manualPaymentSection');
 
+            // Store bank account info in order object for later use
+            if (order) {
+                order.bank_account = bankAccount;
+            }
+
             // Show manual payment section
             manualPaymentSection.style.display = 'block';
 
@@ -950,10 +1197,11 @@
             // Check if payment proof already uploaded
             if (order.payment_proof) {
                 showUploadedProof();
-            } else if (order.status_pembayaran === 'menunggu' && new Date() < new Date(order.payment_deadline)) {
+            } else if (order.status_pembayaran === 'menunggu' || order.status_pembayaran === 'menunggu_verifikasi') {
+                // Show upload form for pending payments, even if deadline passed
                 showUploadForm();
             } else {
-                // Payment expired or different status
+                // Order completed or cancelled
                 hideUploadForm();
             }
         }
@@ -1062,7 +1310,7 @@
                     headers['Authorization'] = `Bearer ${token}`;
                 }
 
-                const response = await fetch(`/api/orders/${orderId}/upload-payment-proof`, {
+                const response = await fetch(`/api/orders/${orderId}/payment-proof`, {
                     method: 'POST',
                     headers: headers,
                     body: formData
@@ -1144,6 +1392,249 @@
         // Hide loading
         function hideLoading() {
             document.getElementById('loadingState').style.display = 'none';
+        }
+
+        // Show manual payment instructions popup
+        function showManualPaymentInstructions() {
+            if (!order || !order.bank_account) {
+                alert('❌ Data pembayaran tidak ditemukan!');
+                return;
+            }
+
+            const bankAccount = order.bank_account;
+
+            // Parse payment deadline
+            let paymentDeadline;
+            if (order.payment_deadline) {
+                paymentDeadline = new Date(order.payment_deadline.replace(' ', 'T'));
+            } else {
+                paymentDeadline = new Date();
+                paymentDeadline.setHours(paymentDeadline.getHours() + 2);
+            }
+
+            // Format deadline
+            const deadlineFormatted = paymentDeadline.toLocaleString('id-ID', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const modalHtml = `
+                <div id="manualPaymentInstructionsModal" class="manual-payment-modal show">
+                    <div class="manual-payment-content">
+                        <div class="manual-payment-header">
+                            <h3>
+                                <i class="fas fa-university"></i>
+                                Instruksi Pembayaran Manual
+                            </h3>
+                            <button class="close-btn" onclick="closeInstructionsModal()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div class="manual-payment-body">
+                            <!-- Payment Status -->
+                            <div class="payment-status-card">
+                                <div class="payment-status-icon">
+                                    <i class="fas fa-info-circle"></i>
+                                    Informasi Pesanan
+                                </div>
+                                <div style="color: #388E3C; font-size: 14px; line-height: 1.5;">
+                                    Nomor Pesanan: <strong>#${order.nomor_pesanan}</strong><br>
+                                    Total Pembayaran: <strong>${order.total_formatted}</strong>
+                                </div>
+                            </div>
+
+                            <!-- Payment Deadline -->
+                            <div class="payment-deadline-card">
+                                <div class="payment-status-icon" style="color: #F57C00;">
+                                    <i class="fas fa-clock"></i>
+                                    Batas Waktu Pembayaran
+                                </div>
+                                <div style="color: #F57C00; font-size: 14px; line-height: 1.5; margin-bottom: 8px;">
+                                    <strong>${deadlineFormatted}</strong><br>
+                                    <small>Pesanan akan otomatis dibatalkan jika tidak dibayar sebelum batas waktu</small>
+                                </div>
+                                <div id="paymentCountdownModal" class="deadline-timer"></div>
+                            </div>
+
+                            <!-- Bank Account Info -->
+                            <div class="bank-account-card">
+                                <h4>
+                                    <i class="fas fa-credit-card"></i>
+                                    Informasi Rekening Tujuan
+                                </h4>
+                                <div class="bank-info-grid">
+                                    <div class="bank-info-item">
+                                        <div class="bank-info-label">Bank</div>
+                                        <div class="bank-info-value">${bankAccount.bank_name}</div>
+                                    </div>
+                                    <div class="bank-info-item">
+                                        <div class="bank-info-label">Nomor Rekening</div>
+                                        <div class="bank-info-value">
+                                            <span class="account-number">${bankAccount.account_number}</span>
+                                            <button class="copy-btn" onclick="copyAccountNumber('${bankAccount.account_number}')">
+                                                <i class="fas fa-copy"></i>
+                                                Salin
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="bank-info-item">
+                                        <div class="bank-info-label">Atas Nama</div>
+                                        <div class="bank-info-value">${bankAccount.account_holder_name}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Instructions -->
+                            <div class="instructions-card">
+                                <h4 class="instructions-title">
+                                    <i class="fas fa-list-ol"></i>
+                                    Langkah-langkah Pembayaran
+                                </h4>
+                                <ol class="instructions-list">
+                                    <li>Transfer ke rekening di atas dengan nominal <strong>PERSIS ${order.total_formatted}</strong></li>
+                                    <li>Simpan bukti transfer Anda</li>
+                                    <li>Upload bukti pembayaran di halaman ini</li>
+                                    <li>Tunggu konfirmasi dari penjual (maksimal 1x24 jam)</li>
+                                </ol>
+                            </div>
+
+                            <!-- Warning -->
+                            <div class="warning-card">
+                                <div class="warning-title">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Penting!
+                                </div>
+                                <ul class="warning-list">
+                                    <li>Transfer harus dilakukan dengan nominal yang PERSIS sama</li>
+                                    <li>Upload bukti pembayaran yang jelas dan mudah dibaca</li>
+                                    <li>Pesanan akan dibatalkan otomatis jika melewati batas waktu</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="manual-payment-footer">
+                            <button class="btn btn-secondary" onclick="closeInstructionsModal()">
+                                <i class="fas fa-times"></i>
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Start countdown for modal
+            startPaymentCountdownModal(paymentDeadline);
+
+            // Add event listeners for closing modal
+            const modal = document.getElementById('manualPaymentInstructionsModal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeInstructionsModal();
+                    }
+                });
+
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        closeInstructionsModal();
+                    }
+                });
+            }
+        }
+
+        // Close instructions modal
+        function closeInstructionsModal() {
+            const modal = document.getElementById('manualPaymentInstructionsModal');
+            if (modal) {
+                // Clear countdown interval
+                if (window.paymentCountdownModalInterval) {
+                    clearInterval(window.paymentCountdownModalInterval);
+                    window.paymentCountdownModalInterval = null;
+                }
+
+                modal.classList.remove('show');
+                modal.style.animation = 'modalFadeOut 0.3s ease-out forwards';
+
+                setTimeout(() => {
+                    modal.remove();
+                }, 300);
+            }
+        }
+
+        // Start payment countdown for modal
+        function startPaymentCountdownModal(deadline) {
+            const countdownElement = document.getElementById('paymentCountdownModal');
+            if (!countdownElement) return;
+
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const deadlineTime = deadline.getTime();
+                const distance = deadlineTime - now;
+
+                if (distance < 0) {
+                    countdownElement.innerHTML = '<span style="color: #D32F2F;">⏰ Waktu pembayaran telah habis</span>';
+                    return;
+                }
+
+                const hours = Math.floor(distance / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                countdownElement.innerHTML = `⏰ Sisa waktu: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            updateCountdown();
+            const countdownInterval = setInterval(updateCountdown, 1000);
+
+            if (window.paymentCountdownModalInterval) {
+                clearInterval(window.paymentCountdownModalInterval);
+            }
+            window.paymentCountdownModalInterval = countdownInterval;
+        }
+
+        // Copy account number
+        function copyAccountNumber(accountNumber) {
+            navigator.clipboard.writeText(accountNumber).then(() => {
+                // Show success message
+                const successMsg = document.createElement('div');
+                successMsg.innerHTML = `
+                    <div style="
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+                        color: white;
+                        padding: 16px 20px;
+                        border-radius: 12px;
+                        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+                        z-index: 9999;
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        animation: slideInRight 0.3s ease-out;
+                    ">
+                        <i class="fas fa-check-circle" style="font-size: 20px;"></i>
+                        <span style="font-weight: 600;">Nomor rekening berhasil disalin!</span>
+                    </div>
+                `;
+
+                document.body.appendChild(successMsg);
+
+                setTimeout(() => {
+                    successMsg.remove();
+                }, 3000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('❌ Gagal menyalin nomor rekening');
+            });
         }
     </script>
 </body>
