@@ -687,15 +687,6 @@
                 imageSrc = '/storage/' + product.gambar;
             }
 
-            // Debug: temporary logging to console
-            if (product.nama === 'Ikan Bebek') {
-                console.log('Debug Ikan Bebek image:');
-                console.log('- main_image_url:', product.main_image_url);
-                console.log('- image_urls:', product.image_urls);
-                console.log('- gambar:', product.gambar);
-                console.log('- final imageSrc:', imageSrc);
-            }
-
             // Format jenis ikan display
             const jenisIkan = product.jenis_ikan || 'segar';
             const spesiesIkan = product.spesies_ikan ? ` - ${product.spesies_ikan}` : '';
@@ -825,11 +816,6 @@
         // Show existing images if available
         const preview = document.getElementById('imagePreview');
         const container = document.getElementById('imagePreviewContainer');
-
-        console.log('Edit product - image data:');
-        console.log('- main_image_url:', product.main_image_url);
-        console.log('- image_urls:', product.image_urls);
-        console.log('- gambar:', product.gambar);
 
         if (product.image_urls && Array.isArray(product.image_urls) && product.image_urls.length > 0) {
             preview.style.display = 'block';

@@ -1734,6 +1734,31 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Utility functions for safe DOM access
+            function safeGetElement(id) {
+                const element = document.getElementById(id);
+                if (!element) {
+                    console.warn(`Element with ID '${id}' not found`);
+                }
+                return element;
+            }
+
+            function safeSetText(id, text) {
+                const element = safeGetElement(id);
+                if (element) {
+                    element.textContent = text;
+                }
+                return element;
+            }
+
+            function safeSetDisplay(id, displayValue) {
+                const element = safeGetElement(id);
+                if (element) {
+                    element.style.display = displayValue;
+                }
+                return element;
+            }
+
             // State
             let cartItems = [];
             let addresses = [];
@@ -1748,6 +1773,16 @@
 
             const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(Math.round(price));
 
+            // Safe JSON parsing utility
+            function safeJsonParse(jsonString, fallback = null) {
+                try {
+                    return JSON.parse(jsonString);
+                } catch (error) {
+                    console.warn('JSON parsing failed:', error);
+                    return fallback;
+                }
+            }
+
             // Functions
             function init() {
                 const itemsFromStorage = sessionStorage.getItem('checkoutItems');
@@ -1756,8 +1791,13 @@
                     window.location.href = '/cart';
                     return;
                 }
-                cartItems = JSON.parse(itemsFromStorage);
-                document.getElementById('itemCountHeader').textContent = `${cartItems.length} item dipilih`;
+                cartItems = safeJsonParse(itemsFromStorage, []);
+                if (!Array.isArray(cartItems) || cartItems.length === 0) {
+                    alert('Data checkout tidak valid. Kembali ke keranjang.');
+                    window.location.href = '/cart';
+                    return;
+                }
+                safeSetText('itemCountHeader', `${cartItems.length} item dipilih`);
 
                 renderOrderSummary();
                 fetchAddresses();
@@ -1767,8 +1807,8 @@
 
                 // Smooth transition to show content
                 setTimeout(() => {
-                    document.getElementById('loadingState').style.display = 'none';
-                    document.getElementById('checkoutContent').style.display = 'block';
+                    safeSetDisplay('loadingState', 'none');
+                    safeSetDisplay('checkoutContent', 'block');
 
                     // Trigger animations
                     const cards = document.querySelectorAll('.fade-in');
@@ -1796,22 +1836,7 @@
 
             async function fetchAddresses() {
                 try {
-                    // Get auth token from auth.js
-                    const token = getAuthToken ? getAuthToken() : null;
-
-                    const headers = {
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    };
-
-                    // Add Authorization header if token exists
-                    if (token) {
-                        headers['Authorization'] = `Bearer ${token}`;
-                    }
-
-                    const response = await fetch('/api/addresses', {
-                        headers: headers
-                    });
+                    const response = await authenticatedFetch('/api/addresses');
                     const data = await response.json();
                     if (data.success) {
                         addresses = data.data;
@@ -2297,9 +2322,9 @@
                 const subtotal = cartItems.reduce((sum, item) => sum + (item.product.harga * item.jumlah), 0);
                 const grandTotal = subtotal; // Tidak ada biaya pengiriman
 
-                document.getElementById('subtotalPrice').textContent = `Rp ${formatPrice(subtotal)}`;
-                document.getElementById('grandTotalPrice').textContent = `Rp ${formatPrice(grandTotal)}`;
-                document.getElementById('footerTotalPrice').textContent = `Rp ${formatPrice(grandTotal)}`;
+                safeSetText('subtotalPrice', `Rp ${formatPrice(subtotal)}`);
+                safeSetText('grandTotalPrice', `Rp ${formatPrice(grandTotal)}`);
+                safeSetText('footerTotalPrice', `Rp ${formatPrice(grandTotal)}`);
 
                 // Validasi lengkap untuk enable/disable button
                 const isValid = selectedAddressId && selectedShippingMethod && selectedPaymentMethod && !isLoading;
@@ -2681,7 +2706,7 @@
                     biaya_kirim: shippingCost,
                     metode_pembayaran: selectedPaymentMethod,
                     items: cartItems.map(item => ({ product_id: item.product.id, jumlah: item.jumlah })),
-                    catatan: document.getElementById('notes').value
+                    catatan: safeGetElement('notes')?.value || ''
                 };
 
                 // Tambahkan data Xendit jika bukan COD
@@ -2691,23 +2716,8 @@
                 }
 
                 try {
-                    // Get auth token from auth.js
-                    const token = getAuthToken ? getAuthToken() : null;
-
-                    const headers = {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    };
-
-                    // Add Authorization header if token exists
-                    if (token) {
-                        headers['Authorization'] = `Bearer ${token}`;
-                    }
-
-                    const response = await fetch('/api/orders/checkout', {
+                    const response = await authenticatedFetch('/api/orders/checkout', {
                         method: 'POST',
-                        headers: headers,
                         body: JSON.stringify(checkoutData)
                     });
 
@@ -2761,7 +2771,10 @@
                                 const loadingOverlay = document.getElementById('checkoutLoadingOverlay');
                                 loadingOverlay.classList.remove('show');
 
-                                document.getElementById('successModal').classList.add('show');
+                                const successModal = safeGetElement('successModal');
+                                if (successModal) {
+                                    successModal.classList.add('show');
+                                }
                             }, 1500);
                         }
                     } else {
@@ -2787,7 +2800,10 @@
                 }
             }
 
-            document.getElementById('processCheckoutBtn').addEventListener('click', processCheckout);
+            const processBtn = safeGetElement('processCheckoutBtn');
+            if (processBtn) {
+                processBtn.addEventListener('click', processCheckout);
+            }
 
             // Init
             init();

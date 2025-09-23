@@ -310,7 +310,7 @@ class OrderController extends Controller
      * Proses checkout dari keranjang.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function checkout(Request $request)
     {
@@ -591,7 +591,7 @@ class OrderController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Order  $order
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function cancelOrder(Request $request, Order $order)
     {
@@ -680,7 +680,7 @@ class OrderController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Order  $order
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function updateOrderStatus(Request $request, Order $order)
     {
@@ -800,7 +800,7 @@ class OrderController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Order  $order
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function completeOrder(Request $request, Order $order)
     {
@@ -879,7 +879,7 @@ class OrderController extends Controller
      * Mendapatkan daftar pesanan untuk penjual.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function sellerOrders(Request $request)
     {

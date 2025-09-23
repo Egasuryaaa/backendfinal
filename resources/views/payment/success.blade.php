@@ -228,9 +228,14 @@
                 // Check if there's saved checkout info
                 const checkoutInfo = sessionStorage.getItem('checkout_success');
                 if (checkoutInfo) {
-                    const info = JSON.parse(checkoutInfo);
-                    loadOrderInfo(info.order_id);
-                    sessionStorage.removeItem('checkout_success');
+                    try {
+                        const info = JSON.parse(checkoutInfo);
+                        loadOrderInfo(info.order_id);
+                        sessionStorage.removeItem('checkout_success');
+                    } catch (error) {
+                        console.warn('Failed to parse checkout info:', error);
+                        showDefaultInfo();
+                    }
                 } else {
                     showDefaultInfo();
                 }

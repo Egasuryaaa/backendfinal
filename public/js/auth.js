@@ -3,6 +3,16 @@
  * Manages Bearer tokens across the application
  */
 
+// Safe JSON parsing utility
+function safeJsonParse(jsonString, fallback = null) {
+    try {
+        return JSON.parse(jsonString);
+    } catch (error) {
+        console.warn('JSON parsing failed:', error);
+        return fallback;
+    }
+}
+
 // Token utility functions
 function getAuthToken() {
     return localStorage.getItem('auth_token') ||
@@ -11,32 +21,23 @@ function getAuthToken() {
 }
 
 function setAuthToken(token, remember = false) {
-    console.log('setAuthToken called with token:', token ? token.substring(0, 10) + '...' : 'null');
-    console.log('setAuthToken remember:', remember);
-
     if (remember) {
         localStorage.setItem('auth_token', token);
         sessionStorage.removeItem('auth_token');
-        console.log('Token saved to localStorage, removed from sessionStorage');
     } else {
         sessionStorage.setItem('auth_token', token);
         localStorage.removeItem('auth_token');
-        console.log('Token saved to sessionStorage, removed from localStorage');
     }
 
-    // Also set as cookie for web route authentication
-    const cookieDays = remember ? 30 : 1; // Use 1 day instead of 0 for session
+    // Also set as cookie for server-side access
+    const cookieDays = remember ? 7 : 1;
     setCookie('auth_token', token, cookieDays);
-    console.log('Token saved to cookie with days:', cookieDays);
 
-    // Verify cookie was set immediately
-    setTimeout(() => {
-        const cookieValue = getCookie('auth_token');
-        console.log('Cookie verification:', cookieValue ? 'Found' : 'NOT FOUND');
-        if (cookieValue) {
-            console.log('Cookie value preview:', cookieValue.substring(0, 10) + '...');
-        }
-    }, 10);
+    // Verify cookie was set
+    const cookieValue = getCookie('auth_token');
+    if (!cookieValue) {
+        console.warn('Auth token cookie was not set properly');
+    }
 }
 
 function clearAuthToken() {
@@ -52,20 +53,15 @@ function clearAuthToken() {
 // Cookie utility functions
 function setCookie(name, value, days) {
     let expires = "";
-    if (days && days > 0) {
+    if (days) {
         const date = new Date();
         date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
         expires = "; expires=" + date.toUTCString();
     }
 
-    // Ensure value is properly encoded
     const encodedValue = encodeURIComponent(value || "");
     const cookieString = name + "=" + encodedValue + expires + "; path=/; SameSite=Lax";
     document.cookie = cookieString;
-    console.log('setCookie called:', name, 'with expires:', expires ? expires : 'session');
-    console.log('Cookie string set:', cookieString.substring(0, 50) + '...');
-    console.log('Original value length:', (value || "").length);
-    console.log('Encoded value length:', encodedValue.length);
 }
 
 function getCookie(name) {
@@ -117,7 +113,7 @@ function isLoggedIn() {
 
 function getUserData() {
     const userData = localStorage.getItem('user_data') || sessionStorage.getItem('user_data');
-    return userData ? JSON.parse(userData) : null;
+    return userData ? safeJsonParse(userData, null) : null;
 }
 
 function setUserData(userData, remember = false) {
@@ -391,7 +387,6 @@ async function logout() {
 
     // Always try session-based logout for web auth
     try {
-        console.log('Attempting session logout...');
         const response = await fetch('/logout', {
             method: 'POST',
             headers: {
@@ -403,9 +398,7 @@ async function logout() {
             credentials: 'same-origin'
         });
 
-        if (response.ok) {
-            console.log('Session logout successful');
-        } else {
+        if (!response.ok) {
             console.warn('Session logout failed with status:', response.status);
         }
     } catch (error) {

@@ -1106,21 +1106,7 @@
         // Fetch categories from API
         async function fetchCategories() {
             try {
-                const token = getAuthToken ? getAuthToken() : null;
-
-                const headers = {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                };
-
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const response = await fetch('/api/categories?parents_only=true&include_product_count=true', {
-                    method: 'GET',
-                    headers: headers
-                });
+                const response = await authenticatedFetch('/api/categories?parents_only=true&include_product_count=true');
 
                 if (response.ok) {
                     const data = await response.json();
@@ -1144,23 +1130,7 @@
         // Fetch products from API
         async function fetchProducts() {
             try {
-                // Get auth token from auth.js
-                const token = getAuthToken ? getAuthToken() : null;
-
-                const headers = {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                };
-
-                // Add Authorization header if token exists
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const response = await fetch('/api/products', {
-                    method: 'GET',
-                    headers: headers
-                });
+                const response = await authenticatedFetch('/api/products');
 
                 if (response.ok) {
                     const data = await response.json();
@@ -1337,21 +1307,7 @@
                 console.log('Testing auth status...');
 
                 // Get auth token from auth.js
-                const token = getAuthToken ? getAuthToken() : null;
-
-                const headers = {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                };
-
-                // Add Authorization header if token exists
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const testResponse = await fetch('/auth-test', {
-                    method: 'GET',
-                    headers: headers,
+                const testResponse = await authenticatedFetch('/auth-test', {
                     credentials: 'same-origin'
                 });
 
@@ -1431,24 +1387,7 @@
         // Load cart count and update badge
         async function loadCartCount() {
             try {
-                // Get auth token from auth.js
-                const token = getAuthToken ? getAuthToken() : null;
-
-                const headers = {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                };
-
-                // Add Authorization header if token exists
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const response = await fetch('/api/cart', {
-                    method: 'GET',
-                    headers: headers,
+                const response = await authenticatedFetch('/api/cart', {
                     credentials: 'same-origin'
                 });
 

@@ -377,46 +377,46 @@
             .wave-container {
                 height: 25vh;
             }
-            
+
             .logo {
                 width: 80px;
                 height: 80px;
                 font-size: 36px;
             }
-            
+
             .app-title {
                 font-size: 24px;
             }
-            
+
             .app-subtitle {
                 font-size: 12px;
             }
-            
+
             .form-container {
                 margin: 16px;
                 padding: 20px;
             }
-            
+
             .form-title {
                 font-size: 20px;
             }
-            
+
             .form-input {
                 padding: 12px 12px 12px 52px;
                 font-size: 14px;
             }
-            
+
             .input-icon {
                 font-size: 18px;
                 width: 32px;
                 height: 32px;
             }
-            
+
             .login-btn {
                 padding: 12px;
                 font-size: 14px;
             }
-            
+
             .form-options {
                 font-size: 12px;
             }
@@ -435,7 +435,7 @@
             .wave-container {
                 height: 20vh;
             }
-            
+
             .form-container {
                 margin-top: 10px;
                 padding: 20px;
@@ -497,7 +497,7 @@
         <div class="wave-container">
             <div class="wave"></div>
             <div class="wave"></div>
-            
+
             <div class="header-content">
                 <div class="logo-container">
                     <div class="logo">
@@ -542,7 +542,7 @@
 
                 <form id="loginForm" novalidate>
                     @csrf
-                    
+
                     <!-- Email Field -->
                     <div class="form-group">
                         <label for="email" class="form-label">Email</label>
@@ -550,13 +550,13 @@
                             <div class="input-icon">
                                 <i class="fas fa-envelope"></i>
                             </div>
-                            <input 
-                                type="email" 
-                                id="email" 
-                                name="email" 
-                                class="form-input" 
-                                value="{{ old('email') }}" 
-                                required 
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                class="form-input"
+                                value="{{ old('email') }}"
+                                required
                                 autocomplete="off"
                                 placeholder="Masukkan email Anda"
                             >
@@ -570,12 +570,12 @@
                             <div class="input-icon">
                                 <i class="fas fa-lock"></i>
                             </div>
-                            <input 
-                                type="password" 
-                                id="password" 
-                                name="password" 
-                                class="form-input" 
-                                required 
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                class="form-input"
+                                required
                                 autocomplete="off"
                                 placeholder="Masukkan password Anda"
                             >
@@ -614,7 +614,7 @@
         document.getElementById('togglePassword').addEventListener('click', function() {
             const password = document.getElementById('password');
             const isPassword = password.getAttribute('type') === 'password';
-            
+
             password.setAttribute('type', isPassword ? 'text' : 'password');
             this.classList.toggle('fa-eye');
             this.classList.toggle('fa-eye-slash');
@@ -623,20 +623,20 @@
         // Form submission - use API endpoint
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const button = document.getElementById('loginButton');
             const buttonText = document.getElementById('buttonText');
             const buttonSpinner = document.getElementById('buttonSpinner');
-            
+
             button.disabled = true;
             buttonText.style.display = 'none';
             buttonSpinner.style.display = 'inline-flex';
-            
+
             try {
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 const remember = document.getElementById('remember_me').checked;
-                
+
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: {
@@ -650,18 +650,18 @@
                         remember_me: remember
                     })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok && data.success) {
                     // Login successful
                     localShowAlert('Login berhasil! Mengarahkan ke dashboard...', 'success');
-                    
+
                     // Store token using auth.js functions
                     if (window.setAuthToken && data.data.access_token) {
                         window.setAuthToken(data.data.access_token, remember);
                     }
-                    
+
                     // Redirect to fishmarket
                     setTimeout(() => {
                         window.location.href = '/fishmarket';
@@ -670,7 +670,7 @@
                     // Login failed
                     const errorMessage = data.message || 'Login gagal. Silakan periksa email dan password Anda.';
                     localShowAlert(errorMessage, 'error');
-                    
+
                     // Reset button state
                     button.disabled = false;
                     buttonText.style.display = 'inline';
@@ -679,7 +679,7 @@
             } catch (error) {
                 console.error('Login error:', error);
                 localShowAlert('Terjadi kesalahan. Silakan coba lagi.', 'error');
-                
+
                 // Reset button state
                 button.disabled = false;
                 buttonText.style.display = 'inline';
@@ -690,7 +690,7 @@
         // Show coming soon message for forgot password
         function showComingSoon(event) {
             event.preventDefault();
-            
+
             // Create and show custom alert
             const alertDiv = document.createElement('div');
             alertDiv.className = 'alert alert-success';
@@ -698,10 +698,10 @@
                 <i class="fas fa-info-circle"></i>
                 <span>Fitur lupa password segera hadir</span>
             `;
-            
+
             const form = document.getElementById('loginForm');
             form.insertBefore(alertDiv, form.firstChild);
-            
+
             // Remove alert after 3 seconds
             setTimeout(function() {
                 alertDiv.remove();
@@ -712,22 +712,22 @@
         function localShowAlert(message, type = 'info') {
             const alertDiv = document.createElement('div');
             alertDiv.className = `alert alert-${type}`;
-            
+
             const iconMap = {
                 'success': 'fas fa-check-circle',
                 'error': 'fas fa-exclamation-circle',
                 'warning': 'fas fa-exclamation-triangle',
                 'info': 'fas fa-info-circle'
             };
-            
+
             alertDiv.innerHTML = `
                 <i class="${iconMap[type] || iconMap['info']}"></i>
                 <span>${message}</span>
             `;
-            
+
             const form = document.getElementById('loginForm');
             form.insertBefore(alertDiv, form.firstChild);
-            
+
             // Remove alert after 5 seconds
             setTimeout(function() {
                 if (alertDiv.parentNode) {
@@ -740,7 +740,7 @@
         document.getElementById('email').addEventListener('blur', function() {
             const email = this.value;
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            
+
             if (email && !emailRegex.test(email)) {
                 this.style.borderColor = '#F44336';
                 this.style.borderWidth = '2px';
@@ -753,7 +753,7 @@
         // Password validation
         document.getElementById('password').addEventListener('input', function() {
             const password = this.value;
-            
+
             if (password.length > 0 && password.length < 6) {
                 this.style.borderColor = '#F44336';
                 this.style.borderWidth = '2px';
@@ -814,9 +814,19 @@
             return !!getAuthToken();
         }
 
+        // Safe JSON parsing utility
+        function safeJsonParse(jsonString, fallback = null) {
+            try {
+                return JSON.parse(jsonString);
+            } catch (error) {
+                console.warn('JSON parsing failed:', error);
+                return fallback;
+            }
+        }
+
         function getUserData() {
             const userData = localStorage.getItem('user_data') || sessionStorage.getItem('user_data');
-            return userData ? JSON.parse(userData) : null;
+            return userData ? safeJsonParse(userData, null) : null;
         }
 
         // Make token functions globally available

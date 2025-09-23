@@ -832,23 +832,7 @@
         // Fetch order detail
         async function fetchOrderDetail() {
             try {
-                // Get auth token from auth.js
-                const token = getAuthToken ? getAuthToken() : null;
-
-                const headers = {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                };
-
-                // Add Authorization header if token exists
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const response = await fetch(`/api/orders/${orderId}`, {
-                    method: 'GET',
-                    headers: headers
-                });
+                const response = await authenticatedFetch(`/api/orders/${orderId}`);
 
                 if (response.ok) {
                     const data = await response.json();
@@ -930,21 +914,7 @@
         // Fetch order items
         async function fetchOrderItems() {
             try {
-                const token = getAuthToken ? getAuthToken() : null;
-
-                const headers = {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                };
-
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const response = await fetch(`/api/orders/${orderId}/items`, {
-                    method: 'GET',
-                    headers: headers
-                });
+                const response = await authenticatedFetch(`/api/orders/${orderId}/items`);
 
                 if (response.ok) {
                     const data = await response.json();
@@ -1042,21 +1012,8 @@
             }
 
             try {
-                const token = getAuthToken ? getAuthToken() : null;
-
-                const headers = {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                };
-
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const response = await fetch(`/api/orders/${orderId}/cancel`, {
-                    method: 'POST',
-                    headers: headers
+                const response = await authenticatedFetch(`/api/orders/${orderId}/cancel`, {
+                    method: 'POST'
                 });
 
                 const data = await response.json();
@@ -1081,21 +1038,8 @@
             }
 
             try {
-                const token = getAuthToken ? getAuthToken() : null;
-
-                const headers = {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                };
-
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const response = await fetch(`/api/orders/${orderId}/complete`, {
-                    method: 'POST',
-                    headers: headers
+                const response = await authenticatedFetch(`/api/orders/${orderId}/complete`, {
+                    method: 'POST'
                 });
 
                 const data = await response.json();
@@ -1117,20 +1061,7 @@
         async function handleManualPaymentDisplay() {
             try {
                 // Fetch bank account info for this order
-                const token = getAuthToken ? getAuthToken() : null;
-                const headers = {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                };
-
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const response = await fetch(`/api/orders/${orderId}/bank-account`, {
-                    method: 'GET',
-                    headers: headers
-                });
+                const response = await authenticatedFetch(`/api/orders/${orderId}/bank-account`);
 
                 if (response.ok) {
                     const data = await response.json();
@@ -1300,20 +1231,10 @@
                 const formData = new FormData();
                 formData.append('payment_proof', file);
 
-                const token = getAuthToken ? getAuthToken() : null;
-                const headers = {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                };
-
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const response = await fetch(`/api/orders/${orderId}/payment-proof`, {
+                const response = await authenticatedFetch(`/api/orders/${orderId}/payment-proof`, {
                     method: 'POST',
-                    headers: headers,
-                    body: formData
+                    body: formData,
+                    skipContentType: true // Let browser set multipart/form-data boundary
                 });
 
                 const data = await response.json();

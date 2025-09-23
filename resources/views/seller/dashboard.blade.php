@@ -416,30 +416,55 @@
         });
     }
 
+    // Utility functions for safe DOM access
+    function safeGetElement(id) {
+        const element = document.getElementById(id);
+        if (!element) {
+            console.warn(`Element with ID '${id}' not found`);
+        }
+        return element;
+    }
+
+    function safeSetText(id, text) {
+        const element = safeGetElement(id);
+        if (element) {
+            element.textContent = text;
+        }
+        return element;
+    }
+
+    function safeSetDisplay(id, displayValue) {
+        const element = safeGetElement(id);
+        if (element) {
+            element.style.display = displayValue;
+        }
+        return element;
+    }
+
     function populateDashboard(data) {
         // Update stats
-        document.getElementById('totalRevenue').textContent = data.formatted_total_revenue;
-        document.getElementById('orderCount').textContent = data.order_count;
-        document.getElementById('productCount').textContent = data.product_count;
-        document.getElementById('avgRating').textContent = data.avg_rating;
+        safeSetText('totalRevenue', data.formatted_total_revenue);
+        safeSetText('orderCount', data.order_count);
+        safeSetText('productCount', data.product_count);
+        safeSetText('avgRating', data.avg_rating);
 
         // Show alerts if needed
-        const alertCards = document.getElementById('alertCards');
+        const alertCards = safeGetElement('alertCards');
         let hasAlerts = false;
 
         if (data.out_of_stock_count > 0) {
-            document.getElementById('outOfStockCount').textContent = data.out_of_stock_count;
-            document.getElementById('outOfStockAlert').style.display = 'block';
+            safeSetText('outOfStockCount', data.out_of_stock_count);
+            safeSetDisplay('outOfStockAlert', 'block');
             hasAlerts = true;
         }
 
         if (data.unreplied_reviews > 0) {
-            document.getElementById('unrepliedReviews').textContent = data.unreplied_reviews;
-            document.getElementById('unrepliedReviewsAlert').style.display = 'block';
+            safeSetText('unrepliedReviews', data.unreplied_reviews);
+            safeSetDisplay('unrepliedReviewsAlert', 'block');
             hasAlerts = true;
         }
 
-        if (hasAlerts) {
+        if (hasAlerts && alertCards) {
             alertCards.style.display = 'flex';
         }
 
@@ -454,7 +479,11 @@
     }
 
     function updateSalesChart(salesData) {
-        const ctx = document.getElementById('salesChart').getContext('2d');
+        const ctx = safeGetElement('salesChart')?.getContext('2d');
+        if (!ctx) {
+            console.error('Sales chart canvas not found');
+            return;
+        }
 
         if (salesChart) {
             salesChart.destroy();

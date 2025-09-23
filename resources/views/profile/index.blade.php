@@ -608,20 +608,45 @@
         }
     }
 
+    // Utility functions for safe DOM access
+    function safeGetElement(id) {
+        const element = document.getElementById(id);
+        if (!element) {
+            console.warn(`Element with ID '${id}' not found`);
+        }
+        return element;
+    }
+
+    function safeSetText(id, text) {
+        const element = safeGetElement(id);
+        if (element) {
+            element.textContent = text;
+        }
+        return element;
+    }
+
+    function safeSetDisplay(id, displayValue) {
+        const element = safeGetElement(id);
+        if (element) {
+            element.style.display = displayValue;
+        }
+        return element;
+    }
+
     // Display profile data
     function displayProfile() {
         if (!user) return;
 
         // Hanya tampilkan nama dan email
-        document.getElementById('profileName').textContent = user.name || '-';
-        document.getElementById('profileEmail').textContent = user.email || '-';
+        safeSetText('profileName', user.name || '-');
+        safeSetText('profileEmail', user.email || '-');
 
         // Always show Dashboard Penjual menu - checking will be done on click
-        document.getElementById('sellerDashboardMenuItemForBuyers').style.display = 'block';
+        safeSetDisplay('sellerDashboardMenuItemForBuyers', 'block');
 
         // Hide loading and show content
-        document.getElementById('loadingState').style.display = 'none';
-        document.getElementById('profileContent').style.display = 'block';
+        safeSetDisplay('loadingState', 'none');
+        safeSetDisplay('profileContent', 'block');
     }
 
 
@@ -649,9 +674,9 @@
                     orderStats = data.data;
 
                     // Update tampilan statistik
-                    document.getElementById('totalOrders').textContent = orderStats.total_pesanan || 0;
-                    document.getElementById('pendingOrders').textContent = orderStats.menunggu || 0;
-                    document.getElementById('cancelledOrders').textContent = orderStats.dibatalkan || 0;
+                    safeSetText('totalOrders', orderStats.total_pesanan || 0);
+                    safeSetText('pendingOrders', orderStats.menunggu || 0);
+                    safeSetText('cancelledOrders', orderStats.dibatalkan || 0);
 
                     // Bisa ditambahkan statistik lainnya jika diperlukan
                     console.log('Order Statistics:', orderStats);
@@ -671,9 +696,9 @@
                 dibatalkan: 0
             };
 
-            document.getElementById('totalOrders').textContent = '0';
-            document.getElementById('pendingOrders').textContent = '0';
-            document.getElementById('cancelledOrders').textContent = '0';
+            safeSetText('totalOrders', '0');
+            safeSetText('pendingOrders', '0');
+            safeSetText('cancelledOrders', '0');
         }
     }
 
@@ -907,8 +932,8 @@
 
     // Update profile
     async function updateProfile() {
-        const name = document.getElementById('editName').value;
-        const phone = document.getElementById('editPhone').value;
+        const name = safeGetElement('editName')?.value || '';
+        const phone = safeGetElement('editPhone')?.value || '';
 
         try {
             // Mock update - in real app, send to API
@@ -1125,9 +1150,9 @@
 
     // Change password function
     function changePassword() {
-        const currentPassword = document.getElementById('currentPassword').value;
-        const newPassword = document.getElementById('newPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
+        const currentPassword = safeGetElement('currentPassword')?.value || '';
+        const newPassword = safeGetElement('newPassword')?.value || '';
+        const confirmPassword = safeGetElement('confirmPassword')?.value || '';
 
         if (!currentPassword || !newPassword || !confirmPassword) {
             showError('Semua field password wajib diisi');

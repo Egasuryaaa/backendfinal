@@ -806,23 +806,7 @@
             try {
                 showLoading(true);
 
-                // Get auth token from auth.js
-                const token = getAuthToken ? getAuthToken() : null;
-
-                const headers = {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                };
-
-                // Add Authorization header if token exists
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const response = await fetch(`/api/products/${productId}`, {
-                    headers: headers
-                });
+                const response = await authenticatedFetch(`/api/products/${productId}`);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -1076,24 +1060,8 @@
             try {
                 setLoading(true);
 
-                // Get auth token from auth.js
-                const token = getAuthToken ? getAuthToken() : null;
-
-                const headers = {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                };
-
-                // Add Authorization header if token exists
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const response = await fetch('/api/cart', {
+                const response = await authenticatedFetch('/api/cart', {
                     method: 'POST',
-                    headers: headers,
                     body: JSON.stringify({
                         produk_id: currentProduct.id,
                         jumlah: currentQuantity

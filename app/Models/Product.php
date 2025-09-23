@@ -193,7 +193,7 @@ class Product extends Model
      */
     public function getFormattedPriceAttribute()
     {
-        return 'Rp ' . number_format($this->harga, 0, ',', '.');
+        return 'Rp ' . number_format((float) $this->harga, 0, ',', '.');
     }
 
     /**
@@ -220,7 +220,7 @@ class Product extends Model
 
         if ($count > 0) {
             $avgRating = $reviews->avg('rating');
-            $this->rating_rata = round($avgRating, 1);
+            $this->update(['rating_rata' => round((float) $avgRating, 1)]);
             $this->jumlah_ulasan = $count;
             $this->save();
         }

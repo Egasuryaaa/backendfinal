@@ -18,7 +18,7 @@ class AuthController extends Controller
      * Registrasi pengguna baru
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function register(Request $request)
     {
@@ -74,7 +74,7 @@ class AuthController extends Controller
      * Login pengguna.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function login(Request $request)
     {
@@ -155,7 +155,7 @@ class AuthController extends Controller
      * Logout pengguna.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function logout(Request $request)
     {
@@ -171,7 +171,7 @@ class AuthController extends Controller
      * Mendapatkan detail pengguna yang sedang login.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function user(Request $request)
     {
@@ -195,7 +195,7 @@ class AuthController extends Controller
      * Memperbarui detail pengguna.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request)
     {

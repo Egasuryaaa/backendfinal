@@ -307,23 +307,7 @@
         // Fetch orders from API
         async function fetchOrders() {
             try {
-                // Get auth token from auth.js
-                const token = getAuthToken ? getAuthToken() : null;
-
-                const headers = {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                };
-
-                // Add Authorization header if token exists
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const response = await fetch('/api/orders', {
-                    method: 'GET',
-                    headers: headers
-                });
+                const response = await authenticatedFetch('/api/orders');
 
                 if (response.ok) {
                     const data = await response.json();
@@ -467,23 +451,8 @@
             }
 
             try {
-                // Get auth token from auth.js
-                const token = getAuthToken ? getAuthToken() : null;
-
-                const headers = {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                };
-
-                // Add Authorization header if token exists
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const response = await fetch(`/api/orders/${orderId}/cancel`, {
-                    method: 'POST',
-                    headers: headers
+                const response = await authenticatedFetch(`/api/orders/${orderId}/cancel`, {
+                    method: 'POST'
                 });
 
                 const data = await response.json();
