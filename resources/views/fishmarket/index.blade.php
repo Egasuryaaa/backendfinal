@@ -829,9 +829,9 @@
                     <a href="/fish-farms" class="cart-button" id="fishFarmButton" title="Tambak & Pengepul">
                         <i class="fas fa-fish"></i>
                     </a>
-                    <a href="/fish-farms/dashboard" class="cart-button" id="farmDashboardButton" title="Dashboard Pemilik Tambak" style="display: none;">
+                    <!-- <a href="/fish-farms/dashboard" class="cart-button" id="farmDashboardButton" title="Dashboard Pemilik Tambak" style="display: none;">
                         <i class="fas fa-tachometer-alt"></i>
-                    </a>
+                    </a> -->
                     <a href="/cart" class="cart-button" id="cartButton">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="cart-badge hidden" id="cartBadge">0</span>
@@ -1106,7 +1106,21 @@
         // Fetch categories from API
         async function fetchCategories() {
             try {
-                const response = await authenticatedFetch('/api/categories?parents_only=true&include_product_count=true');
+                const token = getAuthToken ? getAuthToken() : null;
+
+                const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                };
+
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const response = await fetch('/api/categories?parents_only=true&include_product_count=true', {
+                    method: 'GET',
+                    headers: headers
+                });
 
                 if (response.ok) {
                     const data = await response.json();
@@ -1130,7 +1144,23 @@
         // Fetch products from API
         async function fetchProducts() {
             try {
-                const response = await authenticatedFetch('/api/products');
+                // Get auth token from auth.js
+                const token = getAuthToken ? getAuthToken() : null;
+
+                const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                };
+
+                // Add Authorization header if token exists
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const response = await fetch('/api/products', {
+                    method: 'GET',
+                    headers: headers
+                });
 
                 if (response.ok) {
                     const data = await response.json();
@@ -1307,7 +1337,21 @@
                 console.log('Testing auth status...');
 
                 // Get auth token from auth.js
-                const testResponse = await authenticatedFetch('/auth-test', {
+                const token = getAuthToken ? getAuthToken() : null;
+
+                const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                };
+
+                // Add Authorization header if token exists
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const testResponse = await fetch('/auth-test', {
+                    method: 'GET',
+                    headers: headers,
                     credentials: 'same-origin'
                 });
 
@@ -1387,7 +1431,24 @@
         // Load cart count and update badge
         async function loadCartCount() {
             try {
-                const response = await authenticatedFetch('/api/cart', {
+                // Get auth token from auth.js
+                const token = getAuthToken ? getAuthToken() : null;
+
+                const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                };
+
+                // Add Authorization header if token exists
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const response = await fetch('/api/cart', {
+                    method: 'GET',
+                    headers: headers,
                     credentials: 'same-origin'
                 });
 
