@@ -665,7 +665,7 @@ class AppointmentController extends Controller
 
             $appointment = Appointment::where('id', $id)
                 ->where('user_id', $user->id)
-                ->whereIn('status', ['pending', 'diterima'])
+                ->whereIn('status', ['menunggu', 'dikonfirmasi'])
                 ->first();
 
             if (!$appointment) {
@@ -714,7 +714,7 @@ class AppointmentController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'status' => 'required|in:dikonfirmasi,dibatalkan',
-            'catatan_collector' => 'nullable|string|max:500'
+            'catatan' => 'nullable|string|max:500'
         ]);
 
         if ($validator->fails()) {
@@ -739,21 +739,43 @@ class AppointmentController extends Controller
             // Get user's collector IDs
             $collectorIds = \App\Models\Collector::where('user_id', $user->id)->pluck('id');
 
-            $appointment = Appointment::whereIn('collector_id', $collectorIds)
-                ->where('id', $id)
-                ->where('status', 'pending')
-                ->first();
-
-            if (!$appointment) {
+            // First check if appointment exists at all
+            $appointmentExists = Appointment::where('id', $id)->first();
+            if (!$appointmentExists) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Appointment not found or not available for response'
+                    'message' => 'Appointment not found'
                 ], 404);
             }
 
+            // Check if appointment belongs to user's collectors
+            if (!$collectorIds->contains($appointmentExists->collector_id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This appointment does not belong to your collectors'
+                ], 403);
+            }
+
+            // Check if appointment status is correct for the action
+            if ($request->status === 'dikonfirmasi' && $appointmentExists->status !== 'menunggu') {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Cannot confirm appointment with status '{$appointmentExists->status}', can only confirm 'menunggu' appointments"
+                ], 422);
+            }
+            
+            if ($request->status === 'dibatalkan' && !in_array($appointmentExists->status, ['menunggu', 'dikonfirmasi'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Cannot cancel appointment with status '{$appointmentExists->status}', can only cancel 'menunggu' or 'dikonfirmasi' appointments"
+                ], 422);
+            }
+
+            $appointment = $appointmentExists;
+
             $appointment->update([
                 'status' => $request->status,
-                'catatan_collector' => $request->catatan_collector
+                'catatan' => $request->catatan
             ]);
 
             // Load relationships for response
@@ -807,17 +829,32 @@ class AppointmentController extends Controller
             // Get user's collector IDs
             $collectorIds = \App\Models\Collector::where('user_id', $user->id)->pluck('id');
 
-            $appointment = Appointment::whereIn('collector_id', $collectorIds)
-                ->where('id', $id)
-                ->where('status', 'dikonfirmasi')
-                ->first();
-
-            if (!$appointment) {
+            // First check if appointment exists at all
+            $appointmentExists = Appointment::where('id', $id)->first();
+            if (!$appointmentExists) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Appointment not found or not ready for completion'
+                    'message' => 'Appointment not found'
                 ], 404);
             }
+
+            // Check if appointment belongs to user's collectors
+            if (!$collectorIds->contains($appointmentExists->collector_id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This appointment does not belong to your collectors'
+                ], 403);
+            }
+
+            // Check if appointment status is correct
+            if ($appointmentExists->status !== 'dikonfirmasi') {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Appointment status is '{$appointmentExists->status}', can only complete 'dikonfirmasi' appointments"
+                ], 422);
+            }
+
+            $appointment = $appointmentExists;
 
             // Calculate final totals
             $totalAktual = $request->berat_aktual * $appointment->harga_per_kg;

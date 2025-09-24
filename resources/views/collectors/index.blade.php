@@ -1087,6 +1087,8 @@
         }
 
         async function acceptAppointment(appointmentId) {
+            const catatan = prompt('Masukkan catatan untuk pemilik tambak (opsional):') || '';
+            
             if (!confirm('Apakah Anda yakin ingin menerima janji penjemputan ini?')) {
                 return;
             }
@@ -1101,7 +1103,8 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({ 
-                        response: 'accept'
+                        status: 'dikonfirmasi',
+                        catatan: catatan
                     })
                 });
 
@@ -1132,6 +1135,8 @@
         }
 
         async function rejectAppointment(appointmentId) {
+            const catatan = prompt('Masukkan alasan penolakan (opsional):') || '';
+            
             if (!confirm('Apakah Anda yakin ingin menolak janji penjemputan ini?')) {
                 return;
             }
@@ -1146,7 +1151,8 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({ 
-                        response: 'reject'
+                        status: 'dibatalkan',
+                        catatan: catatan
                     })
                 });
 
@@ -1177,6 +1183,16 @@
         }
 
         async function completeAppointment(appointmentId) {
+            // Get actual weight from user
+            const beratAktual = prompt('Masukkan berat aktual ikan yang dipungut (kg):');
+            if (!beratAktual || isNaN(beratAktual) || parseFloat(beratAktual) <= 0) {
+                alert('Berat aktual harus diisi dengan angka yang valid!');
+                return;
+            }
+
+            const kualitasIkan = prompt('Masukkan kualitas ikan (opsional):') || '';
+            const catatanSelesai = prompt('Masukkan catatan tambahan (opsional):') || '';
+
             if (!confirm('Apakah Anda yakin ingin menandai janji penjemputan ini sebagai selesai?')) {
                 return;
             }
@@ -1191,7 +1207,9 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({ 
-                        // Add any additional data required for completion
+                        berat_aktual: parseFloat(beratAktual),
+                        kualitas_ikan: kualitasIkan,
+                        catatan_selesai: catatanSelesai
                     })
                 });
 

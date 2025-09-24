@@ -1040,7 +1040,7 @@
     </a>
 
     <div class="header">
-        <h1><i class="fas fa-fish"></i> Manajemen Tambak Ikan</h1>
+        <h1><i class="fas fa-fish"></i> PORTAL JANJI TEMU</h1>
         <p>Kelola tambak dan hubungi pemilik untuk kerjasama</p>
     </div>
 
@@ -1089,9 +1089,9 @@
                         <i class="fas fa-search"></i> Cari
                     </button>
                 </div>
-                <button class="btn btn-primary" onclick="showCollectorRegistrationModal()">
+                <!-- <button class="btn btn-primary" onclick="showCollectorRegistrationModal()">
                     <i class="fas fa-plus"></i> Kelola Usaha Pengepul
-                </button>
+                </button> -->
             </div>
             
             <div id="collectorsContainer" class="grid">
@@ -1225,9 +1225,9 @@
                 <button class="btn btn-secondary" onclick="closeCollectorDetailModal()">
                     <i class="fas fa-times"></i> Tutup
                 </button>
-                <button id="appointmentBtn" class="btn btn-primary" onclick="showAppointmentForm()" style="display: none;">
+                <!-- <button id="appointmentBtn" class="btn btn-primary" onclick="showAppointmentForm()" style="display: none;">
                     <i class="fas fa-calendar-plus"></i> Buat Janji Temu
-                </button>
+                </button> -->
             </div>
         </div>
     </div>
