@@ -10,6 +10,7 @@ use App\Models\Appointment;
 use App\Models\SellerLocation;
 use App\Models\User;
 use Carbon\Carbon;
+use App\Services\WhatsAppService;
 
 class AppointmentController extends Controller
 {
@@ -541,6 +542,23 @@ class AppointmentController extends Controller
             // Load relationships for response
             $appointment->load(['fishFarm', 'collector.user', 'pemilikTambak']);
 
+            // Send WhatsApp notification to collector
+            try {
+                $whatsAppService = new WhatsAppService();
+                $notificationResult = $whatsAppService->sendFishFarmAppointmentSummary($appointment);
+                
+                \Log::info('WhatsApp notification sent for appointment', [
+                    'appointment_id' => $appointment->id,
+                    'result' => $notificationResult
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to send WhatsApp notification for appointment', [
+                    'appointment_id' => $appointment->id,
+                    'error' => $e->getMessage()
+                ]);
+                // Don't fail the appointment creation if WhatsApp fails
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Appointment request sent successfully to collector',
@@ -773,6 +791,8 @@ class AppointmentController extends Controller
 
             $appointment = $appointmentExists;
 
+            $oldStatus = $appointment->status;
+            
             $appointment->update([
                 'status' => $request->status,
                 'catatan' => $request->catatan
@@ -780,6 +800,25 @@ class AppointmentController extends Controller
 
             // Load relationships for response
             $appointment->load(['fishFarm', 'collector.user', 'pemilikTambak']);
+
+            // Send WhatsApp notification about status update
+            try {
+                $whatsAppService = new WhatsAppService();
+                $notificationResult = $whatsAppService->sendAppointmentStatusUpdate($appointment, $oldStatus, $request->status);
+                
+                \Log::info('WhatsApp status update notification sent', [
+                    'appointment_id' => $appointment->id,
+                    'old_status' => $oldStatus,
+                    'new_status' => $request->status,
+                    'result' => $notificationResult
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to send WhatsApp status update notification', [
+                    'appointment_id' => $appointment->id,
+                    'error' => $e->getMessage()
+                ]);
+                // Don't fail the status update if WhatsApp fails
+            }
 
             return response()->json([
                 'success' => true,
@@ -870,6 +909,23 @@ class AppointmentController extends Controller
 
             // Load relationships for response
             $appointment->load(['fishFarm', 'collector.user', 'pemilikTambak']);
+
+            // Send WhatsApp notification about completion
+            try {
+                $whatsAppService = new WhatsAppService();
+                $notificationResult = $whatsAppService->sendAppointmentCompletion($appointment);
+                
+                \Log::info('WhatsApp completion notification sent', [
+                    'appointment_id' => $appointment->id,
+                    'result' => $notificationResult
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to send WhatsApp completion notification', [
+                    'appointment_id' => $appointment->id,
+                    'error' => $e->getMessage()
+                ]);
+                // Don't fail the completion if WhatsApp fails
+            }
 
             return response()->json([
                 'success' => true,

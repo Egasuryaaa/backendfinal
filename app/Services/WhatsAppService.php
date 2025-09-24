@@ -28,11 +28,11 @@ class WhatsAppService
 
             // Send to farmer
             $farmerMessage = $this->buildFarmerAppointmentMessage($appointment, $fishFarm, $collector);
-            $this->sendMessage($farmer->no_telepon ?? $fishFarm->no_telepon, $farmerMessage);
+            $this->sendMessage($farmer->phone ?? $fishFarm->no_telepon, $farmerMessage);
 
             // Send to collector
             $collectorMessage = $this->buildCollectorAppointmentMessage($appointment, $fishFarm, $collector);
-            $this->sendMessage($collectorOwner->no_telepon ?? $collector->no_telepon, $collectorMessage);
+            $this->sendMessage($collectorOwner->phone ?? $collector->no_telepon, $collectorMessage);
 
             // Mark as sent
             $appointment->update(['whatsapp_sent' => true]);
@@ -65,8 +65,8 @@ class WhatsAppService
             $message = $this->buildStatusUpdateMessage($appointment, $oldStatus, $newStatus);
 
             // Send to both parties
-            $this->sendMessage($farmer->no_telepon ?? $fishFarm->no_telepon, $message);
-            $this->sendMessage($collectorOwner->no_telepon ?? $collector->no_telepon, $message);
+            $this->sendMessage($farmer->phone ?? $fishFarm->no_telepon, $message);
+            $this->sendMessage($collectorOwner->phone ?? $collector->no_telepon, $message);
 
             return true;
         } catch (\Exception $e) {
@@ -96,8 +96,8 @@ class WhatsAppService
             $message = $this->buildCompletionMessage($appointment);
 
             // Send to both parties
-            $this->sendMessage($farmer->no_telepon ?? $fishFarm->no_telepon, $message);
-            $this->sendMessage($collectorOwner->no_telepon ?? $collector->no_telepon, $message);
+            $this->sendMessage($farmer->phone ?? $fishFarm->no_telepon, $message);
+            $this->sendMessage($collectorOwner->phone ?? $collector->no_telepon, $message);
 
             return true;
         } catch (\Exception $e) {
@@ -114,23 +114,38 @@ class WhatsAppService
      */
     private function buildFarmerAppointmentMessage(Appointment $appointment, FishFarm $fishFarm, Collector $collector)
     {
-        $message = "🐟 *ITAK MART - Janji Penjemputan Ikan*\n\n";
-        $message .= "Halo *{$fishFarm->user->name}*,\n\n";
+        $farmOwnerName = $fishFarm->user->name ?? 'Pemilik Tambak';
+        $farmName = $fishFarm->nama_tambak ?? $fishFarm->nama ?? 'Tambak';
+        $fishType = $fishFarm->jenis_ikan ?? '-';
+        $estimatedWeight = $appointment->estimated_weight ?? $appointment->perkiraan_berat ?? 0;
+        $pricePerKg = $appointment->price_per_kg ?? $appointment->harga_per_kg ?? 0;
+        $totalEstimate = $estimatedWeight * $pricePerKg;
+        $collectorName = $collector->nama_bisnis ?? $collector->nama_usaha ?? 'Pengepul';
+        $collectorPhone = $collector->no_telepon ?? $collector->user->no_telepon ?? '-';
+        $collectorAddress = $collector->alamat ?? '-';
+        
+        // Format date and time
+        $appointmentDate = \Carbon\Carbon::parse($appointment->tanggal_janji)->format('d/m/Y');
+        $appointmentTime = $appointment->waktu_janji ?? '09:00';
+
+        $message = "🐟 *IWAKMART - Janji Penjemputan Ikan*\n\n";
+        $message .= "Halo *{$farmOwnerName}*,\n\n";
         $message .= "Janji penjemputan ikan Anda telah dibuat!\n\n";
         $message .= "📋 *Detail Penjemputan:*\n";
-        $message .= "• Tambak: {$fishFarm->nama}\n";
-        $message .= "• Jenis Ikan: {$fishFarm->jenis_ikan}\n";
-        $message .= "• Perkiraan Berat: {$appointment->perkiraan_berat} kg\n";
-        $message .= "• Harga per KG: Rp " . number_format($appointment->harga_per_kg, 0, ',', '.') . "\n";
-        $message .= "• Total Estimasi: Rp " . number_format($appointment->total_estimasi, 0, ',', '.') . "\n\n";
+        $message .= "• Tambak: {$farmName}\n";
+        $message .= "• Jenis Ikan: {$fishType}\n";
+        $message .= "• Perkiraan Berat: {$estimatedWeight} kg\n";
+        $message .= "• Harga per KG: Rp " . number_format($pricePerKg, 0, ',', '.') . "\n";
+        $message .= "• Total Estimasi: Rp " . number_format($totalEstimate, 0, ',', '.') . "\n\n";
         $message .= "🏢 *Pengepul:*\n";
-        $message .= "• Nama: {$collector->nama_usaha}\n";
-        $message .= "• Telepon: {$collector->no_telepon}\n";
-        $message .= "• Alamat: {$collector->alamat}\n\n";
-        $message .= "📅 *Tanggal Penjemputan:* " . $appointment->tanggal->format('d F Y, H:i') . "\n\n";
+        $message .= "• Nama: {$collectorName}\n";
+        $message .= "• Telepon: {$collectorPhone}\n";
+        $message .= "• Alamat: {$collectorAddress}\n\n";
+        $message .= "📅 *Tanggal:* {$appointmentDate}\n";
+        $message .= "🕐 *Waktu:* {$appointmentTime}\n\n";
         
-        if ($appointment->catatan) {
-            $message .= "📝 *Catatan:* {$appointment->catatan}\n\n";
+        if ($appointment->pesan_pemilik ?? $appointment->catatan) {
+            $message .= "📝 *Catatan:* " . ($appointment->pesan_pemilik ?? $appointment->catatan) . "\n\n";
         }
         
         $message .= "Status saat ini: *{$appointment->status}*\n\n";
@@ -144,27 +159,42 @@ class WhatsAppService
      */
     private function buildCollectorAppointmentMessage(Appointment $appointment, FishFarm $fishFarm, Collector $collector)
     {
-        $message = "🐟 *ITAK MART - Janji Penjemputan Baru*\n\n";
-        $message .= "Halo *{$collector->user->name}*,\n\n";
+        $collectorOwnerName = $collector->user->name ?? 'Pengepul';
+        $farmName = $fishFarm->nama_tambak ?? $fishFarm->nama ?? 'Tambak';
+        $farmOwnerName = $fishFarm->user->name ?? 'Pemilik Tambak';
+        $farmPhone = $fishFarm->no_telepon ?? $fishFarm->user->phone ?? '-';
+        $farmAddress = $fishFarm->alamat ?? '-';
+        $fishType = $fishFarm->jenis_ikan ?? '-';
+        $estimatedWeight = $appointment->estimated_weight ?? $appointment->perkiraan_berat ?? 0;
+        $pricePerKg = $appointment->price_per_kg ?? $appointment->harga_per_kg ?? 0;
+        $totalEstimate = $estimatedWeight * $pricePerKg;
+        
+        // Format date and time
+        $appointmentDate = \Carbon\Carbon::parse($appointment->tanggal_janji)->format('d/m/Y');
+        $appointmentTime = $appointment->waktu_janji ?? '09:00';
+
+        $message = "🐟 *IWAKMART - Janji Penjemputan Baru*\n\n";
+        $message .= "Halo *{$collectorOwnerName}*,\n\n";
         $message .= "Ada permintaan penjemputan ikan baru!\n\n";
         $message .= "🏊 *Detail Tambak:*\n";
-        $message .= "• Nama Tambak: {$fishFarm->nama}\n";
-        $message .= "• Pemilik: {$fishFarm->user->name}\n";
-        $message .= "• Telepon: {$fishFarm->no_telepon}\n";
-        $message .= "• Alamat: {$fishFarm->alamat}\n\n";
+        $message .= "• Nama Tambak: {$farmName}\n";
+        $message .= "• Pemilik: {$farmOwnerName}\n";
+        $message .= "• Telepon: {$farmPhone}\n";
+        $message .= "• Alamat: {$farmAddress}\n\n";
         $message .= "🐠 *Detail Ikan:*\n";
-        $message .= "• Jenis: {$fishFarm->jenis_ikan}\n";
-        $message .= "• Perkiraan Berat: {$appointment->perkiraan_berat} kg\n";
-        $message .= "• Harga per KG: Rp " . number_format($appointment->harga_per_kg, 0, ',', '.') . "\n";
-        $message .= "• Total Estimasi: Rp " . number_format($appointment->total_estimasi, 0, ',', '.') . "\n\n";
-        $message .= "📅 *Tanggal Penjemputan:* " . $appointment->tanggal->format('d F Y, H:i') . "\n\n";
+        $message .= "• Jenis: {$fishType}\n";
+        $message .= "• Perkiraan Berat: {$estimatedWeight} kg\n";
+        $message .= "• Harga per KG: Rp " . number_format($pricePerKg, 0, ',', '.') . "\n";
+        $message .= "• Total Estimasi: Rp " . number_format($totalEstimate, 0, ',', '.') . "\n\n";
+        $message .= "📅 *Tanggal:* {$appointmentDate}\n";
+        $message .= "🕐 *Waktu:* {$appointmentTime}\n\n";
         
-        if ($appointment->catatan) {
-            $message .= "📝 *Catatan Petani:* {$appointment->catatan}\n\n";
+        if ($appointment->pesan_pemilik ?? $appointment->catatan) {
+            $message .= "📝 *Catatan Pemilik Tambak:* " . ($appointment->pesan_pemilik ?? $appointment->catatan) . "\n\n";
         }
         
         $message .= "Status: *{$appointment->status}*\n";
-        $message .= "Silakan konfirmasi melalui aplikasi IwakMart.\n\n";
+        $message .= "Silakan buka aplikasi IwakMart untuk merespons janji temu ini.\n\n";
         $message .= "Terima kasih! 🐠";
 
         return $message;
@@ -198,18 +228,27 @@ class WhatsAppService
      */
     private function buildCompletionMessage(Appointment $appointment)
     {
-        $message = "✅ *ITAK MART - Penjemputan Selesai*\n\n";
+        $farmName = $appointment->fishFarm->nama_tambak ?? $appointment->fishFarm->nama ?? 'Tambak';
+        $collectorName = $appointment->collector->nama_bisnis ?? $appointment->collector->nama_usaha ?? 'Pengepul';
+        $fishType = $appointment->fishFarm->jenis_ikan ?? '-';
+        $actualWeight = $appointment->berat_aktual ?? 0;
+        $fishQuality = $appointment->kualitas_ikan ?? 'Baik';
+        $finalPrice = $appointment->price_per_kg ?? $appointment->harga_per_kg ?? 0;
+        $totalPayment = $appointment->total_aktual ?? 0;
+        $completionDate = $appointment->tanggal_selesai ? \Carbon\Carbon::parse($appointment->tanggal_selesai)->format('d/m/Y H:i') : \Carbon\Carbon::now()->format('d/m/Y H:i');
+
+        $message = "✅ *IWAKMART - Penjemputan Selesai*\n\n";
         $message .= "Penjemputan ikan telah selesai!\n\n";
         $message .= "📋 *Ringkasan Transaksi:*\n";
-        $message .= "• Tambak: {$appointment->fishFarm->nama}\n";
-        $message .= "• Pengepul: {$appointment->collector->nama_usaha}\n";
-        $message .= "• Tanggal Selesai: " . $appointment->tanggal_selesai->format('d F Y, H:i') . "\n\n";
+        $message .= "• Tambak: {$farmName}\n";
+        $message .= "• Pengepul: {$collectorName}\n";
+        $message .= "• Tanggal Selesai: {$completionDate}\n\n";
         $message .= "🐠 *Detail Ikan:*\n";
-        $message .= "• Jenis: {$appointment->fishFarm->jenis_ikan}\n";
-        $message .= "• Berat Aktual: {$appointment->berat_aktual} kg\n";
-        $message .= "• Kualitas: {$appointment->kualitas_ikan}\n";
-        $message .= "• Harga Final: Rp " . number_format($appointment->harga_final, 0, ',', '.') . "/kg\n";
-        $message .= "• Total Pembayaran: Rp " . number_format($appointment->total_aktual, 0, ',', '.') . "\n\n";
+        $message .= "• Jenis: {$fishType}\n";
+        $message .= "• Berat Aktual: {$actualWeight} kg\n";
+        $message .= "• Kualitas: {$fishQuality}\n";
+        $message .= "• Harga Final: Rp " . number_format($finalPrice, 0, ',', '.') . "/kg\n";
+        $message .= "• Total Pembayaran: Rp " . number_format($totalPayment, 0, ',', '.') . "\n\n";
         
         if ($appointment->catatan_selesai) {
             $message .= "📝 *Catatan:* {$appointment->catatan_selesai}\n\n";
@@ -222,49 +261,88 @@ class WhatsAppService
     }
 
     /**
-     * Send WhatsApp message (mock implementation)
-     * In production, integrate with actual WhatsApp API like Twilio, WhatsApp Business API, etc.
+     * Send WhatsApp message via Fonnte API
      */
     private function sendMessage($phoneNumber, $message)
     {
         try {
-            // Clean phone number
-            $cleanPhone = preg_replace('/[^0-9]/', '', $phoneNumber);
-            
-            // Convert to international format if needed
-            if (substr($cleanPhone, 0, 1) === '0') {
-                $cleanPhone = '62' . substr($cleanPhone, 1);
+            // Skip if no phone number
+            if (empty($phoneNumber)) {
+                Log::warning('WhatsApp: Empty phone number provided');
+                return false;
             }
 
-            // Log the message for development/testing
-            Log::info('WhatsApp Message Sent', [
-                'phone' => $cleanPhone,
-                'message' => $message,
-                'timestamp' => now()
+            // Clean phone number - keep local format without 62 prefix
+            $cleanPhone = preg_replace('/[^0-9]/', '', $phoneNumber);
+            
+            // Ensure phone starts with 0 for Indonesian local format
+            if (!str_starts_with($cleanPhone, '0')) {
+                // If it starts with 62, remove it and add 0
+                if (str_starts_with($cleanPhone, '62')) {
+                    $cleanPhone = '0' . substr($cleanPhone, 2);
+                } else {
+                    // If it doesn't start with 0 or 62, assume it needs 0 prefix
+                    $cleanPhone = '0' . $cleanPhone;
+                }
+            }
+
+            // Log the message attempt
+            Log::info('WhatsApp: Attempting to send message', [
+                'original_phone' => $phoneNumber,
+                'formatted_phone' => $cleanPhone,
+                'message_preview' => substr($message, 0, 100) . '...'
             ]);
 
-            // In production, uncomment and configure actual WhatsApp API
-            /*
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . config('services.whatsapp.token'),
-                'Content-Type' => 'application/json'
-            ])->post(config('services.whatsapp.url'), [
-                'messaging_product' => 'whatsapp',
-                'to' => $cleanPhone,
-                'type' => 'text',
-                'text' => [
-                    'body' => $message
-                ]
+            $curl = curl_init();
+
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => config('services.whatsapp.api_url'),
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS => array(
+                    'target' => $cleanPhone, // Now using local format like 082257108680
+                    'message' => $message,
+                    'countryCode' => '62', // Country code as separate parameter
+                ),
+                CURLOPT_HTTPHEADER => array(
+                    'Authorization: ' . config('services.whatsapp.token')
+                ),
+            ));
+
+            $response = curl_exec($curl);
+            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $error = curl_error($curl);
+            curl_close($curl);
+
+            if ($error) {
+                Log::error('WhatsApp: cURL Error', [
+                    'error' => $error,
+                    'phone' => $cleanPhone
+                ]);
+                return false;
+            }
+
+            $responseData = json_decode($response, true);
+
+            Log::info('WhatsApp: API Response', [
+                'http_code' => $httpCode,
+                'response' => $responseData,
+                'phone' => $cleanPhone
             ]);
 
-            return $response->successful();
-            */
+            // Consider it successful if HTTP code is 200
+            return $httpCode === 200;
 
-            return true; // Return true for development
         } catch (\Exception $e) {
-            Log::error('Failed to send WhatsApp message', [
+            Log::error('WhatsApp: Failed to send message', [
                 'phone' => $phoneNumber,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             return false;
         }
