@@ -677,6 +677,17 @@
             font-weight: 600;
         }
 
+        .collector-info .fish-type {
+            color: #ff9800;
+            font-weight: 500;
+            background: rgba(255, 152, 0, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: inline-block;
+            margin: 2px 0;
+        }
+
         .collector-status {
             display: flex;
             flex-direction: column;
@@ -2509,20 +2520,29 @@ Silakan coba lagi.`);
                     
                     <div class="card-details">
                         <div class="detail-item">
+                            <span class="detail-label">Jenis Ikan</span>
+                            <span class="detail-value" style="color: #ff9800; font-weight: 500;">${(() => {
+                                if (collector.jenis_ikan_diterima) {
+                                    if (Array.isArray(collector.jenis_ikan_diterima)) {
+                                        return collector.jenis_ikan_diterima.join(', ');
+                                    } else if (typeof collector.jenis_ikan_diterima === 'string') {
+                                        return collector.jenis_ikan_diterima;
+                                    }
+                                }
+                                return 'Semua jenis ikan';
+                            })()}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Rate per KG</span>
+                            <span class="detail-value" style="color: #4caf50; font-weight: 600;">Rp ${collector.rate_harga_per_kg ? parseInt(collector.rate_harga_per_kg).toLocaleString() : 'Nego'}</span>
+                        </div>
+                        <div class="detail-item">
                             <span class="detail-label">Kontak</span>
                             <span class="detail-value">${collector.no_telepon || 'Tidak tersedia'}</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Rate per KG</span>
-                            <span class="detail-value">Rp ${collector.rate_harga_per_kg ? parseInt(collector.rate_harga_per_kg).toLocaleString() : 'Tidak tersedia'}</span>
-                        </div>
-                        <div class="detail-item">
                             <span class="detail-label">Kapasitas Max</span>
-                            <span class="detail-value">${collector.kapasitas_maksimal ? collector.kapasitas_maksimal + ' kg' : 'Tidak tersedia'}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Email</span>
-                            <span class="detail-value">${collector.user?.email || collector.email || 'Tidak tersedia'}</span>
+                            <span class="detail-value">${collector.kapasitas_maksimal ? collector.kapasitas_maksimal + ' kg' : 'Tidak dibatasi'}</span>
                         </div>
                     </div>
 
@@ -2530,8 +2550,11 @@ Silakan coba lagi.`);
                         <button class="btn btn-success" onclick="contactCollectorFixed('${collector.no_telepon || ''}', ${JSON.stringify(collector.nama_usaha || collector.nama || 'Pengepul')})">
                             <i class="fab fa-whatsapp"></i> WhatsApp
                         </button>
+                        <button class="btn btn-primary" onclick="openAppointmentModal(${collector.id})" title="Buat Janji Temu">
+                            <i class="fas fa-calendar-plus"></i> Janji Temu
+                        </button>
                         <button class="btn btn-info" onclick="navigateToCollectorLocation(${collector.id})">
-                            <i class="fas fa-directions"></i> Menuju Lokasi
+                            <i class="fas fa-directions"></i> Lokasi
                         </button>
                     </div>
                 </div>
@@ -2592,14 +2615,24 @@ Silakan coba lagi.`);
                     
                     // Update user location in backend for future reference
                     const token = getToken();
+                    const csrfToken = getCSRFToken();
                     try {
-                        await makeAPIRequest('/api/user', {
+                        const response = await fetch('/api/user', {
                             method: 'PUT',
+                            headers: {
+                                'Authorization': 'Bearer ' + token,
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            },
                             body: JSON.stringify({
                                 latitude: latitude,
                                 longitude: longitude
                             })
                         });
+                        if (!response.ok) {
+                            console.warn('Failed to update user location:', response.status, response.statusText);
+                        }
                     } catch (updateError) {
                         console.warn('Failed to update user location in backend:', updateError);
                     }
@@ -2712,6 +2745,16 @@ Silakan coba lagi.`);
                             <h4>${collector.nama_usaha || collector.nama || 'Nama Usaha Tidak Tersedia'} <i class="fas fa-eye" style="color: #2196f3; font-size: 0.8em; margin-left: 8px;" title="Klik untuk detail"></i></h4>
                             <p class="owner"><i class="fas fa-user"></i> ${collector.user?.name || 'Pemilik tidak diketahui'}</p>
                             <p class="location"><i class="fas fa-map-marker-alt"></i> ${collector.alamat || 'Alamat tidak tersedia'}</p>
+                            <p class="fish-type"><i class="fas fa-fish"></i> ${(() => {
+                                if (collector.jenis_ikan_diterima) {
+                                    if (Array.isArray(collector.jenis_ikan_diterima)) {
+                                        return collector.jenis_ikan_diterima.join(', ');
+                                    } else if (typeof collector.jenis_ikan_diterima === 'string') {
+                                        return collector.jenis_ikan_diterima;
+                                    }
+                                }
+                                return 'Semua jenis ikan';
+                            })()}</p>
                             <p class="rate"><i class="fas fa-money-bill-wave"></i> Rp ${(collector.rate_per_kg || collector.rate_harga_per_kg) ? parseInt(collector.rate_per_kg || collector.rate_harga_per_kg).toLocaleString('id-ID') : 'Nego'}/kg</p>
                         </div>
                         <div class="collector-status">
