@@ -328,23 +328,7 @@
             margin: 1rem 0;
         }
 
-        .whatsapp-summary {
-            background: #e8f5e8;
-            border: 1px solid #28a745;
-            border-radius: 8px;
-            padding: 1rem;
-            margin: 1rem 0;
-        }
-
-        .whatsapp-summary h4 {
-            color: #28a745;
-            margin-bottom: 0.5rem;
-        }
-
-        .whatsapp-summary p {
-            margin: 0.25rem 0;
-            font-size: 0.9rem;
-        }
+        /* WhatsApp summary styling removed - functionality disabled per user request */
 
         @media (max-width: 768px) {
             .header h1 {
@@ -392,9 +376,6 @@
             </button>
             <button class="tab" onclick="switchTab('appointments')">
                 <i class="fas fa-calendar-check"></i> Janji Penjemputan
-            </button>
-            <button class="tab" onclick="switchTab('statistics')">
-                <i class="fas fa-chart-line"></i> Statistik
             </button>
         </div>
 
@@ -449,39 +430,7 @@
             </div>
         </div>
 
-        <!-- Statistics Tab -->
-        <div id="statistics-tab" class="tab-content">
-            <div class="grid">
-                <div class="card">
-                    <h3><i class="fas fa-chart-bar"></i> Ringkasan Bulanan</h3>
-                    <div class="appointment-details">
-                        <div class="detail-item">
-                            <span class="detail-label">Janji Diterima</span>
-                            <span class="detail-value" id="stat-accepted">0</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Janji Selesai</span>
-                            <span class="detail-value" id="stat-completed">0</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Total Penjemputan</span>
-                            <span class="detail-value" id="stat-total-kg">0 kg</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Estimasi Pendapatan</span>
-                            <span class="detail-value" id="stat-revenue">Rp 0</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h3><i class="fas fa-fish"></i> Jenis Ikan Populer</h3>
-                    <div id="fishTypesStats" class="appointment-details">
-                        <p>Memuat data...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- Statistics Tab removed per user request -->
     </div>
 
     <!-- Edit Collector Modal -->
@@ -642,8 +591,6 @@
                 if (!Array.isArray(appointments) || appointments.length === 0) {
                     if (typeof loadAppointments === 'function') loadAppointments();
                 }
-            } else if (tab === 'statistics') {
-                if (typeof loadStatistics === 'function') loadStatistics();
             }
         }
 
@@ -983,10 +930,9 @@
                         </div>
                     ` : appointment.status === 'selesai' ? `
                         <div class="card-actions">
-                            <button class="btn btn-success" onclick="sendWhatsAppSummary(${appointment.id})" style="background-color: #25D366;">
-                                <i class="fab fa-whatsapp"></i> Kirim Summary WA
-                            </button>
-                            <span class="status-text">Status: ${getStatusText(appointment.status)}</span>
+                            <span class="status-text" style="font-weight: 600; color: #155724; background: #d4edda; padding: 0.5rem 1rem; border-radius: 8px; display: inline-block;">
+                                <i class="fas fa-check-circle"></i> Status: ${getStatusText(appointment.status)}
+                            </span>
                         </div>
                     ` : `
                         <div class="card-actions">
@@ -994,26 +940,7 @@
                         </div>
                     `}
 
-                    ${appointment.whatsapp_summary ? `
-                        <div class="whatsapp-summary">
-                            <h4><i class="fab fa-whatsapp"></i> Summary WhatsApp</h4>
-                            ${(() => {
-                                try {
-                                    const summary = typeof appointment.whatsapp_summary === 'string' 
-                                        ? JSON.parse(appointment.whatsapp_summary) 
-                                        : appointment.whatsapp_summary;
-                                    return `
-                                        <p><strong>Tanggal:</strong> ${summary.tanggal || '-'}</p>
-                                        <p><strong>Berat Aktual:</strong> ${summary.berat_aktual || 0} kg</p>
-                                        <p><strong>Total Harga:</strong> Rp ${parseInt(summary.total_harga || 0).toLocaleString()}</p>
-                                        <p><strong>Status:</strong> ${summary.status || 'Selesai'}</p>
-                                    `;
-                                } catch (e) {
-                                    return '<p>Detail transaksi tersedia</p>';
-                                }
-                            })()}
-                        </div>
-                    ` : ''}
+                
                 </div>
             `;
             }).join('');
@@ -1032,59 +959,7 @@
             `;
         }
 
-        async function loadStatistics() {
-            try {
-                const response = await fetch('/api/collectors/statistics', {
-                    headers: {
-                        'Authorization': 'Bearer ' + getToken(),
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    const stats = await safeParseJSON(response);
-                    displayStatistics(stats.data);
-                } else {
-                    let errorMessage = 'Failed to load statistics';
-                    try {
-                        const errorData = await safeParseJSON(response);
-                        errorMessage = errorData.message || errorMessage;
-                    } catch (e) {
-                        console.warn('Could not parse error response:', e);
-                    }
-                    throw new Error(errorMessage);
-                }
-            } catch (error) {
-                console.error('Error loading statistics:', error);
-                // Show default stats
-                displayStatistics({
-                    accepted: 0,
-                    completed: 0,
-                    total_kg: 0,
-                    revenue: 0,
-                    fish_types: []
-                });
-            }
-        }
-
-        function displayStatistics(stats) {
-            document.getElementById('stat-accepted').textContent = stats.accepted || 0;
-            document.getElementById('stat-completed').textContent = stats.completed || 0;
-            document.getElementById('stat-total-kg').textContent = `${stats.total_kg || 0} kg`;
-            document.getElementById('stat-revenue').textContent = `Rp ${parseInt(stats.revenue || 0).toLocaleString()}`;
-
-            const fishTypesContainer = document.getElementById('fishTypesStats');
-            if (stats.fish_types && stats.fish_types.length > 0) {
-                fishTypesContainer.innerHTML = stats.fish_types.map(fish => `
-                    <div class="detail-item">
-                        <span class="detail-label">${fish.type}</span>
-                        <span class="detail-value">${fish.count} penjemputan</span>
-                    </div>
-                `).join('');
-            } else {
-                fishTypesContainer.innerHTML = '<p>Belum ada data penjemputan</p>';
-            }
-        }
+        // Statistics functionality removed per user request
 
         async function acceptAppointment(appointmentId) {
             const catatan = prompt('Masukkan catatan untuk pemilik tambak (opsional):') || '';
@@ -1239,48 +1114,9 @@
             }
         }
 
-        async function sendWhatsAppSummary(appointmentId) {
-            try {
-                const response = await fetch(`/api/appointments/${appointmentId}/whatsapp-summary`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + getToken(),
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
-                });
-
-                if (response.ok) {
-                    const result = await safeParseJSON(response);
-                    
-                    // Show success message
-                    alert('Summary WhatsApp berhasil digenerate!');
-                    
-                    // Open WhatsApp with the message if URL available
-                    if (result.data?.whatsapp_url) {
-                        const openWA = confirm('Buka WhatsApp untuk mengirim summary?');
-                        if (openWA) {
-                            window.open(result.data.whatsapp_url, '_blank');
-                        }
-                    } else if (result.data?.message) {
-                        // Show message in alert if no URL
-                        alert('Summary Message:\n\n' + result.data.message);
-                    }
-                } else {
-                    let errorMessage = 'Gagal mengirim summary WhatsApp';
-                    try {
-                        const errorData = await safeParseJSON(response);
-                        errorMessage = errorData.message || errorMessage;
-                    } catch (e) {
-                        console.warn('Could not parse error response:', e);
-                    }
-                    alert(errorMessage);
-                }
-            } catch (error) {
-                console.error('Error sending WhatsApp summary:', error);
-                alert('Terjadi kesalahan saat mengirim summary WhatsApp: ' + error.message);
-            }
-        }
+        // Removed sendWhatsAppSummary function - no longer needed
+        // WhatsApp summary functionality has been disabled per user request
+        // Only showing "Selesai" status after appointment completion
 
         // Search collectors function
         function searchCollectors() {
