@@ -28,9 +28,9 @@ use App\Http\Controllers\Web\PaymentPageController;
 // PUBLIC ROUTES
 // ============================================================================
 
-// Home route - redirect to login
+// Home route - redirect to fish market (public access)
 Route::get('/', function () {
-    return redirect()->route('login');
+    return redirect()->route('fishmarket');
 })->name('home');
 
 // Route List Documentation
@@ -106,16 +106,31 @@ Route::get('/payment/failed', [PaymentPageController::class, 'failed'])->name('p
 Route::get('/payment/pending', [PaymentPageController::class, 'pending'])->name('payment.pending');
 
 // ============================================================================
+// PUBLIC ACCESS ROUTES - Fish Market & Product Browsing
+// ============================================================================
+
+// Fish Market - Main page (public access, no login required)
+Route::get('/fishmarket', function () {
+    return view('fishmarket.index');
+})->name('fishmarket');
+
+// Product browsing - public access
+Route::get('/products', function () {
+    return view('products.index');
+})->name('products');
+
+// Product detail view - public access
+Route::get('/product/{productId}', function ($productId) {
+    return view('product.detail', compact('productId'));
+})->name('product.detail');
+
+// ============================================================================
 // PROTECTED ROUTES (Semua menggunakan API endpoints dari routes/api.php)
 // ============================================================================
 
 Route::middleware(['hybrid.auth'])->group(function () {
 
-    // Main pages (views yang consume API)
-    Route::get('/fishmarket', function () {
-        return view('fishmarket.index');
-    })->name('fishmarket');
-
+    // Protected pages that require authentication
     Route::get('/locations', function () {
         return view('locations.index');
     })->name('locations');
@@ -123,15 +138,6 @@ Route::middleware(['hybrid.auth'])->group(function () {
     Route::get('/profile', function () {
         return view('profile.index');
     })->name('profile');
-
-    // Product pages
-    Route::get('/products', function () {
-        return view('products.index');
-    })->name('products');
-
-    Route::get('/product/{productId}', function ($productId) {
-        return view('product.detail', compact('productId'));
-    })->name('product.detail');
 
     // Cart page
     Route::get('/cart', function () {

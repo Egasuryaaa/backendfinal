@@ -1049,6 +1049,13 @@
 
         // Add to cart
         async function addToCart() {
+            // Check authentication first
+            const token = getAuthToken ? getAuthToken() : null;
+            if (!token) {
+                showLoginModal();
+                return;
+            }
+
             if (isLoading || !currentProduct) return;
 
             const stock = currentProduct.stok || 0;
@@ -1097,7 +1104,89 @@
 
         // Quick buy (placeholder)
         function quickBuy() {
+            // Check authentication first
+            const token = getAuthToken ? getAuthToken() : null;
+            if (!token) {
+                showLoginModal();
+                return;
+            }
             showSnackbar('Fitur beli langsung akan segera hadir', 'error');
+        }
+
+        function showLoginModal() {
+            // Show login required modal
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                font-family: 'Inter', sans-serif;
+            `;
+            modal.innerHTML = `
+                <div style="
+                    background: white;
+                    padding: 30px;
+                    border-radius: 16px;
+                    text-align: center;
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+                    max-width: 400px;
+                    width: 90%;
+                ">
+                    <div style="
+                        width: 60px;
+                        height: 60px;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border-radius: 50%;
+                        margin: 0 auto 20px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: white;
+                        font-size: 24px;
+                    ">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h3 style="margin-bottom: 10px; color: #333;">Login Diperlukan</h3>
+                    <p style="color: #666; margin-bottom: 20px;">Silakan login untuk menambahkan produk ke keranjang</p>
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <button onclick="window.location.href='/login'" style="
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-weight: 600;
+                            font-size: 14px;
+                        ">Login Sekarang</button>
+                        <button onclick="this.closest('[style*=\"position: fixed\"]').remove()" style="
+                            background: #f5f5f5;
+                            color: #666;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-weight: 600;
+                            font-size: 14px;
+                        ">Batal</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Auto remove modal after 10 seconds
+            setTimeout(() => {
+                if (modal.parentElement) {
+                    modal.remove();
+                }
+            }, 10000);
         }
 
         // Toggle favorite (placeholder)

@@ -245,9 +245,23 @@
             margin-bottom: 8px;
         }
 
-        .welcome-subtitle {
-            color: rgba(255,255,255,0.8);
+                .welcome-subtitle {
+            color: #666;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+
+        .login-notice {
+            background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+            color: #1976D2;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-size: 14px;
+            border: 1px solid #90CAF9;
         }
 
         .welcome-icon {
@@ -847,15 +861,16 @@
         <!-- Main Content -->
         <div class="main-content">
             <!-- Welcome Section -->
+                        <!-- Welcome Section -->
             <div class="welcome-section">
-                <div class="welcome-content">
-                    <div class="welcome-text">
-                        <div class="welcome-greeting">Selamat Datang di</div>
-                        <div class="welcome-title">IwakMart 🐟</div>
-                        <div class="welcome-subtitle">Temukan berbagai jenis ikan segar dan berkualitas</div>
-                    </div>
-                    <div class="welcome-icon">
-                        <i class="fas fa-water"></i>
+                <div class="welcome-card">
+                    <div class="welcome-info">
+                        <h1 class="welcome-title">Selamat Datang di IwakMart</h1>
+                        <p class="welcome-subtitle">Platform terpercaya untuk jual beli ikan segar berkualitas.</p>
+                        <div id="loginNotice" class="login-notice" style="display: none;">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Silakan <a href="/login" style="color: #1976D2; text-decoration: none; font-weight: 600;">login</a> untuk mengakses keranjang, profil, dan fitur lengkap lainnya</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1294,6 +1309,13 @@
 
         // Show user menu
         function showUserMenu() {
+            // Check if user is authenticated first
+            const token = getAuthToken ? getAuthToken() : null;
+            if (!token) {
+                // User is not authenticated - avatar should be login button
+                return;
+            }
+            
             // Use the improved confirmLogout function from auth.js
             if (typeof window.confirmLogout === 'function') {
                 window.confirmLogout();
@@ -1368,6 +1390,9 @@
                     userName.style.display = 'block';
                     console.log('User authenticated:', testData.user.name);
 
+                    // Show protected elements for authenticated users
+                    showProtectedElements();
+
                     // Show farm dashboard button for farm owners
                     if (testData.user.role === 'pemilik_tambak') {
                         const farmDashboardButton = document.getElementById('farmDashboardButton');
@@ -1424,8 +1449,110 @@
             userAvatar.innerHTML = '<i class="fas fa-user"></i>';
             userName.style.display = 'none';
 
-            // Redirect to login if user is not authenticated
-            redirectToLogin();
+            // Hide protected elements for non-authenticated users
+            hideProtectedElements();
+            
+            // Show login button instead of user menu
+            showLoginButton();
+        }
+
+        function hideProtectedElements() {
+            // Hide cart button and badge for non-authenticated users
+            const cartButton = document.getElementById('cartButton');
+            if (cartButton) cartButton.style.display = 'none';
+            
+            // Hide profile button
+            const profileButton = document.getElementById('profileButton');
+            if (profileButton) profileButton.style.display = 'none';
+            
+            // Hide fish farm button (requires authentication)
+            const fishFarmButton = document.getElementById('fishFarmButton');
+            if (fishFarmButton) fishFarmButton.style.display = 'none';
+            
+            // Hide quick actions section
+            const quickActionsSection = document.getElementById('quickActionsSection');
+            if (quickActionsSection) quickActionsSection.style.display = 'none';
+            
+            // Show login notice
+            const loginNotice = document.getElementById('loginNotice');
+            if (loginNotice) loginNotice.style.display = 'flex';
+        }
+
+        function showProtectedElements() {
+            // Show cart button for authenticated users
+            const cartButton = document.getElementById('cartButton');
+            if (cartButton) cartButton.style.display = 'flex';
+            
+            // Show profile button
+            const profileButton = document.getElementById('profileButton');
+            if (profileButton) profileButton.style.display = 'flex';
+            
+            // Show fish farm button
+            const fishFarmButton = document.getElementById('fishFarmButton');
+            if (fishFarmButton) fishFarmButton.style.display = 'flex';
+            
+            // Hide login notice
+            const loginNotice = document.getElementById('loginNotice');
+            if (loginNotice) loginNotice.style.display = 'none';
+        }
+
+        function showLoginButton() {
+            const userAvatar = document.getElementById('userAvatar');
+            if (userAvatar) {
+                userAvatar.innerHTML = '<a href="/login" style="color: white; text-decoration: none;"><i class="fas fa-sign-in-alt"></i></a>';
+                userAvatar.title = 'Login untuk akses lengkap';
+            }
+        }
+
+        function requireAuth(callback) {
+            // Check if user is authenticated
+            const token = getAuthToken ? getAuthToken() : null;
+            if (!token) {
+                // Show login required message
+                const message = document.createElement('div');
+                message.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 20px 30px;
+                    border-radius: 12px;
+                    text-align: center;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                    z-index: 10000;
+                    font-family: 'Inter', sans-serif;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 15px;
+                `;
+                message.innerHTML = `
+                    <i class="fas fa-lock" style="font-size: 24px;"></i>
+                    <div>
+                        <strong>Login Diperlukan</strong><br>
+                        <small>Silakan login untuk mengakses fitur ini</small>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <button onclick="window.location.href='/login'" style="background: white; color: #667eea; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Login</button>
+                        <button onclick="this.parentElement.parentElement.remove()" style="background: transparent; color: white; border: 1px solid white; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Batal</button>
+                    </div>
+                `;
+                document.body.appendChild(message);
+                
+                // Auto remove message after 5 seconds
+                setTimeout(() => {
+                    if (message.parentElement) {
+                        message.remove();
+                    }
+                }, 5000);
+                
+                return false;
+            }
+            
+            // User is authenticated, execute callback
+            if (callback) callback();
+            return true;
         }
 
         // Load cart count and update badge
@@ -1433,6 +1560,11 @@
             try {
                 // Get auth token from auth.js
                 const token = getAuthToken ? getAuthToken() : null;
+                
+                // Don't load cart count if user is not authenticated
+                if (!token) {
+                    return;
+                }
 
                 const headers = {
                     'Accept': 'application/json',
